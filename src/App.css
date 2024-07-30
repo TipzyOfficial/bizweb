@@ -1,0 +1,358 @@
+.App {
+  text-align: center;
+}
+
+.App-body {
+  background-color: #17171E;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* font-size: calc(10px + 2vmin); */
+  color: white;
+}
+
+.App-body-top {
+  background-color: #17171E;
+  min-height: 100dvh;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  /* font-size: calc(10px + 2vmin); */
+  color: white;
+}
+
+.input {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 12;
+  border-radius: 10;
+  border-width: 1;
+  border-color: #888;
+  background-color: white;
+  color: black;
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+}
+
+.text {
+  font-size: calc(12x + 1vmin);
+  font-size: calc(12px + 1vmin);
+  font-weight: bold;
+}
+
+.threelinetext {
+  font-size: calc(15x + 1vmin);
+  font-size: calc(15px + 1vmin);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.onelinetext {
+  font-size: calc(15x + 1vmin);
+  font-size: calc(15px + 1vmin);
+  font-weight: bold;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.App-header {
+  background-color: #17171E;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-title {
+  font-size: calc(20px + 5vmin);
+  line-height: calc(20px + 5vmin);
+  font-weight: bold;
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+.App-logintitle {
+  font-size: calc(25px + 4vmin);
+  line-height: calc(25px + 4vmin);
+  font-weight: bold;
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+.App-subtitle {
+  font-size: calc(20px + 1.5vmin);
+  font-size: calc(20px + 1.5vmin);
+  line-height: 1;
+  font-weight: bold;
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+.App-artistsubtitle {
+  font-size: calc(15px + 2vmin);
+  font-size: calc(15px + 2vmin);
+  line-height: 1;
+  font-weight: bold;
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+.App-headertop {
+  background-color: #17171E;
+  display: flex;
+  flex-direction: column;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+.App-headertitle {
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-size: calc(17px + 2vmin);
+  font-weight: bold;
+}
+
+.App-headertitleoneline {
+  font-size: calc(17px + 2vmin);
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-weight: bold;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.App-bluroverlay {
+  -webkit-backdrop-filter: blur(5px);
+  /* Add this line first, it fixes blur for Safari*/
+  backdrop-filter: blur(5px);
+  /* This line activates blur*/
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  z-index: 100;
+  background-color: #17171Edd;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.App-modal {
+  min-width: 80vw;
+}
+
+.App-modaltitle {
+  width: "100%";
+  background-color: 'red';
+  text-align: center;
+}
+
+.App-backarrow {
+  font-size: calc(12px + 1vmin);
+}
+
+.App-tertiarytitle {
+  font-size: calc(12px + 1vmin);
+  font-weight: bold;
+}
+
+.App-typetitle {
+  font-size: calc(10px + 1vmin);
+  font-weight: 500;
+}
+
+.App-smalltext {
+  font-size: calc(10px + 0.5vmin);
+}
+
+.App-tertiarytoggle {
+  font-size: calc(12px + 1vmin);
+  font-size: calc(12px + 1vmin);
+}
+
+.App-toggletitle {
+  font-size: calc(12px + 2vmin);
+  font-size: calc(12px + 2vmin);
+  font-weight: bold;
+}
+
+.App-normaltext {
+  font-size: calc(15px + 0.5vmin);
+}
+
+.App-montserrat-normaltext {
+  font-size: calc(15px + 0.5vmin);
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+.App-animated-gradient {
+  background: linear-gradient(90deg, #D98205, #CA3C6D, #D98205);
+  /* background: linear-gradient(90deg, #FCC679, #d5648b, #FCC679); */
+  background-size: 200% 200%;
+  -webkit-animation: Animation 3s ease infinite;
+  -moz-animation: Animation 3s ease infinite;
+  animation: Animation 3s ease infinite;
+  -webkit-transition: .2s;
+  transition: width .2s;
+}
+
+.App-modal .modal-content {
+  background-color: #17171E;
+}
+
+.App-animated-gradient-fast {
+  background: linear-gradient(90deg, #D98205, #CA3C6D, #D98205);
+  /* background: linear-gradient(90deg, #FCC679, #d5648b, #FCC679); */
+  background-size: 200% 200%;
+  -webkit-animation: Animation 2s ease infinite;
+  -moz-animation: Animation 2s ease infinite;
+  animation: Animation 2s ease infinite;
+  -webkit-transition: .2s;
+  transition: width .2s;
+}
+
+.App-animated-gradient-fast-light {
+  background: linear-gradient(90deg, #FCC679, #e293ae, #FCC679);
+  /* background: linear-gradient(90deg, #FCC679, #d5648b, #FCC679); */
+  background-size: 200% 200%;
+  -webkit-animation: Animation 2s ease infinite;
+  -moz-animation: Animation 2s ease infinite;
+  animation: Animation 2s ease infinite;
+  -webkit-transition: .2s;
+  transition: width .2s;
+}
+
+@-webkit-keyframes Animation {
+  0% {
+    background-position: 10% 0%
+  }
+
+  50% {
+    background-position: 91% 100%
+  }
+
+  100% {
+    background-position: 10% 0%
+  }
+}
+
+@-moz-keyframes Animation {
+  0% {
+    background-position: 10% 0%
+  }
+
+  50% {
+    background-position: 91% 100%
+  }
+
+  100% {
+    background-position: 10% 0%
+  }
+}
+
+@keyframes Animation {
+  0% {
+    background-position: 10% 0%
+  }
+
+  50% {
+    background-position: 91% 100%
+  }
+
+  100% {
+    background-position: 10% 0%
+  }
+}
+
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 15px;
+  /* background: linear-gradient(to right, #FA9D17 0%, #82CFD0 50%, #fff2 50%, #fff2 100%); */
+  border-radius: 25px;
+  /* opacity: 0.7; */
+  /* -webkit-transition: .2s; */
+  /* transition: background-color .2s; */
+}
+
+/* .slider:hover {
+  background: #fff2;
+} */
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  background: #FA9D17;
+  cursor: pointer;
+}
+
+/* unvisited link */
+a:link {
+  color: #FA9D17;
+  text-decoration: none;
+}
+
+/* visited link */
+a:visited {
+  color: #FA9D17;
+  text-decoration: none;
+}
+
+/* mouse over link */
+a:hover {
+  color: #df8605;
+  text-decoration: none;
+}
+
+/* selected link */
+a:active {
+  color: #df8605;
+  text-decoration: none;
+}
