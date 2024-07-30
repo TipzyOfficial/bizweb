@@ -218,15 +218,11 @@ function Login(props: { back?: boolean }) {
         await checkIfAccountExists({
             user: user,
             setUser: () => { },
-            barState: { setBar: () => { } },
-            artistState: { setArtist: () => { } }
         }).then((result) => {
             if (result.result) {
                 storeAll({
                     user: result.data,
                     setUser: usc.setUser,
-                    barState: usc.barState,
-                    artistState: usc.artistState
                 }, refreshToken).then((user) => {
                     // console.log("resulting user", user);
                     usc.setUser(user);
@@ -240,8 +236,6 @@ function Login(props: { back?: boolean }) {
                     checkIfAccountExists({
                         user: user,
                         setUser: () => { },
-                        barState: { setBar: () => { } },
-                        artistState: { setArtist: () => { } }
                     }).then(r => {
                         if (!r.result) return undefined
                         return r.data;
@@ -255,8 +249,6 @@ function Login(props: { back?: boolean }) {
                         storeAll({
                             user: newUser,
                             setUser: usc.setUser,
-                            barState: usc.barState,
-                            artistState: { setArtist: () => { } }
                         }, refreshToken).then((u) => {
                             nextPage();
                         });

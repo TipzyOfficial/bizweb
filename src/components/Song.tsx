@@ -1,11 +1,9 @@
-import { Button, Col, Container, Modal, Row } from "react-bootstrap";
 import { Colors, padding, radius, useFdim } from "../lib/Constants";
 import { PlayableType, SongType } from "../lib/song";
 import './Song.css'
 import { router } from "../App";
 import FlatList from "flatlist-react/lib";
 import { memo, useEffect, useState } from "react";
-import RequestSongModal, { RequestPlayableModal } from "./RequestSongModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCirclePlus, faMusic } from "@fortawesome/free-solid-svg-icons";
 import { numberToPrice } from "../lib/utils";
@@ -125,9 +123,6 @@ export function SongList(props: { songs: SongType[], dims: number, noImage?: boo
                     </>
                 }
             />
-            {/* <div style={{position: "fixed", top: 0}}> */}
-            <RequestSongModal song={requestedSong} show={requestVisible} handleClose={() => setRequestVisible(false)} data={props.logoutData} refreshRequests={props.refreshRequests} />
-            {/* </div> */}
         </>
     )
 }

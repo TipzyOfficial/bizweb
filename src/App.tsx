@@ -7,22 +7,17 @@ import {
   RouterProvider,
 } from 'react-router-dom';
 import Bar from './pages/bar/Bar';
-import EnterCode from './pages/bar/EnterCode';
 import { useContext } from 'react';
 import { Navigate } from 'react-router'
 // import { Cookies, useCookies } from 'react-cookie';
 import Cookies from 'universal-cookie';
 import { UserSessionContext, UserSessionContextProvider } from './lib/UserSessionContext';
-import SongSearch from './pages/bar/SongSearch';
 import { Elements, PaymentElement, } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { fetchPaymentSheetParams } from './lib/stripe';
 import { DisplayOrLoading } from './components/DisplayOrLoading';
-import ArtistInfo from './pages/bar/artist/ArtistInfo';
 import Account from './pages/profile/Account';
 import About from './pages/profile/About';
-import AlbumPage from './pages/bar/artist/AlbumPage';
-import Albums from './pages/bar/artist/Albums';
 import { NotFoundPage } from './pages/bar/NotFoundPage';
 import { getCookies, getStored } from './lib/utils';
 
@@ -54,16 +49,8 @@ export const router = createBrowserRouter([{
       Component: Login
     },
     {
-      path: "/code",
-      Component: EnterCode
-    },
-    {
       path: "/bar",
       Component: Bar
-    },
-    {
-      path: "/search",
-      Component: SongSearch
     },
     {
       path: "/account",
@@ -72,18 +59,6 @@ export const router = createBrowserRouter([{
     {
       path: "/contact-us",
       Component: About
-    },
-    {
-      path: "/search/artist",
-      Component: ArtistInfo
-    },
-    {
-      path: "/search/album",
-      Component: AlbumPage
-    },
-    {
-      path: "/search/albums",
-      Component: Albums
     }
     ], errorElement: <NotFoundPage title="Oops!" body={"We can't seem to find that page. Are you sure you entered everything correctly?"} backPath={-1} />
 }
