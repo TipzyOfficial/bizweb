@@ -3,6 +3,7 @@ import { DisplayOrLoading } from "../../components/DisplayOrLoading";
 import { Colors } from "../../lib/Constants";
 import { useContext, useState } from "react";
 import { UserSessionContext } from "../../lib/UserSessionContext";
+import ProfileButton from "../../components/ProfileButton";
 
 
 const LoadingScreen = () =>
@@ -12,7 +13,7 @@ const LoadingScreen = () =>
         <span>Loading bar information...</span>
     </div>;
 
-export default function Bar() {
+export default function Dashboard() {
 
     const usc = useContext(UserSessionContext);
     const bar = usc.user;
@@ -22,6 +23,7 @@ export default function Bar() {
     return (
         <DisplayOrLoading condition={ready} loadingScreen={<LoadingScreen />}>
             <div className="App-body-top">
+                <ProfileButton></ProfileButton>
                 hi
             </div>
         </DisplayOrLoading>

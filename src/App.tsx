@@ -3,19 +3,14 @@ import './index.css';
 import Login from './pages/Login';
 import {
   createBrowserRouter,
-  Outlet,
   RouterProvider,
 } from 'react-router-dom';
-import Bar from './pages/bar/Bar';
+import Dashboard from './pages/bar/Dashboard';
 import { useContext } from 'react';
 import { Navigate } from 'react-router'
 // import { Cookies, useCookies } from 'react-cookie';
-import Cookies from 'universal-cookie';
 import { UserSessionContext, UserSessionContextProvider } from './lib/UserSessionContext';
-import { Elements, PaymentElement, } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { fetchPaymentSheetParams } from './lib/stripe';
-import { DisplayOrLoading } from './components/DisplayOrLoading';
 import Account from './pages/profile/Account';
 import About from './pages/profile/About';
 import { NotFoundPage } from './pages/bar/NotFoundPage';
@@ -32,9 +27,7 @@ function Redirect() {
   //reset refresh expiry time
   // if (loggedin) cookies.set("refresh_token", cookies.get("refresh_token"), { expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
 
-  return (
-    (session ? <Navigate to={`/bar?id=${session}`}></Navigate> : <Navigate to='/code'></Navigate>)
-  )
+  return (loggedin ? <Navigate to={`/dashboard`}></Navigate> : <Navigate to={`/login`}></Navigate>)
 }
 
 export const router = createBrowserRouter([{
@@ -49,8 +42,8 @@ export const router = createBrowserRouter([{
       Component: Login
     },
     {
-      path: "/bar",
-      Component: Bar
+      path: "/dashboard",
+      Component: Dashboard
     },
     {
       path: "/account",

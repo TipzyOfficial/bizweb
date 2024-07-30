@@ -53,7 +53,7 @@ function Login(props: { back?: boolean }) {
             router.navigate(retDecoded.url, { state: { fromLogin: true, ...retDecoded.data } })
         } else {
             console.log("going barid")
-            router.navigate(barID ? `/bar?id=${barID}` : '/code');
+            router.navigate('dashboard');
         }
     }
 
