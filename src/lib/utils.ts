@@ -85,10 +85,10 @@ export const setStored = (key: string, value: string): void => {
     return localStorage.setItem(key, value);
 }
 
-export function useInterval(callback: () => any, delay: number, firstDelay?: number): void {
+export function useInterval(callback: () => any, delay: number, firstDelay?: number, startFirstDelay?: boolean): void {
 
     const [enabled, setEnabled] = useState(true);
-    const [d, setdi] = useState(firstDelay ?? delay);
+    const [d, setdi] = useState((startFirstDelay ? firstDelay : delay) ?? delay);
     const setd = (n: number) => {
         if (n !== d) setdi(n);
     }

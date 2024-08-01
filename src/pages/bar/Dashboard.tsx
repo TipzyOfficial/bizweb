@@ -153,7 +153,7 @@ export default function Dashboard() {
         refreshAllData().then(() => setReady(true)).catch(() => setReady(true));
     }, []);
 
-    useInterval(refreshAllData, 5000);
+    useInterval(refreshAllData, 5000, 500, false);
 
     ///() => rejectAll()
 
