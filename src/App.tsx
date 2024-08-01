@@ -90,24 +90,6 @@ export type ReturnLinkType = {
 
 export function goToLogin(data?: any, defaultToBar?: boolean) {
 
-  if (defaultToBar) {
-    localStorage.removeItem("ret")
-  }
-
-  else {
-    const url = window.location.pathname;
-    const returnLink: ReturnLinkType = {
-      url: url,
-      data: data,
-    }
-
-    localStorage.setItem("ret", btoa(JSON.stringify(returnLink)))
-  }
-
-  // window.location.replace(
-  //   `${window.location.origin}/login?prev=${urlbtoa}`
-  // )
-
   window.location.replace(
     `${window.location.origin}/login`//?prev=true`
   )

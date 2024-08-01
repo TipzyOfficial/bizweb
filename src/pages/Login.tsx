@@ -46,15 +46,7 @@ function Login(props: { back?: boolean }) {
     const [usernameShowing, setUsernameShowing] = useState(false);
 
     const nextPage = () => {
-        const ret = localStorage.getItem("ret");
-
-        if (ret) {
-            const retDecoded: ReturnLinkType = JSON.parse(atob(ret));
-            router.navigate(retDecoded.url, { state: { fromLogin: true, ...retDecoded.data } })
-        } else {
-            console.log("going barid")
-            router.navigate('/dashboard');
-        }
+        router.navigate('/dashboard');
     }
 
     // console.log(searchParams.get("prev"));
@@ -93,10 +85,6 @@ function Login(props: { back?: boolean }) {
     const handleAppleLoginFailure = (event: any) => {
         console.log("apple failure...", event)
     }
-
-    useEffect(() => {
-        if (localStorage.getItem("ret")) setLoginPrompt(true);
-    })
 
     useLayoutEffect(() => {
         window.document.addEventListener('AppleIDSignInOnSuccess', (event) => handleAppleLoginSuccess(event));
