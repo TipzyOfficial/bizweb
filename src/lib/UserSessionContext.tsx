@@ -44,28 +44,6 @@ export const DefaultUserSessionContext: UserSessionContextType = {
 
 export const UserSessionContext = createContext<UserSessionContextType>(DefaultUserSessionContext);
 
-export const getPending = async (usc: UserSessionContextType, ignoreReqs?: boolean): Promise<[SongRequestType[], number]> => {
-    const p: SongRequestType[] = [];
-    let ptc: number = 0;
-    await fetchWithToken(usc, `tipper/requests/pending/`, 'GET').then(r => {
-        return r.json();
-    })
-        .then(json => {
-            const reqs = json.data;
-            reqs.forEach((e: any) => {
-                const sj = e.song_json;
-                const bi = e.business_info;
-                const s: SongType = { id: sj.id, title: sj.name, artists: [sj.artist], albumart: sj.image_url, explicit: false };
-                const b: BarType = { id: bi.id, name: bi.business_name, type: bi.business_type, image_url: bi.image_url, description: bi.description, active: bi.active, allowingRequests: bi.allowing_requests }
-                ptc += e.token_count ?? 0;
-                p.push({ id: e.id, song: s, status: e.status, bar: b, date: new Date(e.request_time) })
-            })
-        })
-        .catch((e: Error) => { console.log("problem getting pending: ", e) });
-
-    return [p, ptc];
-}
-
 export function UserSessionContextProvider(props: { children: JSX.Element }) {
     const cookies = getCookies();
     const dc = defaultConsumer();
@@ -103,7 +81,6 @@ export function UserSessionContextProvider(props: { children: JSX.Element }) {
     const usc: UserSessionContextType = { user: user, setUser: editUser, abortController: abortController };
 
     const setup = async () => {
-
         if (!getStored("refresh_token") || !getStored("access_token")) {
             if (usc.user.user.access_token) {
                 checkIfAccountExists(usc).then((r) => {

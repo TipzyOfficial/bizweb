@@ -6,7 +6,7 @@ import { router } from "../App";
 import { useLocation } from "react-router-dom";
 import useWindowDimensions from "../lib/useWindowDimensions";
 import { UserSessionContext } from "../lib/UserSessionContext";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { Logout } from "..";
 
 export default function ProfileButton(props: { position?: "fixed" | "relative" | "sticky", disabled?: boolean, style?: React.CSSProperties, name?: string }) {
@@ -16,15 +16,19 @@ export default function ProfileButton(props: { position?: "fixed" | "relative" |
     const position = props.position ?? "fixed";
     // console.log(location.pathname)
 
+    const [hover, setHover] = useState(false);
+
     return (
-        <div style={{
-            position: position,
-            top: position === "fixed" ? padding : undefined,
-            right: position === "fixed" ? padding : undefined,
-            zIndex: 20,
-            // opacity: 0.85,
-            ...props.style
-        }}>
+        <div
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+            style={{
+                position: position,
+                top: position === "fixed" ? padding : undefined,
+                right: position === "fixed" ? padding : undefined,
+                zIndex: 20,
+                ...props.style
+            }}>
             <button
                 onClick={() => {
                     if (!usc.user.user.access_token) {
@@ -34,6 +38,8 @@ export default function ProfileButton(props: { position?: "fixed" | "relative" |
                     if (!props.disabled) router.navigate("/account")
                 }}
                 style={{
+                    overflow: 'hidden',
+                    backgroundColor: hover ? "#fff2" : Colors.background + "00",
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -44,9 +50,9 @@ export default function ProfileButton(props: { position?: "fixed" | "relative" |
                     borderStyle: 'solid',
                     borderWidth: 1,
                     borderColor: 'white',
-                    backgroundColor: Colors.background + "00",
-                    color: 'white'
+                    color: 'white',
                     // boxShadow: '0px 10px 10px rgba(0, 0, 0, 0.5)'
+                    transition: "all 0.2s"
                 }}>
                 <FontAwesomeIcon icon={faProfile} color={'white'} fontSize={dims / 3}></FontAwesomeIcon>
                 <span style={{ fontSize: dims / 3, paddingLeft: padding }}>{props.name}</span>

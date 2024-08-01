@@ -88,30 +88,6 @@ export default function Account() {
         getCardDetails();
     }, [])
 
-    function CardDetails() {
-        return (
-            <>
-                <div style={{ width: "100%", padding: padding, borderColor: "#8888", borderStyle: 'solid', borderWidth: 1, borderRadius: radius }}>
-                    <div style={{ paddingBottom: padding / 2 }}>
-                        <span>Your card details:</span>
-                    </div>
-                    <DisplayOrLoading condition={cdReady} loadingScreen={<div style={{ display: "flex", justifyContent: 'center', alignContent: 'center', padding: padding }}><Spinner></Spinner></div>}>
-                        <div style={{ width: "100%", padding: padding, backgroundColor: "#8883" }}>
-                            {details ?
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <span style={{ fontFamily: 'monospace' }}>{details.brand ? details.brand.toUpperCase() : "no brand"} ****{details.last4}</span>
-                                    <span style={{ fontFamily: 'monospace' }}>Expiration: {details.expMonth}/{details.expYear}</span>
-                                </div>
-                                : <span>No card details saved–please update your payment information.</span>
-                            }
-                        </div>
-                    </DisplayOrLoading>
-                </div>
-                <div style={{ paddingBottom: padding }}></div>
-            </>
-        )
-    }
-
     function DeleteAccount() {
         alert('If you wish to delete your account, please reach out to us in the "Contact Us" section.')
 

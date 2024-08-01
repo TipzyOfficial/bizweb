@@ -3,22 +3,22 @@ import { SongType } from "../../lib/song";
 import Song from "../../components/Song";
 import { padding } from "../../lib/Constants";
 
-export default function Queue(props: { current: SongType | undefined, queue: SongType[] | undefined }) {
+export default function Queue(props: { current: SongType | undefined, queue: SongType[] | undefined, songDims?: number }) {
     const queue = props.queue;
     const current = props.current;
 
     return (
         <div style={{ width: "100%" }}>
-            <span style={{ padding: 7, backgroundColor: "#8883", borderRadius: 10 }}>Now playing:</span>
+            <span className="App-montserrat-normaltext" style={{ paddingBottom: 7 }}>Now playing:</span>
             <div style={{ paddingBottom: padding }} />
-            <Song song={current ?? { title: "No song playing", artists: ["No artist"], id: "", albumart: "", explicit: false }}></Song>
+            <Song song={current ?? { title: "No song playing", artists: ["No artist"], id: "", albumart: "", explicit: false }} dims={props.songDims}></Song>
             <div style={{ paddingBottom: padding * 2 }} />
-            <span style={{ padding: 7, backgroundColor: "#8883", borderRadius: 10 }}>Next up:</span>
+            <span className="App-montserrat-normaltext" style={{ paddingBottom: 7 }}>Next up:</span>
             <div style={{ paddingBottom: padding }} />
             {queue ?
                 <FlatList
                     list={queue}
-                    renderItem={(s, k) => <><Song key={k} song={s} /><div style={{ paddingBottom: padding }}></div></>}
+                    renderItem={(s, k) => <><Song key={k} song={s} dims={props.songDims} /><div style={{ paddingBottom: padding }}></div></>}
                     renderWhenEmpty={
                         <div>
                             <span>Queue is empty...</span>

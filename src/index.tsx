@@ -74,15 +74,20 @@ export async function getBusiness(usc: UserSessionContextType) {
 }
 
 export const businessFromJSON = (user: Business | undefined, d: any) => {
-  const c = new Business(user?.user ?? new Users("", 0, ""),
+  console.log("bdata", d);
+
+  const u = user?.user ?? new Users("", 0, "");
+
+  const c = new Business(new Users(u.access_token, u.expires_at, `${d.user_info.first_name} ${d.user_info.last_name}`, u.image, d.user_info.email),
     d.business_name,
     d.business_image,
-    d.business_id,
+    d.id,
     d.allowing_requests,
     d.auto_accept_requests,
     d.type,
     d.address,
     d.vibe,
+    d.block_explicit,
     d.hour_explicit_allowed,
     d.hour_explicit_blocked)
   return (c);
