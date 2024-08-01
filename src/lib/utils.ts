@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Cookies from "universal-cookie";
 import { Business } from "./user";
+import { SongType } from "./song";
+
+export function parseSongJson(json: any): SongType {
+    return { id: json.track_id, title: json.track_name, artists: json.artists, albumart: json.images.thumbnail, albumartbig: json.images.teaser, explicit: json.explicit }
+}
 
 function isMobile() {
     const o = typeof window.screen.orientation !== 'undefined';

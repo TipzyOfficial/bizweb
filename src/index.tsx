@@ -39,7 +39,7 @@ export function Logout(usc: UserSessionContextType, data?: any, defaultToBar?: b
   goToLogin(data, defaultToBar ?? false);
 }
 
-export function rootGetRefreshToken(cookies: Cookies): string | null {
+export function rootGetRefreshToken(): string | null {
   const rt = getStored("refresh_token");
   return rt;
 }
@@ -69,21 +69,31 @@ async function resetTokenValues(usc: UserSessionContextType, tokens: TokenReturn
   usc.setUser(newUser);
 }
 
-export async function getTipper(usc: UserSessionContextType, cookies: Cookies) {
-  return getUser("business", usc.user.user.access_token, usc.user.user.expires_at, () => rootGetRefreshToken(cookies), () => Logout(usc), (tokens: TokenReturnType) => resetTokenValues(usc, tokens));
+export async function getBusiness(usc: UserSessionContextType) {
+  return getUser("business", usc.user.user.access_token, usc.user.user.expires_at, () => rootGetRefreshToken(), () => Logout(usc), (tokens: TokenReturnType) => resetTokenValues(usc, tokens));
 }
 
-export const consumerFromJSON = (user: Business | undefined, d: any) => {
-  const c = new Business(user?.user ?? new Users("", 0, ""), user?.business_name, user?.business_image, user?.business_id, user?.allowing_requests, user?.auto_accept_requests, user?.type, user?.address, user?.vibe, user?.hour_explicit_allowed, user?.hour_explicit_blocked)
+export const businessFromJSON = (user: Business | undefined, d: any) => {
+  const c = new Business(user?.user ?? new Users("", 0, ""),
+    d.business_name,
+    d.business_image,
+    d.business_id,
+    d.allowing_requests,
+    d.auto_accept_requests,
+    d.type,
+    d.address,
+    d.vibe,
+    d.hour_explicit_allowed,
+    d.hour_explicit_blocked)
   return (c);
 }
 
 export async function checkIfAccountExists(usc: UserSessionContextType): Promise<{ result: boolean, data: Business }> {
-  return getTipper(usc, cookies).then(json => {
+  return getBusiness(usc).then(json => {
     const d = json.data;
     return {
       result: json.status === 200,
-      data: json.status !== 200 ? usc.user : consumerFromJSON(usc.user, d)
+      data: json.status !== 200 ? usc.user : businessFromJSON(usc.user, d)
     }
   })
     .catch(e => { throw e })
@@ -99,7 +109,7 @@ async function handleResponse(response: Response | null) {
 }
 
 export async function fetchWithToken(usc: UserSessionContextType, urlEnding: string, fetchMethod: string, body?: string, data?: any) {
-  const response = await sharedFetchWithToken(usc.user.user.access_token, urlEnding, usc.user.user.expires_at, () => rootGetRefreshToken(cookies), () => Logout(usc, data), (tokens: TokenReturnType) => resetTokenValues(usc, tokens), fetchMethod, body, usc.abortController?.signal).then(response => {
+  const response = await sharedFetchWithToken(usc.user.user.access_token, urlEnding, usc.user.user.expires_at, () => rootGetRefreshToken(), () => Logout(usc, data), (tokens: TokenReturnType) => resetTokenValues(usc, tokens), fetchMethod, body, usc.abortController?.signal).then(response => {
     return handleResponse(response);
   }).catch((e: Error) => {
     if (e.name === "AbortError") {
@@ -124,9 +134,9 @@ export async function storeTokens(accessToken: string, refreshToken: string, exp
 
 export async function storeAll(usc: UserSessionContextType, refreshToken: string) {
   await storeTokens(usc.user.user.access_token, refreshToken, usc.user.user.expires_at);
-  const json = await getTipper(usc, cookies);
+  const json = await getBusiness(usc);
 
-  return consumerFromJSON(usc.user, json.data);
+  return businessFromJSON(usc.user, json.data);
 }
 
 // If you want to start measuring performance in your app, pass a function

@@ -9,7 +9,7 @@ import { UserSessionContext } from "../lib/UserSessionContext";
 import { useContext } from "react";
 import { Logout } from "..";
 
-export default function ProfileButton(props: { position?: "fixed" | "relative" | "sticky", disabled?: boolean, style?: React.CSSProperties }) {
+export default function ProfileButton(props: { position?: "fixed" | "relative" | "sticky", disabled?: boolean, style?: React.CSSProperties, name?: string }) {
     // const fs = 25
     const usc = useContext(UserSessionContext)
     const dims = Math.min(Math.max(35, 10 + useWindowDimensions().width * 0.04), 45);
@@ -37,9 +37,7 @@ export default function ProfileButton(props: { position?: "fixed" | "relative" |
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    maxWidth: dims,
                     maxHeight: dims,
-                    width: dims,
                     height: dims,
                     borderRadius: dims,
                     padding: padding,
@@ -47,9 +45,11 @@ export default function ProfileButton(props: { position?: "fixed" | "relative" |
                     borderWidth: 1,
                     borderColor: 'white',
                     backgroundColor: Colors.background + "00",
+                    color: 'white'
                     // boxShadow: '0px 10px 10px rgba(0, 0, 0, 0.5)'
                 }}>
-                <FontAwesomeIcon icon={faProfile} color={'white'} fontSize={dims / 2}></FontAwesomeIcon>
+                <FontAwesomeIcon icon={faProfile} color={'white'} fontSize={dims / 3}></FontAwesomeIcon>
+                <span style={{ fontSize: dims / 3, paddingLeft: padding }}>{props.name}</span>
             </button>
         </div>
     );

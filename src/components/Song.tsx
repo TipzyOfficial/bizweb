@@ -9,6 +9,7 @@ import { faCirclePlus, faMusic } from "@fortawesome/free-solid-svg-icons";
 import { numberToPrice } from "../lib/utils";
 
 export function artistsStringListToString(artists: string[]) {
+    if (!artists) return "";
     let out = "";
     artists.forEach(a => {
         out += ", " + a

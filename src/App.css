@@ -25,6 +25,15 @@
   color: white;
 }
 
+.App-dashboard-grid {
+  background-color: #17171E;
+  flex: 1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  color: white;
+}
+
 .input {
   width: 100%;
   display: flex;
@@ -123,7 +132,7 @@
 }
 
 .App-headertop {
-  background-color: #17171E;
+  /* background-color: #17171E; */
   display: flex;
   flex-direction: column;
   font-size: calc(10px + 2vmin);

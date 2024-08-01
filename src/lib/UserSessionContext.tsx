@@ -1,7 +1,7 @@
 import { createContext, useEffect, useRef, useState } from 'react';
 import { Business, Users } from './user'
 import { SongRequestType, SongType } from './song';
-import { Logout, checkIfAccountExists, consumerFromJSON, fetchWithToken, rootGetRefreshToken, storeTokens } from '../index'
+import { Logout, checkIfAccountExists, businessFromJSON, fetchWithToken, rootGetRefreshToken, storeTokens } from '../index'
 import { BarType, LiveArtistType } from './bar';
 import { DisplayOrLoading } from '../components/DisplayOrLoading';
 import Cookies from 'universal-cookie';

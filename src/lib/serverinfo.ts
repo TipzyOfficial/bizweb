@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { consumerFromJSON } from "..";
+import { businessFromJSON } from "..";
 import { Business } from "./user";
 
 export const ServerInfo = {

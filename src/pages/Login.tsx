@@ -6,7 +6,7 @@ import { CredentialResponse, GoogleLogin, useGoogleLogin } from '@react-oauth/go
 import GoogleButton from 'react-google-button';
 import { ServerInfo, expiresInToAt, loginWithGoogleAccessToken, loginWithAppleAccessToken, loginWithUsernamePassword, registerUsernamePassword } from '../lib/serverinfo';
 import { Business, Users } from '../lib/user';
-import { checkIfAccountExists, consumerFromJSON, fetchWithToken, storeAll } from '../index';
+import { checkIfAccountExists, businessFromJSON, fetchWithToken, storeAll } from '../index';
 import { ReturnLinkType, router } from '../App';
 import { UserSessionContext } from '../lib/UserSessionContext';
 import { Colors, padding, radius } from '../lib/Constants';
@@ -53,7 +53,7 @@ function Login(props: { back?: boolean }) {
             router.navigate(retDecoded.url, { state: { fromLogin: true, ...retDecoded.data } })
         } else {
             console.log("going barid")
-            router.navigate('dashboard');
+            router.navigate('/dashboard');
         }
     }
 
