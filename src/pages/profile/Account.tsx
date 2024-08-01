@@ -140,7 +140,7 @@ export default function Account() {
                         <span className="App-tertiarytitle">About</span>
                     </div>
                     <TZProfileComponent text="Contact Us" onClick={handleAboutClick}></TZProfileComponent>
-                    <TZProfileComponent text="Privacy Policy" onClick={handleAboutClick}></TZProfileComponent>
+                    <TZProfileComponent text="Privacy Policy" onClick={() => window.open("https://www.tipzy.app/privacy", "_blank")}></TZProfileComponent>
                     <div style={{ padding: padding * 4 }} />
                     <TZProfileComponent text="Log out"
                         selectedBackgroundColor={Colors.secondaryRegular}
