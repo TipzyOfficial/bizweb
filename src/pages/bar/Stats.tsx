@@ -6,17 +6,17 @@ import { FinanceStatsType } from "./Dashboard";
 import { numberToPrice } from "../../lib/utils";
 import { useState } from "react";
 
-export default function Stats(props: { stats: FinanceStatsType | undefined }) {
+export default function Stats(props: { stats: FinanceStatsType | undefined, seeMore: boolean, setSeeMore: (b: boolean) => void }) {
     const stats = props.stats;
-    const [seeMore, setSeeMore] = useState(false);
+    const seeMore = props.seeMore;
+    const setSeeMore = props.setSeeMore;
 
     if (!stats) return (
         <span className="App-montserrat-normaltext" style={{ paddingBottom: 7, fontWeight: 'bold' }}>Stats aren't available right now–check again later.</span>
     )
 
     return (
-        <div style={{ width: "100%" }}>
-            <span className="App-montserrat-normaltext" style={{ paddingBottom: 7 }}>Your stats:</span>
+        <div style={{ width: "100%", overflowY: 'scroll' }}>
             <div style={{ paddingBottom: padding }} />
             <div style={{ width: "100%", padding: padding, borderRadius: radius, backgroundColor: "#FFF1" }}>
                 <span className="App-smalltext" style={{ paddingBottom: 7, color: "#fff8" }}>⚠ These stats may take a minute to update.</span>

@@ -2,6 +2,7 @@ import useWindowDimensions from "./useWindowDimensions";
 
 export const Colors = {
     background: '#17171E',
+    darkBackground: '#121217',
     text: '#FFF',
     primaryLight: '#FCC679',
     primaryRegular: '#FA9D17',

@@ -57,6 +57,9 @@ export default function Dashboard() {
 
     const [financeStats, setFinanceStats] = useState<FinanceStatsType | undefined>();
 
+    const [seeMoreStats, setSeeMoreStats] = useState(false);
+
+
     const setToggles = (allow: boolean, auto: boolean, noExplicit: boolean) => {
         console.log("b", allow)
         if (allow !== toggleAllowRequests) setToggleAllowRequests(allow);
@@ -176,8 +179,8 @@ export default function Dashboard() {
     const Requests = () => {
         const outlineColor = Colors.tertiaryDark;
         return (
-            <div style={{ width: "100%", height: "100%" }}>
-                <TZHeader title="Requests" backgroundColor="#0000" leftComponent={
+            <div style={{ width: "100%", height: "100%", paddingRight: padding }}>
+                <TZHeader title="Requests" backgroundColor={Colors.darkBackground} leftComponent={
                     <RejectAllButton onClick={rejectAll} />
                 }></TZHeader>
                 {songRequests.length > 0 ?
@@ -249,6 +252,8 @@ export default function Dashboard() {
         )
     }
 
+    console.log("windowh", window.screen.height);
+
     return (
         <DisplayOrLoading condition={ready} loadingScreen={<LoadingScreen />}>
             <div className="App-body-top">
@@ -262,15 +267,17 @@ export default function Dashboard() {
                         <ProfileButton position="relative" name={bar.business_name}></ProfileButton>
                     </div>
                 </div>
-                <div className="App-dashboard-grid">
-                    <div style={{ paddingLeft: padding, paddingRight: padding }}>
-                        <div style={{ paddingBottom: padding }} />
-                        <Stats stats={financeStats} />
+                <div className="App-dashboard-grid" style={{ overflow: 'hidden' }}>
+                    <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll' }}>
+                        {/* <div style={{ overflowY: 'hidden' }}> */}
+                        {/* <div style={{ paddingBottom: padding, height: 600 }} /> */}
+                        <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} />
                         <div style={{ paddingBottom: padding }} />
                         <Queue queue={queue} current={currentlyPlaying} songDims={songDims} />
+                        {/* </div> */}
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: "#0003" }}>
-                        <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden' }}>
+                        <div style={{ flex: 1, height: "100%", overflowY: 'scroll' }}>
                             <Requests />
                         </div>
                         <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>

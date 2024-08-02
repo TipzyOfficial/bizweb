@@ -14,7 +14,8 @@ export default function TZHeader(props: { title: string, leftComponent?: JSX.Ele
                 alignItems: 'flex-start',
                 flexDirection: 'row',
                 width: '100%',
-                backgroundColor: props.backgroundColor ?? Colors.background + "cc"
+                backgroundColor: props.backgroundColor ?? Colors.background + "cc",
+                zIndex: 10,
             }}>
             <div style={{ flex: 1, paddingTop: padding }}>
                 {props.leftComponent ?? <div></div>}
