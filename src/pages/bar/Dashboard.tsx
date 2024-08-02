@@ -15,10 +15,21 @@ import FlatList from "flatlist-react/lib";
 import Song from "../../components/Song";
 import TZButton from "../../components/TZButton";
 import { FontAwesomeIcon, FontAwesomeIconProps } from "@fortawesome/react-fontawesome";
-import { faCheck, faCheckCircle, faXmark, faXmarkCircle, IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faCheckCircle, faCircle, faXmark, faXmarkCircle, IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { faCheckSquare as faYes, faSquare as faNo } from "@fortawesome/free-regular-svg-icons";
+
 import TZHeader from "../../components/TZHeader";
+import Stats from "./Stats";
 
 const cookies = getCookies();
+
+export type FinanceStatsType = {
+    totalCustomers: number,
+    barCut: number,
+    pendingBarCut: number,
+    totalRequests: number,
+    pendingRequests: number,
+}
 
 const LoadingScreen = () =>
     <div className="App-header">
@@ -44,6 +55,8 @@ export default function Dashboard() {
     const fdim = useFdim();
     const songDims = fdim / 12;
 
+    const [financeStats, setFinanceStats] = useState<FinanceStatsType | undefined>();
+
     const setToggles = (allow: boolean, auto: boolean, noExplicit: boolean) => {
         console.log("b", allow)
         if (allow !== toggleAllowRequests) setToggleAllowRequests(allow);
@@ -53,15 +66,18 @@ export default function Dashboard() {
 
     const refreshAllData = async () => {
         console.log("refreshing all");
+        //reqs
+        const requests = await getRequests(usc, deletedIds, deletedCheckAgain);
+        if (!_.isEqual(requests, songRequests)) setSongRequests(requests);
 
         //queue
         const [cur, q] = await getQueue(usc);
         if (!_.isEqual(cur, currentlyPlaying)) setCurrentlyPlaying(cur);
         if (!_.isEqual(q, queue)) setQueue(q);
 
-        //reqs
-        const requests = await getRequests(usc, deletedIds, deletedCheckAgain);
-        if (!_.isEqual(requests, songRequests)) setSongRequests(requests);
+        //stats
+        const stats = await getStats(usc);
+        if (!_.isEqual(stats, financeStats)) setFinanceStats(stats);
     }
 
     const addDeletedIds = (id: number) => {
@@ -179,7 +195,7 @@ export default function Dashboard() {
                         </div>
                     </div>
                     : <div style={{ padding: padding, width: "100%", display: 'flex', justifyContent: 'center', opacity: 0.7 }}>
-                        <span>No song requests...yet!</span>
+                        {toggleAutoRequests ? <span>Since you're auto-accepting new requests, you won't see requests show up here for review.</span> : <span>No new song requests...yet!</span>}
                     </div>}
                 {songRequests.length > 1 ?
                     songRequests.slice(1).map((r, i) =>
@@ -249,29 +265,29 @@ export default function Dashboard() {
                 <div className="App-dashboard-grid">
                     <div style={{ paddingLeft: padding, paddingRight: padding }}>
                         <div style={{ paddingBottom: padding }} />
+                        <Stats stats={financeStats} />
+                        <div style={{ paddingBottom: padding }} />
                         <Queue queue={queue} current={currentlyPlaying} songDims={songDims} />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: "#0003" }}>
                         <div style={{ flex: 1 }}>
                             <Requests />
                         </div>
-                        <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'flex-end' }}>
-                            <div style={{ display: 'flex' }}>
-                                <Toggle title="Allow explicit songs" value={!toggleBlockExplicitRequests} onClick={async () => {
-                                    await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
-                                    setToggles(...await getToggles(usc));
-                                }} />
-                                <div style={{ paddingLeft: padding }} />
-                                <Toggle title="Auto-accept requests" value={toggleAutoRequests} onClick={async () => {
-                                    await setAutoAcceptingRequests(usc, !toggleAutoRequests);
-                                    setToggles(...await getToggles(usc));
-                                }} />
-                                <div style={{ paddingLeft: padding }} />
-                                <Toggle title="Allow new requests" value={toggleAllowRequests} onClick={async () => {
-                                    await setAllowingRequests(usc, !toggleAllowRequests);
-                                    setToggles(...await getToggles(usc));
-                                }} />
-                            </div>
+                        <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
+                            <Toggle title="Explicit songs" value={!toggleBlockExplicitRequests} onClick={async () => {
+                                await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
+                                setToggles(...await getToggles(usc));
+                            }} />
+                            <div style={{ paddingLeft: padding }} />
+                            <Toggle title="Auto-accept requests" value={toggleAutoRequests} onClick={async () => {
+                                await setAutoAcceptingRequests(usc, !toggleAutoRequests);
+                                setToggles(...await getToggles(usc));
+                            }} />
+                            <div style={{ paddingLeft: padding }} />
+                            <Toggle title="Taking requests" value={toggleAllowRequests} onClick={async () => {
+                                await setAllowingRequests(usc, !toggleAllowRequests);
+                                setToggles(...await getToggles(usc));
+                            }} />
                         </div>
                     </div>
                 </div>
@@ -348,6 +364,7 @@ const setBlockExplcitRequests = async (usc: UserSessionContextType, b: boolean) 
 }
 
 function Toggle(props: { title: string, value: boolean, onClick: () => Promise<void> }) {
+    const [hover, setHover] = useState(false);
     const fdim = useFdim();
     const dim = fdim / 40;
     const [disabled, setDisabled] = useState(false);
@@ -358,8 +375,14 @@ function Toggle(props: { title: string, value: boolean, onClick: () => Promise<v
         setDisabled(false);
     }
     return (
-        <div style={{ padding: padding, backgroundColor: props.value ? Colors.green : Colors.red, borderRadius: radius, display: 'flex', alignItems: 'center', opacity: disabled ? 0.7 : 1 }} onClick={onClick}>
-            {!disabled ? <FontAwesomeIcon icon={props.value ? faCheck : faXmark} fontSize={dim}></FontAwesomeIcon> :
+        <div
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+            style={{
+                padding: padding, backgroundColor: Colors.tertiaryDark, borderRadius: radius, display: 'flex', alignItems: 'center',
+                opacity: disabled ? 0.6 : hover ? 0.8 : 1
+            }} onClick={onClick}>
+            {!disabled ? <FontAwesomeIcon icon={props.value ? faYes : faNo} fontSize={dim}></FontAwesomeIcon> :
                 <Spinner style={{ width: dim, height: dim }} />
             }
             <span style={{ paddingLeft: padding, fontWeight: 'bold' }}>{props.title}</span>
@@ -398,6 +421,18 @@ const getToggles = async (usc: UserSessionContextType): Promise<[boolean, boolea
     return ([u.data.allowing_requests, u.data.auto_accept_requests, u.data.block_explicit]);
 }
 
+const getStats = async (usc: UserSessionContextType): Promise<FinanceStatsType | undefined> => {
+    const json = await fetchWithToken(usc, `get_bar_stats/`, 'GET').then(r => r.json()).catch((e: Error) => { console.log("Can't get acc in toggles", e.message); return undefined; });
+    if (!json) return undefined;
+    const stats: FinanceStatsType = {
+        pendingBarCut: json.stats.Pending_bar_cut,
+        pendingRequests: json.stats.pending_requests,
+        barCut: json.stats.bar_cut,
+        totalRequests: json.stats.count_requests,
+        totalCustomers: json.total_customers,
+    }
+    return stats;
+}
 
 const getQueue = async (usc: UserSessionContextType): Promise<[SongType | undefined, SongType[] | undefined]> => {
     return fetchWithToken(usc, `business/queue/`, 'GET').then(response => response.json())
