@@ -31,7 +31,7 @@ export default function Stats(props: { stats: FinanceStatsType | undefined }) {
                         <div style={{ paddingBottom: padding }} />
                         <span className="App-montserrat-normaltext" style={{ paddingBottom: 7, fontWeight: 'bold' }}>Lifetime earnings:</span>
                         <div />
-                        <span className="App-subtitle" style={{ paddingBottom: 7, color: Colors.primaryRegular }}>${numberToPrice(stats.barCut)}</span>
+                        <span className="App-subtitle" style={{ paddingBottom: 7, color: Colors.primaryRegular }}>${numberToPrice(stats.barCut + stats.pendingBarCut)}</span>
                         <div />
                         <span className="App-montserrat-normaltext" style={{ paddingBottom: 7 }}>from {stats.totalRequests + stats.pendingRequests} request{stats.totalRequests + stats.pendingRequests === 1 ? "" : "s"}.</span>
                         <div style={{ paddingBottom: padding }} />
