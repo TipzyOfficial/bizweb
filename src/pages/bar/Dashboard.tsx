@@ -183,23 +183,26 @@ export default function Dashboard() {
                 <TZHeader title="Requests" backgroundColor={Colors.darkBackground} leftComponent={
                     <RejectAllButton onClick={rejectAll} />
                 }></TZHeader>
-                {songRequests.length > 0 ?
-                    <div style={{ paddingBottom: padding, paddingLeft: padding, paddingRight: padding, width: "100%" }}>
-                        <div style={{ padding: padding, borderStyle: "solid", borderRadius: 5, borderColor: outlineColor, width: "100%" }}>
-                            <SongRequestRenderItem request={songRequests[0]} index={0} />
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: "flex-end" }}>
-                            <div style={{ position: 'relative', right: 10, backgroundColor: outlineColor, padding: 5, borderEndStartRadius: radius, borderEndEndRadius: radius }}>
-                                <span style={{ fontWeight: 'bold' }}> [ 1 ] to Accept</span>
+                {currentlyPlaying ?
+                    (songRequests.length > 0 ?
+                        <div style={{ paddingBottom: padding, paddingLeft: padding, paddingRight: padding, width: "100%" }}>
+                            <div style={{ padding: padding, borderStyle: "solid", borderRadius: 5, borderColor: outlineColor, width: "100%" }}>
+                                <SongRequestRenderItem request={songRequests[0]} index={0} />
                             </div>
-                            <div style={{ position: 'relative', right: 10, backgroundColor: outlineColor, padding: 5, borderEndStartRadius: radius, borderEndEndRadius: radius }}>
-                                <span style={{ fontWeight: 'bold' }}> [ 2 ] to Reject</span>
+                            <div style={{ display: 'flex', justifyContent: "flex-end" }}>
+                                <div style={{ position: 'relative', right: 10, backgroundColor: outlineColor, padding: 5, borderEndStartRadius: radius, borderEndEndRadius: radius }}>
+                                    <span style={{ fontWeight: 'bold' }}> [ 1 ] to Accept</span>
+                                </div>
+                                <div style={{ position: 'relative', right: 10, backgroundColor: outlineColor, padding: 5, borderEndStartRadius: radius, borderEndEndRadius: radius }}>
+                                    <span style={{ fontWeight: 'bold' }}> [ 2 ] to Reject</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    : <div style={{ padding: padding, width: "100%", display: 'flex', justifyContent: 'center', opacity: 0.7 }}>
-                        {toggleAutoRequests ? <span>Since you're auto-accepting new requests, you won't see requests show up here for review.</span> : <span>No new song requests...yet!</span>}
-                    </div>}
+                        : <div style={{ padding: padding, width: "100%", display: 'flex', justifyContent: 'center', opacity: 0.7 }}>
+                            {toggleAutoRequests ? <span>Since you're auto-accepting new requests, you won't see requests show up here for review.</span> : <span>No new song requests...yet!</span>}
+                        </div>)
+                    : <div style={{ paddingLeft: padding }}><NotPlaying /></div>
+                }
                 {songRequests.length > 1 ?
                     songRequests.slice(1).map((r, i) =>
                         <div style={{ paddingBottom: padding, paddingLeft: padding, paddingRight: padding }}>
@@ -269,33 +272,37 @@ export default function Dashboard() {
                 </div>
                 <div className="App-dashboard-grid" style={{ overflow: 'hidden' }}>
                     <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll' }}>
-                        {/* <div style={{ overflowY: 'hidden' }}> */}
-                        {/* <div style={{ paddingBottom: padding, height: 600 }} /> */}
-                        <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} />
                         <div style={{ paddingBottom: padding }} />
-                        <Queue queue={queue} current={currentlyPlaying} songDims={songDims} />
-                        {/* </div> */}
+                        {currentlyPlaying ?
+                            <Queue queue={queue} current={currentlyPlaying} songDims={songDims} />
+                            :
+                            <NotPlaying />
+                        }
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden' }}>
                         <div style={{ flex: 1, height: "100%", overflowY: 'scroll' }}>
                             <Requests />
                         </div>
                         <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
-                            <Toggle title="Explicit songs" value={!toggleBlockExplicitRequests} onClick={async () => {
+                            <Toggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
                                 await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
                                 setToggles(...await getToggles(usc));
                             }} />
                             <div style={{ paddingLeft: padding }} />
-                            <Toggle title="Auto-accept requests" value={toggleAutoRequests} onClick={async () => {
+                            <Toggle title="Auto-accept" value={toggleAutoRequests} onClick={async () => {
                                 await setAutoAcceptingRequests(usc, !toggleAutoRequests);
                                 setToggles(...await getToggles(usc));
                             }} />
                             <div style={{ paddingLeft: padding }} />
-                            <Toggle title="Taking requests" value={toggleAllowRequests} onClick={async () => {
+                            <Toggle title="Take requests" value={toggleAllowRequests} onClick={async () => {
                                 await setAllowingRequests(usc, !toggleAllowRequests);
                                 setToggles(...await getToggles(usc));
                             }} />
                         </div>
+                    </div>
+                    <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll' }}>
+                        <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} />
+                        <div style={{ paddingBottom: padding }} />
                     </div>
                 </div>
             </div>
@@ -453,7 +460,7 @@ const getQueue = async (usc: UserSessionContextType): Promise<[SongType | undefi
             const qD = data.queue;
             const q: SongType[] = [];
             qD.forEach((e: any) => {
-                q.push({ id: e.id, title: e.name, artists: e.artist, albumart: e.images.thumbnail, albumartbig: e.images.teaser, explicit: e.explicit });
+                q.push({ id: e.id, title: e.name, artists: e.artist, albumart: e.images.thumbnail, albumartbig: e.images.teaser, explicit: e.explicit, manuallyQueued: e.manually_queued });
             })
             // console.log("refreshed")
 
@@ -461,3 +468,10 @@ const getQueue = async (usc: UserSessionContextType): Promise<[SongType | undefi
         })
 }
 
+function NotPlaying() {
+    return (
+        <div style={{ padding: padding, backgroundColor: "#FFF1", borderRadius: radius, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <span style={{ textAlign: 'center' }}>Start playing music on your streaming app to accept requests and view the queue!</span>
+        </div>
+    )
+}

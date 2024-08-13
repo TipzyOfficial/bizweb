@@ -1,11 +1,14 @@
 import FlatList from "flatlist-react/lib";
 import { SongType } from "../../lib/song";
 import Song from "../../components/Song";
-import { padding } from "../../lib/Constants";
+import { padding, useFdim } from "../../lib/Constants";
+import LogoLetter from "../../assets/LogoLetter.svg"
 
 export default function Queue(props: { current: SongType | undefined, queue: SongType[] | undefined, songDims?: number }) {
     const queue = props.queue;
     const current = props.current;
+    const fdim = useFdim();
+    const logoDim = fdim / 30;
 
     return (
         <div style={{ width: "100%" }}>
@@ -18,7 +21,17 @@ export default function Queue(props: { current: SongType | undefined, queue: Son
             {queue ?
                 <FlatList
                     list={queue}
-                    renderItem={(s, k) => <><Song key={k} song={s} dims={props.songDims} /><div style={{ paddingBottom: padding }}></div></>}
+                    renderItem={(s, k) => <>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <Song key={k} song={s} dims={props.songDims} />
+                            {s.manuallyQueued ?
+                                <img src={LogoLetter} style={{ width: logoDim, height: logoDim }} alt="This song was requested by a tipper." />
+                                : <></>
+                            }
+                        </div>
+                        <div style={{ paddingBottom: padding }} />
+                    </>
+                    }
                     renderWhenEmpty={
                         <div>
                             <span>Queue is empty...</span>
