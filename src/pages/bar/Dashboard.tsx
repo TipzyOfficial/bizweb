@@ -22,6 +22,7 @@ import Dropdown from 'react-bootstrap/Dropdown';
 
 import TZHeader from "../../components/TZHeader";
 import Stats from "./Stats";
+import PlaybackComponent from "./PlaybackComponent";
 
 const cookies = getCookies();
 
@@ -61,7 +62,7 @@ export default function Dashboard() {
 
     const [toggleBlockExplicitRequests, setToggleBlockExplcitRequests] = useState(usc.user.block_explicit);
     const [toggleAllowRequests, setToggleAllowRequests] = useState(usc.user.allowing_requests);
-
+    // console.log('auto', usc.user.auto_accept_requests, usc.user.gpt_accept_requests)
     const [acceptRadioValue, setAcceptRadioValue] = useState<AcceptingType>(checkAutoAccept(usc.user.auto_accept_requests, usc.user.gpt_accept_requests))
 
     const [toggleAutoRequests, setToggleAutoRequests] = useState(usc.user.auto_accept_requests);
@@ -174,12 +175,12 @@ export default function Dashboard() {
         }
     }
 
-    useEffect(() => {
-        document.addEventListener('keydown', handleKeyPress);
-        return () => {
-            document.removeEventListener('keydown', handleKeyPress);
-        };
-    }, [songRequests]);
+    // useEffect(() => {
+    //     document.addEventListener('keydown', handleKeyPress);
+    //     return () => {
+    //         document.removeEventListener('keydown', handleKeyPress);
+    //     };
+    // }, [songRequests]);
 
     useEffect(() => {
         refreshAllData().then(() => setReady(true)).catch(() => setReady(true));
@@ -291,6 +292,7 @@ export default function Dashboard() {
                 <div className="App-dashboard-grid" style={{ overflow: 'hidden' }}>
                     <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll' }}>
                         <div style={{ paddingBottom: padding }} />
+                        <PlaybackComponent />
                         {currentlyPlaying ?
                             <Queue queue={queue} current={currentlyPlaying} songDims={songDims} />
                             :

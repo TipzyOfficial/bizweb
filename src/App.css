@@ -231,6 +231,13 @@
   font-style: normal;
 }
 
+.App-montserrat-smallertext {
+  font-size: calc(12px + 0.5vmin);
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
 .App-animated-gradient {
   background: linear-gradient(90deg, #D98205, #CA3C6D, #D98205);
   /* background: linear-gradient(90deg, #FCC679, #d5648b, #FCC679); */

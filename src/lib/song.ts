@@ -38,6 +38,13 @@ export type ArtistType = {
     id: string,
 }
 
+export type PlaylistType = {
+    id: string,
+    name: string,
+    image: string,
+}
+
+
 export function songIsEqual(s1: SongType, s2: SongType): boolean {
     return s1.id === s2.id;
 }
