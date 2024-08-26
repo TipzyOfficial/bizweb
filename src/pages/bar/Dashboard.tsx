@@ -17,11 +17,21 @@ import TZButton from "../../components/TZButton";
 import { FontAwesomeIcon, FontAwesomeIconProps } from "@fortawesome/react-fontawesome";
 import { faCheck, faCheckCircle, faCircle, faXmark, faXmarkCircle, IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { faCheckSquare as faYes, faSquare as faNo } from "@fortawesome/free-regular-svg-icons";
+import Dropdown from 'react-bootstrap/Dropdown';
+
 
 import TZHeader from "../../components/TZHeader";
 import Stats from "./Stats";
 
 const cookies = getCookies();
+
+type AcceptingType = "Manual" | "Auto" | "TipzyAI" | undefined
+
+function checkAutoAccept(auto?: boolean, gpt?: boolean): AcceptingType {
+    if (auto === undefined && gpt === undefined) return undefined;
+    if (auto) return "Auto";
+    else return gpt ? "TipzyAI" : "Manual";
+}
 
 export type FinanceStatsType = {
     totalCustomers: number,
@@ -51,6 +61,9 @@ export default function Dashboard() {
 
     const [toggleBlockExplicitRequests, setToggleBlockExplcitRequests] = useState(usc.user.block_explicit);
     const [toggleAllowRequests, setToggleAllowRequests] = useState(usc.user.allowing_requests);
+
+    const [acceptRadioValue, setAcceptRadioValue] = useState<AcceptingType>(checkAutoAccept(usc.user.auto_accept_requests, usc.user.gpt_accept_requests))
+
     const [toggleAutoRequests, setToggleAutoRequests] = useState(usc.user.auto_accept_requests);
     const fdim = useFdim();
     const songDims = fdim / 12;
@@ -60,10 +73,10 @@ export default function Dashboard() {
     const [seeMoreStats, setSeeMoreStats] = useState(false);
 
 
-    const setToggles = (allow: boolean, auto: boolean, noExplicit: boolean) => {
+    const setToggles = (allow: boolean, accept: AcceptingType, noExplicit: boolean) => {
         console.log("b", allow)
         if (allow !== toggleAllowRequests) setToggleAllowRequests(allow);
-        if (auto !== toggleAutoRequests) setToggleAutoRequests(auto);
+        if (accept !== acceptRadioValue) setAcceptRadioValue(accept);
         if (noExplicit !== toggleBlockExplicitRequests) setToggleBlockExplcitRequests(noExplicit);
     }
 
@@ -257,6 +270,11 @@ export default function Dashboard() {
 
     console.log("windowh", window.screen.height);
 
+    const onSetAccept = async (v: AcceptingType) => {
+        await setAccepting(usc, v);
+        setToggles(...await getToggles(usc));
+    }
+
     return (
         <DisplayOrLoading condition={ready} loadingScreen={<LoadingScreen />}>
             <div className="App-body-top">
@@ -289,10 +307,22 @@ export default function Dashboard() {
                                 setToggles(...await getToggles(usc));
                             }} />
                             <div style={{ paddingLeft: padding }} />
-                            <Toggle title="Auto-accept" value={toggleAutoRequests} onClick={async () => {
+                            <Dropdown>
+                                <Dropdown.Toggle variant="primary" style={{ height: "100%" }} id="dropdown-basic">
+                                    {acceptRadioValue === "Manual" ? "Manually accept" :
+                                        acceptRadioValue === "Auto" ? "Auto-accept" :
+                                            acceptRadioValue === "TipzyAI" ? "Tipzy accepts" : "..."}
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu variant="dark">
+                                    <Dropdown.Item onClick={async () => onSetAccept("Manual")}>Manually accept</Dropdown.Item>
+                                    <Dropdown.Item onClick={async () => onSetAccept("Auto")}>Auto-accept</Dropdown.Item>
+                                    <Dropdown.Item onClick={async () => onSetAccept("TipzyAI")}>Let Tipzy Decide</Dropdown.Item>
+                                </Dropdown.Menu>
+                            </Dropdown>
+                            {/* <Toggle title="Auto-accept" value={toggleAutoRequests} onClick={async () => {
                                 await setAutoAcceptingRequests(usc, !toggleAutoRequests);
                                 setToggles(...await getToggles(usc));
-                            }} />
+                            }} /> */}
                             <div style={{ paddingLeft: padding }} />
                             <Toggle title="Take requests" value={toggleAllowRequests} onClick={async () => {
                                 await setAllowingRequests(usc, !toggleAllowRequests);
@@ -353,16 +383,27 @@ const setAllowingRequests = async (usc: UserSessionContextType, b: boolean) => {
         .catch((e: Error) => console.log("Error:", `Can't ${b ? "take" : "disable taking"} requests: ` + e.message));
 }
 
-const setAutoAcceptingRequests = async (usc: UserSessionContextType, b: boolean) => {
-    // const url = b ? 'business/' : 'business/disallow_requests/';
-    await fetchWithToken(usc, 'business/', "PATCH", JSON.stringify({
-        auto_accept_requests: b
+// const setAccepting = async (v: AcceptingType) => {
+//     await fetchWithToken(tc, "business/", "PATCH", JSON.stringify({
+//         auto_accept_requests: v === "TipzyAI" ? false : v === "Auto",
+//         gpt_accept_requests: v === "TipzyAI",
+//     })).then(response => response.json())
+//         .then((json) => {
+//             if (json.status !== 200) throw new Error(json.details + json.error);
+//         })
+//         .catch((e: Error) => Alert.alert("Error:", `Can't change accept pattern: ` + e.message));
+//     await refreshAll();
+// }
+
+const setAccepting = async (usc: UserSessionContextType, v: AcceptingType) => {
+    await fetchWithToken(usc, "business/", "PATCH", JSON.stringify({
+        auto_accept_requests: v === "TipzyAI" ? false : v === "Auto",
+        gpt_accept_requests: v === "TipzyAI",
     })).then(response => response.json())
         .then((json) => {
-            console.log("finished", json.data.allowing_requests)
             if (json.status !== 200) throw new Error(json.details + json.error);
         })
-        .catch((e: Error) => console.log("Error:", `Can't ${b ? "take" : "disable taking"} requests: ` + e.message));
+        .catch((e: Error) => alert(`Error: Can't change accept pattern: ` + e.message));
 }
 
 const setBlockExplcitRequests = async (usc: UserSessionContextType, b: boolean) => {
@@ -430,9 +471,9 @@ function RejectAllButton(props: { onClick: () => void }) {
     )
 }
 
-const getToggles = async (usc: UserSessionContextType): Promise<[boolean, boolean, boolean]> => {
+const getToggles = async (usc: UserSessionContextType): Promise<[boolean, AcceptingType, boolean]> => {
     const u = await getBusiness(usc).catch((e: Error) => console.log("Can't get acc in toggles", e.message));
-    return ([u.data.allowing_requests, u.data.auto_accept_requests, u.data.block_explicit]);
+    return ([u.data.allowing_requests, checkAutoAccept(u.data.auto_accept_requests, u.data.gpt_accept_requests), u.data.block_explicit]);
 }
 
 const getStats = async (usc: UserSessionContextType): Promise<FinanceStatsType | undefined> => {
