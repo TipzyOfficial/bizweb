@@ -23,6 +23,7 @@ import Dropdown from 'react-bootstrap/Dropdown';
 import TZHeader from "../../components/TZHeader";
 import Stats from "./Stats";
 import PlaybackComponent from "./PlaybackComponent";
+import Price from "./Price";
 
 const cookies = getCookies();
 
@@ -70,6 +71,8 @@ export default function Dashboard() {
     const songDims = fdim / 12;
 
     const [financeStats, setFinanceStats] = useState<FinanceStatsType | undefined>();
+    const [miniumumPrice, setMinimumPrice] = useState<number | undefined>();
+    const [currentPrice, setCurrentPrice] = useState<number | undefined>();
 
     const [seeMoreStats, setSeeMoreStats] = useState(false);
 
@@ -79,6 +82,15 @@ export default function Dashboard() {
         if (allow !== toggleAllowRequests) setToggleAllowRequests(allow);
         if (accept !== acceptRadioValue) setAcceptRadioValue(accept);
         if (noExplicit !== toggleBlockExplicitRequests) setToggleBlockExplcitRequests(noExplicit);
+    }
+
+    const refreshPrice = async (includeMinimum: boolean) => {
+        const [minPrice, currPrice] = await getPrice(usc);
+
+        console.log(miniumumPrice);
+
+        if (includeMinimum && minPrice !== miniumumPrice) setMinimumPrice(minPrice);
+        if (currPrice !== currentPrice) setCurrentPrice(currPrice);
     }
 
     const refreshAllData = async () => {
@@ -95,6 +107,9 @@ export default function Dashboard() {
         //stats
         const stats = await getStats(usc);
         if (!_.isEqual(stats, financeStats)) setFinanceStats(stats);
+
+        //price
+        await refreshPrice(false);
     }
 
     const addDeletedIds = (id: number) => {
@@ -183,6 +198,7 @@ export default function Dashboard() {
     // }, [songRequests]);
 
     useEffect(() => {
+        refreshPrice(true);
         refreshAllData().then(() => setReady(true)).catch(() => setReady(true));
     }, []);
 
@@ -333,6 +349,7 @@ export default function Dashboard() {
                         </div>
                     </div>
                     <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll' }}>
+                        <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
                         <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} />
                         <div style={{ paddingBottom: padding }} />
                     </div>
@@ -370,6 +387,23 @@ const getRequests = async (usc: UserSessionContextType, deletedIds: Map<number, 
         return out;
     })
         .catch((e: Error) => { console.log("error: " + e.message); return [] })
+}
+
+const getPrice = async (usc: UserSessionContextType): Promise<[number, number]> => {
+    const dr = await fetchWithToken(usc, `calc_dynamic_price/`, 'POST', JSON.stringify({
+        business_id: usc.user.business_id
+    }));
+
+    const djson = await dr.json();
+    const dynamicPrice = djson.Dynamic_price;
+
+    const mr = await fetchWithToken(usc, `get_minimum_price/`, 'GET');
+    const mjson = await mr.json();
+    const minPrice = mjson.min_price;
+
+    console.log("dyn,min", dynamicPrice, minPrice)
+
+    return [minPrice, dynamicPrice];
 }
 
 
