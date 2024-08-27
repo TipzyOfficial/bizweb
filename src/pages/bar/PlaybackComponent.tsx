@@ -10,11 +10,16 @@ import TZButton from "../../components/TZButton";
 import { Modal, Spinner } from "react-bootstrap";
 import { styles } from "../Login";
 
-export default function PlaybackComponent() {
+export default function PlaybackComponent(props: { setDisableTyping: (b: boolean) => void }) {
     const [ss, setSS] = useState<string | null>("...");
     const usc = useContext(UserSessionContext);
     const [currentPlaylist, setCurrentPlaylistIn] = useState("loading...");
-    const [visible, setVisible] = useState(false);
+    const [visible, setVisibleIn] = useState(false);
+
+    const setVisible = (b: boolean) => {
+        props.setDisableTyping(b);
+        setVisibleIn(b);
+    }
 
     const setCurrentPlaylist = (p: string) => {
         setCurrentPlaylistIn(p);

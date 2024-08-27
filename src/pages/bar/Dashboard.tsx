@@ -66,13 +66,14 @@ export default function Dashboard() {
     // console.log('auto', usc.user.auto_accept_requests, usc.user.gpt_accept_requests)
     const [acceptRadioValue, setAcceptRadioValue] = useState<AcceptingType>(checkAutoAccept(usc.user.auto_accept_requests, usc.user.gpt_accept_requests))
 
-    const [toggleAutoRequests, setToggleAutoRequests] = useState(usc.user.auto_accept_requests);
+    // const [toggleAutoRequests, setToggleAutoRequests] = useState(usc.user.auto_accept_requests);
     const fdim = useFdim();
     const songDims = fdim / 12;
 
     const [financeStats, setFinanceStats] = useState<FinanceStatsType | undefined>();
     const [miniumumPrice, setMinimumPrice] = useState<number | undefined>();
     const [currentPrice, setCurrentPrice] = useState<number | undefined>();
+    const [disableTyping, setDisableTyping] = useState(false);
 
     const [seeMoreStats, setSeeMoreStats] = useState(false);
 
@@ -183,19 +184,26 @@ export default function Dashboard() {
         const acceptCode = "Digit1";
         const rejectCode = "Digit2";
         // console.log(ev.code);
-        if (ev.code === acceptCode) {
-            acceptOnPress(songRequests[0].id, 0);
-        } else if (ev.code === rejectCode) {
-            rejectOnPress(songRequests[0].id, 0);
+        if (!disableTyping) {
+            if (ev.code === acceptCode) {
+                acceptOnPress(songRequests[0].id, 0);
+            } else if (ev.code === rejectCode) {
+                rejectOnPress(songRequests[0].id, 0);
+            }
         }
     }
 
-    // useEffect(() => {
-    //     document.addEventListener('keydown', handleKeyPress);
-    //     return () => {
-    //         document.removeEventListener('keydown', handleKeyPress);
-    //     };
-    // }, [songRequests]);
+    useEffect(() => {
+        console.log("disabletyping!", disableTyping)
+
+        if (!disableTyping) {
+            document.addEventListener('keydown', handleKeyPress);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyPress);
+        };
+    }, [songRequests, disableTyping]);
 
     useEffect(() => {
         refreshPrice(true);
@@ -229,7 +237,9 @@ export default function Dashboard() {
                             </div>
                         </div>
                         : <div style={{ padding: padding, width: "100%", display: 'flex', justifyContent: 'center', opacity: 0.7 }}>
-                            {toggleAutoRequests ? <span>Since you're auto-accepting new requests, you won't see requests show up here for review.</span> : <span>No new song requests...yet!</span>}
+                            {acceptRadioValue === "Auto" ? <span>Since you're auto-accepting new requests, you won't see requests show up here for review.</span> :
+                                acceptRadioValue === "TipzyAI" ? <span>You're letting Tipzy check if each request is a good fit. If we don't think a song matches your vibe, we'll put it here for you to decide.</span>
+                                    : <span>No new song requests...yet!</span>}
                         </div>)
                     : <div style={{ paddingLeft: padding }}><NotPlaying /></div>
                 }
@@ -308,7 +318,7 @@ export default function Dashboard() {
                 <div className="App-dashboard-grid" style={{ overflow: 'hidden' }}>
                     <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll' }}>
                         <div style={{ paddingBottom: padding }} />
-                        <PlaybackComponent />
+                        <PlaybackComponent setDisableTyping={setDisableTyping} />
                         {currentlyPlaying ?
                             <Queue queue={queue} current={currentlyPlaying} songDims={songDims} />
                             :
@@ -329,7 +339,7 @@ export default function Dashboard() {
                                 <Dropdown.Toggle variant="primary" style={{ height: "100%" }} id="dropdown-basic">
                                     {acceptRadioValue === "Manual" ? "Manually accept" :
                                         acceptRadioValue === "Auto" ? "Auto-accept" :
-                                            acceptRadioValue === "TipzyAI" ? "Tipzy accepts" : "..."}
+                                            acceptRadioValue === "TipzyAI" ? "Tipzy decides" : "..."}
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu variant="dark">
                                     <Dropdown.Item onClick={async () => onSetAccept("Manual")}>Manually accept</Dropdown.Item>
