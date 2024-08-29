@@ -291,6 +291,8 @@ export default function Dashboard() {
                         <Button icon={faCheck} color={Colors.primaryRegular} onClick={() => acceptOnPress(request.id, props.index)}></Button>
                     </div>
                 </div>
+                <span className="App-smalltext">Vibe check: {request.fitAnalysis}. </span>
+                <span className="App-smalltext">{request.fitReasoning}</span>
             </div>
         )
     }
@@ -391,6 +393,8 @@ const getRequests = async (usc: UserSessionContextType, deletedIds: Map<number, 
                     id: item.id,
                     song: { title: songJSON.name, artists: [songJSON.artist], albumart: songJSON.image_url, id: songJSON.id, explicit: songJSON.explicit ?? false },
                     price: item.price,
+                    fitAnalysis: item.fit_analysis,
+                    fitReasoning: item.fit_reasoning,
                 })
             }
         });

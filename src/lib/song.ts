@@ -70,4 +70,6 @@ export type SongRequestType = {
     id: number,
     song: SongType,
     price: number,
+    fitAnalysis: string,
+    fitReasoning?: string,
 }
