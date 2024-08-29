@@ -283,6 +283,7 @@ export default function Dashboard() {
 
         return (
             <div style={{ width: "100%" }}>
+                <span className="App-smalltext">{request.user.first_name} {request.user.last_name}</span>
                 <div style={{ width: "100%", display: "flex", alignItems: 'center' }}>
                     <Song song={request.song} dims={songDims} />
                     <div style={{ display: "flex", alignItems: 'center' }}>
@@ -395,9 +396,13 @@ const getRequests = async (usc: UserSessionContextType, deletedIds: Map<number, 
                     price: item.price,
                     fitAnalysis: item.fit_analysis,
                     fitReasoning: item.fit_reasoning,
+                    date: new Date(item.request_time),
                 })
             }
         });
+
+        const sorted = out.sort((a, b) => a.date.getTime() - b.date.getTime());
+
         return out;
     })
         .catch((e: Error) => { console.log("error: " + e.message); return [] })

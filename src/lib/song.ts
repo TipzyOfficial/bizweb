@@ -68,6 +68,7 @@ export type SongRequestType = {
         email: string
     },
     id: number,
+    date: Date,
     song: SongType,
     price: number,
     fitAnalysis: string,
