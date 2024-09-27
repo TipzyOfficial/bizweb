@@ -9,13 +9,10 @@ import { fetchWithToken, getBusiness } from "../..";
 import { SongRequestType, SongType } from "../../lib/song";
 import { getCookies, parseSongJson, useInterval } from "../../lib/utils";
 import _, { pad } from "lodash";
-import { Business } from "../../lib/user";
 import BigLogo, { SmallLogo } from "../../components/BigLogo";
-import FlatList from "flatlist-react/lib";
 import Song from "../../components/Song";
-import TZButton from "../../components/TZButton";
-import { FontAwesomeIcon, FontAwesomeIconProps } from "@fortawesome/react-fontawesome";
-import { faCheck, faCheckCircle, faCircle, faXmark, faXmarkCircle, IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCheck, faXmark, IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { faCheckSquare as faYes, faSquare as faNo } from "@fortawesome/free-regular-svg-icons";
 import Dropdown from 'react-bootstrap/Dropdown';
 
@@ -27,7 +24,7 @@ import Price from "./Price";
 
 const cookies = getCookies();
 
-type AcceptingType = "Manual" | "Auto" | "TipzyAI" | undefined
+type AcceptingType = "Manual" | "Auto" | "TipzyAI" | undefined;
 
 function checkAutoAccept(auto?: boolean, gpt?: boolean): AcceptingType {
     if (auto === undefined && gpt === undefined) return undefined;
@@ -55,12 +52,13 @@ export default function Dashboard() {
     const bar = usc.user;
     const [ready, setReady] = useState(false);
     const [currentlyPlaying, setCurrentlyPlaying] = useState<SongType | undefined>();
-    const [queue, setQueue] = useState<SongType[] | undefined>([]);
+    const [queue, setQueueIn] = useState<SongType[] | undefined>([]);
 
     const deletedCheckAgain = 15000;
     const [songRequests, setSongRequests] = useState<SongRequestType[]>([]);
     const [deletedIds, setDeletedIds] = useState<Map<number, number>>(new Map<number, number>());
 
+    const [toggleDJMode, setToggleDJMode] = useState(usc.user.dj_mode);
     const [toggleBlockExplicitRequests, setToggleBlockExplcitRequests] = useState(usc.user.block_explicit);
     const [toggleAllowRequests, setToggleAllowRequests] = useState(usc.user.allowing_requests);
     // console.log('auto', usc.user.auto_accept_requests, usc.user.gpt_accept_requests)
@@ -74,8 +72,37 @@ export default function Dashboard() {
     const [miniumumPrice, setMinimumPrice] = useState<number | undefined>();
     const [currentPrice, setCurrentPrice] = useState<number | undefined>();
     const [disableTyping, setDisableTyping] = useState(false);
-
     const [seeMoreStats, setSeeMoreStats] = useState(false);
+
+    const qO = useState(queue ?? []);
+    const [queueOrder, setQueueOrder] = qO;
+
+    const setQueue = (q: SongType[] | undefined) => {
+        console.log("setQueue");
+        setQueueIn(q);
+
+        const qDef = q ?? [];
+
+        const newQ: SongType[] = [];
+        const qids = qDef.map(v => v.id);
+
+        if (q && qids.length !== 0 && JSON.stringify(q) !== JSON.stringify(queueOrder)) {
+            for (let i = 0; i < queueOrder.length; i++) {
+                if (qids.indexOf(queueOrder[i].id) !== -1) {
+                    console.log("pushing", newQ)
+                    newQ.push(queueOrder[i]);
+                }
+            }
+            for (let i = newQ.length; i < qDef.length; i++) {
+                newQ.push(q[i]);
+            }
+            console.log("setting Qo", newQ);
+            setQueueOrder(newQ);
+        }
+    }
+    // useEffect(() => {
+
+    // }, [queue])
 
 
     const setToggles = (allow: boolean, accept: AcceptingType, noExplicit: boolean) => {
@@ -103,6 +130,7 @@ export default function Dashboard() {
         //queue
         const [cur, q] = await getQueue(usc);
         if (!_.isEqual(cur, currentlyPlaying)) setCurrentlyPlaying(cur);
+        console.log("qqueue", q, queue);
         if (!_.isEqual(q, queue)) setQueue(q);
 
         //stats
@@ -305,6 +333,19 @@ export default function Dashboard() {
         setToggles(...await getToggles(usc));
     }
 
+    const onSetDJMode = async (b: boolean) => {
+        const djmode = await fetchWithToken(usc, 'business/', "PATCH", JSON.stringify({
+            dj_mode: b
+        })).then(response => response.json())
+            .then((json) => {
+                console.log("finished", json.data.dj_mode);
+                if (json.status !== 200) throw new Error(json.details + json.error);
+                return json.data.dj_mode;
+            })
+            .catch((e: Error) => console.log("Error:", `Can't ${b ? "enable" : "disable"} DJ mode: ` + e.message));
+        setToggleDJMode(djmode);
+    }
+
     return (
         <DisplayOrLoading condition={ready} loadingScreen={<LoadingScreen />}>
             <div className="App-body-top">
@@ -312,6 +353,9 @@ export default function Dashboard() {
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <SmallLogo />
                         <span className="App-montserrat-normaltext" style={{ paddingLeft: padding, fontWeight: 'bold', color: "#fff8" }}>Biz Dashboard</span>
+                    </div>
+                    <div>
+                        <Toggle title="DJ Mode" value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></Toggle>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <span style={{ paddingRight: padding, fontWeight: 'bold' }}>Bar's ID: {bar.business_id}</span>
@@ -323,7 +367,7 @@ export default function Dashboard() {
                         <div style={{ paddingBottom: padding }} />
                         <PlaybackComponent setDisableTyping={setDisableTyping} />
                         {currentlyPlaying ?
-                            <Queue queue={queue} current={currentlyPlaying} songDims={songDims} />
+                            <Queue queueOrder={qO} current={currentlyPlaying} songDims={songDims} />
                             :
                             <NotPlaying />
                         }
@@ -363,7 +407,7 @@ export default function Dashboard() {
                     </div>
                     <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll' }}>
                         <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
-                        <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} />
+                        {/* <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} /> */}
                         <div style={{ paddingBottom: padding }} />
                     </div>
                 </div>
@@ -401,9 +445,9 @@ const getRequests = async (usc: UserSessionContextType, deletedIds: Map<number, 
             }
         });
 
-        const sorted = out.sort((a, b) => a.date.getTime() - b.date.getTime());
+        const sorted = out.sort((a, b) => b.date.getTime() - a.date.getTime());
 
-        return out;
+        return sorted;
     })
         .catch((e: Error) => { console.log("error: " + e.message); return [] })
 }
@@ -473,26 +517,27 @@ const setBlockExplcitRequests = async (usc: UserSessionContextType, b: boolean) 
         .catch((e: Error) => console.log("Error:", `Can't ${b ? "take" : "disable taking"} requests: ` + e.message));
 }
 
-function Toggle(props: { title: string, value: boolean, onClick: () => Promise<void> }) {
+function Toggle(props: { title: string, value: boolean, onClick: () => Promise<void>, disabled?: boolean }) {
     const [hover, setHover] = useState(false);
     const fdim = useFdim();
     const dim = fdim / 40;
-    const [disabled, setDisabled] = useState(false);
+    const [loading, setLoading] = useState(false);
     const onClick = async () => {
-        if (!disabled)
-            setDisabled(true)
-        await props.onClick();
-        setDisabled(false);
+        if (!loading && !props.disabled) {
+            setLoading(true)
+            await props.onClick();
+            setLoading(false);
+        }
     }
     return (
         <div
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
             style={{
-                padding: padding, backgroundColor: Colors.tertiaryDark, borderRadius: radius, display: 'flex', alignItems: 'center',
-                opacity: disabled ? 0.6 : hover ? 0.8 : 1
+                padding: padding, backgroundColor: Colors.tertiaryDark, borderRadius: radius, display: 'flex', alignItems: 'center', cursor: 'pointer',
+                opacity: props.disabled ? 0.5 : loading ? 0.6 : hover ? 0.8 : 1
             }} onClick={onClick}>
-            {!disabled ? <FontAwesomeIcon icon={props.value ? faYes : faNo} fontSize={dim}></FontAwesomeIcon> :
+            {!loading ? <FontAwesomeIcon icon={props.value ? faYes : faNo} fontSize={dim}></FontAwesomeIcon> :
                 <Spinner style={{ width: dim, height: dim }} />
             }
             <span style={{ paddingLeft: padding, fontWeight: 'bold' }}>{props.title}</span>

@@ -68,8 +68,9 @@ export class Business extends BusinessUser {
     hour_explicit_allowed?: number;
     hour_explicit_blocked?: number;
     gpt_accept_requests?: boolean;
+    dj_mode?: boolean;
 
-    constructor(user: Users, business_name?: string, business_image?: string, business_id?: number, accepting_requests?: boolean, auto_accept_requests?: boolean, type?: string, address?: string, vibe?: string, block_explicit?: boolean, hour_explicit_allowed?: number, hour_explicit_blocked?: number, gpt_accept_requests?: boolean) {
+    constructor(user: Users, business_name?: string, business_image?: string, business_id?: number, accepting_requests?: boolean, auto_accept_requests?: boolean, type?: string, address?: string, vibe?: string, block_explicit?: boolean, hour_explicit_allowed?: number, hour_explicit_blocked?: number, gpt_accept_requests?: boolean, dj_mode?: boolean) {
         super(user, business_name ?? "", business_image ?? "", business_id ?? -1, accepting_requests ?? false, auto_accept_requests ?? false);
         this.type = type;
         this.address = address;
@@ -78,6 +79,7 @@ export class Business extends BusinessUser {
         this.hour_explicit_allowed = hour_explicit_allowed;
         this.hour_explicit_blocked = hour_explicit_blocked;
         this.gpt_accept_requests = gpt_accept_requests;
+        this.dj_mode = dj_mode;
     }
 
     setType(type?: string) {
