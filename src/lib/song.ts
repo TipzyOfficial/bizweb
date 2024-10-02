@@ -22,6 +22,8 @@ export type SongType = {
     duration?: number; //duration of song in ms. ignore
     explicit: boolean; //if the song is marked as explicit
     manuallyQueued?: boolean; //if the song was manually queued (only for Queue)
+    tipzyRequest?: boolean;
+    expectedPlaytime?: string;
 }
 
 export type AlbumType = {

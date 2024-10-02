@@ -76,11 +76,27 @@
   font-weight: bold;
   display: -webkit-box;
   -webkit-box-orient: vertical;
+  line-clamp: 1;
   -webkit-line-clamp: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: left;
   justify-content: flex-start;
+}
+
+.onelinetextclip {
+  font-size: calc(15x + 1vmin);
+  font-size: calc(15px + 1vmin);
+  font-weight: bold;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  line-clamp: 1;
+  -webkit-line-clamp: 1;
+  overflow: visible;
+  text-overflow: clip;
+  text-align: left;
+  justify-content: flex-start;
+  white-space: nowrap;
 }
 
 .App-header {

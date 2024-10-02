@@ -6,7 +6,8 @@ import FlatList from "flatlist-react/lib";
 import { memo, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCirclePlus, faMusic } from "@fortawesome/free-solid-svg-icons";
-import { numberToPrice } from "../lib/utils";
+import { millisToMinutesAndSeconds, numberToPrice } from "../lib/utils";
+import LogoLetter from "../assets/LogoLetter.svg";
 
 export function artistsStringListToString(artists: string[]) {
     if (!artists) return "";
@@ -23,22 +24,33 @@ export default function Song(props: { song: SongType, dims?: number, noImage?: b
     const radius = 5;
     const bigDims = 128;
     const dims = props.dims ?? 50;
+    const logoDim = dims / 3 //fdim / 30;
 
     const Img = () => props.song.albumart === "" || !props.song.albumart ? <div style={{ borderRadius: props.roundedEdges ? radius : 0, overflow: "hidden", height: dims, width: dims, backgroundColor: "#888", display: 'flex', justifyContent: 'center', alignItems: 'center' }}><FontAwesomeIcon color={"#fff8"} fontSize={dims / 3} icon={faMusic}></FontAwesomeIcon></div>
         : <img src={props.song.albumart} alt={props.song.title} style={{ height: dims, width: dims, borderRadius: props.roundedEdges ? radius : 0, overflow: "hidden", }} />
+
+    const duration = props.song.duration;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', flex: 1 }}>
             {props.number ? <span>{props.number}. </span> : <></>}
             {props.noImage ? <></> : <Img></Img>}
             <div style={{ paddingLeft: props.noImage ? 0 : dims / 10, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <span className="onelinetext" style={{ fontSize: dims / 3, color: "white", width: '100%', fontWeight: '500' }}>
+                <span className="onelinetext" style={{ fontSize: dims / 3, color: props.song.tipzyRequest ? Colors.primaryRegular : "white", width: '100%', fontWeight: props.song.manuallyQueued ? '700' : '500' }}>
                     {props.song.title}
                 </span>
-                <span className="onelinetext" style={{ fontSize: dims / 4, color: "#fffa", width: '100%', fontWeight: 'normal' }}>
-                    {props.song.explicit ? "🅴" : ""} {artistsStringListToString(props.song.artists)}
-                </span>
+                <div style={{ display: 'flex', flexShrink: 1 }}>
+                    <span className="onelinetext" style={{ fontSize: dims / 4, color: "#fffa", fontWeight: 'normal' }}>
+                        {props.song.explicit ? "🅴" : ""} {artistsStringListToString(props.song.artists)}
+                    </span>
+                    <span className="onelinetextclip" style={{ fontSize: dims / 4, color: "#fffa", fontWeight: 'normal' }}>&nbsp;{`• ${duration ? millisToMinutesAndSeconds(duration) : "--:--"}`}</span>
+                </div>
+                {/* <span className="onelinetextclip" style={{ fontSize: dims / 4, color: "#fffa", fontWeight: 'normal' }}>&nbsp;{`• ${props.song.expectedPlaytime ? millisToMinutesAndSeconds(new Date(props.song.expectedPlaytime).getTime()) : "--:--"}`}</span> */}
             </div>
+            {props.song.tipzyRequest ?
+                <img src={LogoLetter} style={{ width: logoDim, height: logoDim }} alt="This song was requested by a tipper." />
+                : <></>
+            }
         </div>
     )
 }

@@ -1,14 +1,14 @@
 import { Spinner } from "react-bootstrap";
 import { DisplayOrLoading } from "../../components/DisplayOrLoading";
 import { Colors, padding, radius, useFdim } from "../../lib/Constants";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
 import { UserSessionContext, UserSessionContextType } from "../../lib/UserSessionContext";
 import ProfileButton from "../../components/ProfileButton";
 import Queue from "./Queue";
 import { fetchWithToken, getBusiness } from "../..";
 import { SongRequestType, SongType } from "../../lib/song";
 import { getCookies, parseSongJson, useInterval } from "../../lib/utils";
-import _, { pad } from "lodash";
+import _, { eq } from "lodash";
 import BigLogo, { SmallLogo } from "../../components/BigLogo";
 import Song from "../../components/Song";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -25,6 +25,8 @@ import Price from "./Price";
 const cookies = getCookies();
 
 type AcceptingType = "Manual" | "Auto" | "TipzyAI" | undefined;
+
+type NowPlayingType = [SongType, { progressMs: number, durationMs: number }]
 
 function checkAutoAccept(auto?: boolean, gpt?: boolean): AcceptingType {
     if (auto === undefined && gpt === undefined) return undefined;
@@ -51,7 +53,7 @@ export default function Dashboard() {
     const usc = useContext(UserSessionContext);
     const bar = usc.user;
     const [ready, setReady] = useState(false);
-    const [currentlyPlaying, setCurrentlyPlaying] = useState<SongType | undefined>();
+    const [currentlyPlaying, setCurrentlyPlayingIn] = useState<[SongType, { progressMs: number, durationMs: number }] | undefined>(undefined);
     const [queue, setQueueIn] = useState<SongType[] | undefined>([]);
 
     const deletedCheckAgain = 15000;
@@ -61,13 +63,9 @@ export default function Dashboard() {
     const [toggleDJMode, setToggleDJMode] = useState(usc.user.dj_mode);
     const [toggleBlockExplicitRequests, setToggleBlockExplcitRequests] = useState(usc.user.block_explicit);
     const [toggleAllowRequests, setToggleAllowRequests] = useState(usc.user.allowing_requests);
-    // console.log('auto', usc.user.auto_accept_requests, usc.user.gpt_accept_requests)
-    const [acceptRadioValue, setAcceptRadioValue] = useState<AcceptingType>(checkAutoAccept(usc.user.auto_accept_requests, usc.user.gpt_accept_requests))
-
-    // const [toggleAutoRequests, setToggleAutoRequests] = useState(usc.user.auto_accept_requests);
+    const [acceptRadioValue, setAcceptRadioValue] = useState<AcceptingType>(checkAutoAccept(usc.user.auto_accept_requests, usc.user.gpt_accept_requests));
     const fdim = useFdim();
     const songDims = fdim / 12;
-
     const [financeStats, setFinanceStats] = useState<FinanceStatsType | undefined>();
     const [miniumumPrice, setMinimumPrice] = useState<number | undefined>();
     const [currentPrice, setCurrentPrice] = useState<number | undefined>();
@@ -75,34 +73,121 @@ export default function Dashboard() {
     const [seeMoreStats, setSeeMoreStats] = useState(false);
 
     const qO = useState(queue ?? []);
-    const [queueOrder, setQueueOrder] = qO;
+    const [queueOrder, setQueueOrder] = qO; //queue AFTER we mess w it. what we actually display.
+    const [editingQueue, setEditingQueueIn] = useState(false); //is "editing" on?
+    const setEditingQueue: Dispatch<SetStateAction<boolean>> = (b: boolean | ((prevState: boolean) => boolean)) => {
+        setEditingQueueIn(b);
+    }
+    const eQ: [boolean, Dispatch<SetStateAction<boolean>>] = [editingQueue, setEditingQueue]; //is "editing" on?
+    const [reordering, setReordering] = useState(false); //is actively reordering queue?
 
-    const setQueue = (q: SongType[] | undefined) => {
-        console.log("setQueue");
-        setQueueIn(q);
-
-        const qDef = q ?? [];
-
-        const newQ: SongType[] = [];
-        const qids = qDef.map(v => v.id);
-
-        if (q && qids.length !== 0 && JSON.stringify(q) !== JSON.stringify(queueOrder)) {
-            for (let i = 0; i < queueOrder.length; i++) {
-                if (qids.indexOf(queueOrder[i].id) !== -1) {
-                    console.log("pushing", newQ)
-                    newQ.push(queueOrder[i]);
-                }
+    const setCurrentlyPlaying = (s: [SongType, { progressMs: number, durationMs: number }] | undefined) => {
+        if (s === undefined && currentlyPlaying === undefined) return;
+        if (s === undefined) setCurrentlyPlayingIn(undefined);
+        else {
+            if (JSON.stringify(JSON.stringify(s) !== JSON.stringify(currentlyPlaying))) {
+                setCurrentlyPlayingIn(s);
             }
-            for (let i = newQ.length; i < qDef.length; i++) {
-                newQ.push(q[i]);
-            }
-            console.log("setting Qo", newQ);
-            setQueueOrder(newQ);
         }
     }
-    // useEffect(() => {
 
-    // }, [queue])
+    useEffect(() => {
+        console.log("editingQueue", editingQueue)
+        if (editingQueue) {
+            const q = queue;
+            const qDef = q ?? [];
+            const newQ: SongType[] = [];
+            const qids = qDef.map(v => v.id);
+
+            if (q !== undefined && qids.length !== 0 && JSON.stringify(q) !== JSON.stringify(queueOrder)) {
+                for (let i = 0; i < queueOrder.length; i++) {
+                    if (qids.indexOf(queueOrder[i].id) !== -1) {
+                        console.log("pushing", newQ)
+                        newQ.push(queueOrder[i]);
+                    }
+                }
+                for (let i = newQ.length; i < qDef.length; i++) {
+                    newQ.push(q[i]);
+                }
+                console.log("setting Qo", newQ);
+                setQueueOrder(newQ);
+            }
+        } else {
+            setQueueOrder(queue ?? []);
+        }
+    }, [queue, setQueueOrder, editingQueue])
+
+    const setQueue = (q: SongType[] | undefined, reset?: boolean) => {
+
+        console.log("setQueue", q, queueOrder, reset)
+
+        setQueueIn(q);
+    }
+
+    async function reorderQueue() {
+        if (reordering) return;
+        setReordering(true);
+
+        const minimumTimeLeft = 30000;
+
+        if (!currentlyPlaying || currentlyPlaying[1].durationMs - currentlyPlaying[1].progressMs < minimumTimeLeft) {
+            setReordering(false);
+            alert("The current song is too close to finishing–please wait for it to finish before saving your changes!");
+            return;
+        }
+
+        // console.log("queueold manual queue1", queue ? queue[0].manualQueue : "queue undef");
+
+        if (!queueOrder || !queue) throw new Error("Queue is undefined.");
+
+        //order is the same, don't need to do nothin'
+        if (JSON.stringify(queueOrder) === JSON.stringify(queue)) {
+            setEditingQueue(false);
+            return;
+        }
+
+        const qOrderIds = queueOrder?.map(v => v.id);
+
+        const map = queueOrder.map((v) => {
+            return {
+                artist: v.artists, explicit: v.explicit, duration_ms: v.duration ?? 0,
+                id: v.id, images: { thumbnail: v.albumart }, manually_queued: v.manuallyQueued, name: v.title,
+            }
+        });
+
+        let lastEditedIndex = 0;
+
+        for (let i = queueOrder.length - 1; i > 0; i--) {
+            if (queueOrder[i].manuallyQueued || JSON.stringify(queueOrder[i]) !== JSON.stringify(queue[i])) {
+                lastEditedIndex = i;
+                break;
+            }
+        }
+
+        const bottom = lastEditedIndex;//Math.max(bottomEdited, lastEditedIndex);
+
+        console.log("bottom", lastEditedIndex)
+
+        const shortmap = map.slice(0, bottom + 1);
+
+        const message = JSON.stringify({
+            tracks: JSON.stringify(qOrderIds),
+            song_jsons: JSON.stringify(shortmap),
+        })
+        console.log("about to send");
+
+        console.log(shortmap);
+
+        const json = await fetchWithToken(usc, `business/queue/reorder/`, 'POST', message).then((r) => r.json());
+        console.log("reorder response", json);
+        if (json.status !== 200) throw new Error(`${json.detail ?? json.toString()}`);
+        console.log("done reordering")
+        const locked = await getQueue(usc);
+        const nQ = locked[1]
+        setQueue(nQ, true);
+        setEditingQueueIn(false);
+        if (locked[2].isLocked) setEditingQueue(true);
+    }
 
 
     const setToggles = (allow: boolean, accept: AcceptingType, noExplicit: boolean) => {
@@ -130,7 +215,7 @@ export default function Dashboard() {
         //queue
         const [cur, q] = await getQueue(usc);
         if (!_.isEqual(cur, currentlyPlaying)) setCurrentlyPlaying(cur);
-        console.log("qqueue", q, queue);
+        console.log("qqueue", q, queue, queueOrder);
         if (!_.isEqual(q, queue)) setQueue(q);
 
         //stats
@@ -221,6 +306,7 @@ export default function Dashboard() {
         }
     }
 
+    //keypress stuff
     useEffect(() => {
         console.log("disabletyping!", disableTyping)
 
@@ -326,7 +412,7 @@ export default function Dashboard() {
         )
     }
 
-    console.log("windowh", window.screen.height);
+    // console.log("windowh", window.screen.height);
 
     const onSetAccept = async (v: AcceptingType) => {
         await setAccepting(usc, v);
@@ -346,6 +432,8 @@ export default function Dashboard() {
         setToggleDJMode(djmode);
     }
 
+    const queueLoading = reordering;
+
     return (
         <DisplayOrLoading condition={ready} loadingScreen={<LoadingScreen />}>
             <div className="App-body-top">
@@ -363,11 +451,27 @@ export default function Dashboard() {
                     </div>
                 </div>
                 <div className="App-dashboard-grid" style={{ overflow: 'hidden' }}>
-                    <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll' }}>
+                    <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll', position: 'relative' }}>
+                        {queueLoading ? <div style={{ position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background + "88" }}>
+                            <Spinner />
+                        </div> : <></>}
                         <div style={{ paddingBottom: padding }} />
                         <PlaybackComponent setDisableTyping={setDisableTyping} />
                         {currentlyPlaying ?
-                            <Queue queueOrder={qO} current={currentlyPlaying} songDims={songDims} />
+                            <Queue disable={reordering} queueOrder={qO} current={currentlyPlaying[0]} songDims={songDims} editingQueue={eQ} reorderQueue={async () => {
+                                console.log('reordering', reordering)
+
+                                if (!reordering) {
+                                    try {
+                                        await reorderQueue();
+                                        setReordering(false);
+                                    }
+                                    catch (e) {
+                                        setReordering(false);
+                                        throw e;
+                                    }
+                                }
+                            }} />
                             :
                             <NotPlaying />
                         }
@@ -589,23 +693,32 @@ const getStats = async (usc: UserSessionContextType): Promise<FinanceStatsType |
     return stats;
 }
 
-const getQueue = async (usc: UserSessionContextType): Promise<[SongType | undefined, SongType[] | undefined]> => {
+// const getQueue = async (resetAnyway?: boolean, resetSomethingPressed?: boolean): Promise<{ isLocked: boolean | undefined, top: SongType | undefined }> => {
+
+// const getQueueIsLocked = async (resetAnyway?: boolean, resetSomethingPressed?: boolean): Promise<{ isLocked: boolean | undefined, top: SongType | undefined }> => {
+
+const getQueue = async (usc: UserSessionContextType): Promise<[NowPlayingType | undefined, SongType[] | undefined, { isLocked: boolean | undefined, top: SongType | undefined }]> => {
     return fetchWithToken(usc, `business/queue/`, 'GET').then(response => response.json())
         .then(json => {
             if (!json.data) {
-                return [undefined, undefined];
+                return [undefined, undefined, { isLocked: undefined, top: undefined }];
             }
             const data = json.data;
+            const isLocked: boolean | undefined = json.data.reorder_locked;
+
             const npD = data.now_playing;
-            const np: SongType | undefined = npD ? parseSongJson(npD) : undefined;
+            const npS: SongType | undefined = npD ? parseSongJson(npD) : undefined;
+            const np: NowPlayingType | undefined = npS ? [npS, { progressMs: npD.progress_ms, durationMs: npD.duration_ms }] : undefined;
             const qD = data.queue;
             const q: SongType[] = [];
             qD.forEach((e: any) => {
-                q.push({ id: e.id, title: e.name, artists: e.artist, albumart: e.images.thumbnail, albumartbig: e.images.teaser, explicit: e.explicit, manuallyQueued: e.manually_queued });
+                const song: SongType = parseSongJson(e);
+                q.push(song);
             })
             // console.log("refreshed")
 
-            return [np, q]
+
+            return [np, q, { isLocked: isLocked, top: q[0] }]
         })
 }
 

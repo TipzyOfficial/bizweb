@@ -15,6 +15,8 @@ import Account from './pages/profile/Account';
 import About from './pages/profile/About';
 import { NotFoundPage } from './pages/bar/NotFoundPage';
 import { getCookies, getStored } from './lib/utils';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 export const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_KEY ?? "");
 
@@ -60,12 +62,14 @@ export const router = createBrowserRouter([{
 function App() {
   return (
     <div className="App-body">
-      <UserSessionContextProvider>
-        <div className="App-body" style={{ width: '100%' }}>
-          <RouterProvider
-            router={router} />
-        </div>
-      </UserSessionContextProvider>
+      <DndProvider backend={HTML5Backend}>
+        <UserSessionContextProvider>
+          <div className="App-body" style={{ width: '100%' }}>
+            <RouterProvider
+              router={router} />
+          </div>
+        </UserSessionContextProvider>
+      </DndProvider>
     </div>
   )
 }

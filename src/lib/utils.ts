@@ -3,8 +3,25 @@ import Cookies from "universal-cookie";
 import { Business } from "./user";
 import { SongType } from "./song";
 
+export function millisToMinutesAndSeconds(millis: number) {
+    let minutes = Math.floor(millis / 60000);
+    let seconds = Math.floor((millis % 60000) / 1000);
+    return (seconds === 60 ? (minutes + 1) + ":00" : minutes + ":" + (seconds < 10 ? "0" : "") + seconds);
+}
+
 export function parseSongJson(json: any): SongType {
-    return { id: json.track_id, title: json.track_name, artists: json.artists, albumart: json.images.thumbnail, albumartbig: json.images.teaser, explicit: json.explicit }
+    return {
+        id: json.track_id ?? json.id,
+        title: json.track_name ?? json.name,
+        artists: json.artists ?? json.artist,
+        albumart: json.images.thumbnail,
+        albumartbig: json.images.teaser,
+        explicit: json.explicit,
+        duration: json.duration_ms,
+        manuallyQueued: json.manually_queued,
+        tipzyRequest: json.manually_queued && (json.estimated_playtime || json.estimated_playtime === 0),
+        expectedPlaytime: json.estimated_playtime
+    }
 }
 
 function isMobile() {
