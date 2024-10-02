@@ -43,7 +43,8 @@ export default function Song(props: { song: SongType, dims?: number, noImage?: b
                     <span className="onelinetext" style={{ fontSize: dims / 4, color: "#fffa", fontWeight: 'normal' }}>
                         {props.song.explicit ? "🅴" : ""} {artistsStringListToString(props.song.artists)}
                     </span>
-                    <span className="onelinetextclip" style={{ fontSize: dims / 4, color: "#fffa", fontWeight: 'normal' }}>&nbsp;{`• ${duration ? millisToMinutesAndSeconds(duration) : "--:--"}`}</span>
+
+                    {duration ? <span className="onelinetextclip" style={{ fontSize: dims / 4, color: "#fffa", fontWeight: 'normal' }}>&nbsp;{`• ${millisToMinutesAndSeconds(duration)}`}</span> : <></>}
                 </div>
                 {/* <span className="onelinetextclip" style={{ fontSize: dims / 4, color: "#fffa", fontWeight: 'normal' }}>&nbsp;{`• ${props.song.expectedPlaytime ? millisToMinutesAndSeconds(new Date(props.song.expectedPlaytime).getTime()) : "--:--"}`}</span> */}
             </div>
