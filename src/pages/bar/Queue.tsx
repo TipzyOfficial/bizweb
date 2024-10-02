@@ -1,7 +1,7 @@
 import FlatList from "flatlist-react/lib";
 import { SongType } from "../../lib/song";
 import Song, { SongList } from "../../components/Song";
-import { Colors, padding, useFdim } from "../../lib/Constants";
+import { Colors, padding, radius, useFdim } from "../../lib/Constants";
 import { useDrag, useDrop } from 'react-dnd';
 import { FC, memo, useCallback, useEffect, useState } from "react";
 import update from 'immutability-helper';
@@ -9,6 +9,7 @@ import _ from "lodash";
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import TZButton from "../../components/TZButton";
+import { CurrentlyPlayingType } from "./Dashboard";
 
 
 type SongDraggableType = SongType// { id: string, song: SongType }
@@ -27,7 +28,7 @@ interface Item {
 };
 
 type QueueProps = {
-    current: SongType | undefined,
+    current: CurrentlyPlayingType,
     queueOrder: [SongType[], React.Dispatch<React.SetStateAction<SongType[]>>],
     editingQueue: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
     songDims?: number,
@@ -37,7 +38,8 @@ type QueueProps = {
 
 export default function Queue(props: QueueProps) {
     // const queue = props.queue;
-    const current = props.current;
+    const current = props.current[0];
+    const progress = props.current[1];
     const fdim = useFdim();
 
     const queueOrder = props.queueOrder[0];
@@ -55,28 +57,42 @@ export default function Queue(props: QueueProps) {
         setEditingQueue(false);
     }
 
+    const playbackHeight = 3;
+
     return (
         <div style={{ width: "100%" }}>
             <span className="App-montserrat-normaltext" style={{ paddingBottom: 7 }}>Now playing:</span>
             <div style={{ paddingBottom: padding }} />
-            <Song song={current ?? { title: "No song playing", artists: ["No artist"], id: "", albumart: "", explicit: false }} dims={props.songDims}></Song>
+            <div style={{ padding: padding, backgroundColor: "#fff1", borderRadius: radius }}>
+                <Song song={current ?? { title: "No song playing", artists: ["No artist"], id: "", albumart: "", explicit: false }} dims={props.songDims}></Song>
+                {progress ?
+                    <>
+                        <div style={{ paddingBottom: padding }} />
+                        <div style={{ width: "100%", height: playbackHeight, backgroundColor: "#fff2" }}>
+                            <div className="App-animated-gradient-fast-light" style={{ width: `${(progress.progressMs / progress.durationMs) * 100}%`, height: "100%", backgroundColor: 'white' }}></div>
+                        </div>
+                    </> : <></>}
+            </div>
             <div style={{ paddingBottom: padding * 2 }} />
-            {editingQueue ?
-                <div style={{ display: 'flex' }}>
-                    <TZButton title="Save changes" onClick={onSave} backgroundColor={Colors.green}></TZButton>
-                    <div style={{ width: padding }} />
-                    <TZButton title="Cancel" onClick={onCancel} backgroundColor={Colors.red}></TZButton>
-                </div> : <></>}
+            {
+                editingQueue ?
+                    <div style={{ display: 'flex' }}>
+                        <TZButton title="Save changes" onClick={onSave} backgroundColor={Colors.green}></TZButton>
+                        <div style={{ width: padding }} />
+                        <TZButton title="Cancel" onClick={onCancel} backgroundColor={Colors.red}></TZButton>
+                    </div> : <></>
+            }
             <span className="App-montserrat-normaltext" style={{ paddingBottom: 7 }}>Next up:</span>
             <div style={{ paddingBottom: padding }} />
-            {queueOrder ?
-                <Container disable={props.disable} data={props.queueOrder} dims={props.songDims} editingQueue={props.editingQueue} />
-                :
-                <div>
-                    <span>There was a problem getting your queue... are you sure you've set up everything completely?</span>
-                </div>
+            {
+                queueOrder ?
+                    <Container disable={props.disable} data={props.queueOrder} dims={props.songDims} editingQueue={props.editingQueue} />
+                    :
+                    <div>
+                        <span>There was a problem getting your queue... are you sure you've set up everything completely?</span>
+                    </div>
             }
-        </div>
+        </div >
     )
 }
 

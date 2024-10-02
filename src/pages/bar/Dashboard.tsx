@@ -28,6 +28,8 @@ type AcceptingType = "Manual" | "Auto" | "TipzyAI" | undefined;
 
 type NowPlayingType = [SongType, { progressMs: number, durationMs: number }]
 
+export type CurrentlyPlayingType = [SongType, { progressMs: number, durationMs: number }]
+
 function checkAutoAccept(auto?: boolean, gpt?: boolean): AcceptingType {
     if (auto === undefined && gpt === undefined) return undefined;
     if (auto) return "Auto";
@@ -53,7 +55,7 @@ export default function Dashboard() {
     const usc = useContext(UserSessionContext);
     const bar = usc.user;
     const [ready, setReady] = useState(false);
-    const [currentlyPlaying, setCurrentlyPlayingIn] = useState<[SongType, { progressMs: number, durationMs: number }] | undefined>(undefined);
+    const [currentlyPlaying, setCurrentlyPlayingIn] = useState<CurrentlyPlayingType | undefined>(undefined);
     const [queue, setQueueIn] = useState<SongType[] | undefined>([]);
 
     const deletedCheckAgain = 15000;
@@ -458,7 +460,7 @@ export default function Dashboard() {
                         <div style={{ paddingBottom: padding }} />
                         <PlaybackComponent setDisableTyping={setDisableTyping} />
                         {currentlyPlaying ?
-                            <Queue disable={reordering} queueOrder={qO} current={currentlyPlaying[0]} songDims={songDims} editingQueue={eQ} reorderQueue={async () => {
+                            <Queue disable={reordering} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} reorderQueue={async () => {
                                 console.log('reordering', reordering)
 
                                 if (!reordering) {

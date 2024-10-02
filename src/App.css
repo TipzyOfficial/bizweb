@@ -291,6 +291,17 @@
   transition: width .2s;
 }
 
+.App-animated-gradient-fast-light {
+  background: linear-gradient(90deg, #FCC679, #e293ae, #FCC679);
+  /* background: linear-gradient(90deg, #FCC679, #d5648b, #FCC679); */
+  background-size: 200% 200%;
+  -webkit-animation: Animation 2s ease infinite;
+  -moz-animation: Animation 2s ease infinite;
+  animation: Animation 2s ease infinite;
+  -webkit-transition: .2s;
+  transition: width .2s;
+}
+
 @-webkit-keyframes Animation {
   0% {
     background-position: 10% 0%
