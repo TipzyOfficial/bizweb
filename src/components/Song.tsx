@@ -96,12 +96,14 @@ export function SongRenderItem(props: { song: SongType, dims: number, onClick?: 
     )
 }
 
-export function SongList(props: { songs: SongType[], dims: number, noImage?: boolean, numbered?: boolean, logoutData?: any, refreshRequests?: () => Promise<void> }) {
+export function SongList(props: { songs: SongType[], dims: number, noImage?: boolean, numbered?: boolean, logoutData?: any, refreshRequests?: () => Promise<void>, onClick?: (song: SongType) => any }) {
 
     const songDims = props.dims;
 
     const [requestedSong, setRequestedSong] = useState<SongType | undefined>(undefined);
     const [requestVisible, setRequestVisible] = useState(false);
+
+    const onClick = props.onClick;
 
     return (
         <>
@@ -110,10 +112,7 @@ export function SongList(props: { songs: SongType[], dims: number, noImage?: boo
                 renderWhenEmpty={() => <div style={{ height: 50, justifyContent: 'center', alignItems: 'center', display: 'flex', color: '#888' }}>No songs.</div>}
                 renderItem={(item, index) =>
                     <>
-                        <SongRenderItem song={item} dims={songDims} number={props.numbered ? parseInt(index) : undefined} key={item.id + "_index" + index} noImage={props.noImage} onClick={() => {
-                            setRequestedSong(item);
-                            setRequestVisible(true);
-                        }} />
+                        <SongRenderItem song={item} dims={songDims} number={props.numbered ? parseInt(index) : undefined} key={item.id + "_index" + index} noImage={props.noImage} onClick={onClick ? () => onClick(item) : undefined} />
                         <div style={{
                             paddingBottom: padding * 1.2,
                         }}></div>

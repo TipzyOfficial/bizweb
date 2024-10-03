@@ -12,7 +12,7 @@ import _, { eq } from "lodash";
 import BigLogo, { SmallLogo } from "../../components/BigLogo";
 import Song from "../../components/Song";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faXmark, IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faMagnifyingGlass, faXmark, IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { faCheckSquare as faYes, faSquare as faNo } from "@fortawesome/free-regular-svg-icons";
 import Dropdown from 'react-bootstrap/Dropdown';
 
@@ -21,6 +21,8 @@ import TZHeader from "../../components/TZHeader";
 import Stats from "./Stats";
 import PlaybackComponent from "./PlaybackComponent";
 import Price from "./Price";
+import useWindowDimensions from "../../lib/useWindowDimensions";
+import { router } from "../../App";
 
 const cookies = getCookies();
 
@@ -445,7 +447,7 @@ export default function Dashboard() {
                         <span className="App-montserrat-normaltext" style={{ paddingLeft: padding, fontWeight: 'bold', color: "#fff8" }}>Biz Dashboard</span>
                     </div>
                     <div>
-                        <Toggle title="DJ Mode" value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></Toggle>
+                        <SearchBar />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <span style={{ paddingRight: padding, fontWeight: 'bold' }}>Bar's ID: {bar.business_id}</span>
@@ -515,6 +517,9 @@ export default function Dashboard() {
                         <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
                         {/* <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} /> */}
                         <div style={{ paddingBottom: padding }} />
+                        <div style={{ display: "flex" }}>
+                            <Toggle title="DJ Mode" disabled value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></Toggle>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -728,6 +733,17 @@ function NotPlaying() {
     return (
         <div style={{ padding: padding, backgroundColor: "#FFF1", borderRadius: radius, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <span style={{ textAlign: 'center' }}>Start playing music on your streaming app to accept requests and view the queue!</span>
+        </div>
+    )
+}
+
+function SearchBar() {
+    const window = useWindowDimensions();
+    const [hovered, setHovered] = useState(false);
+    return (
+        <div onClick={() => router.navigate("/search")} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} style={{ padding: padding, backgroundColor: hovered ? "#FFF2" : "#FFF1", borderRadius: radius * 2, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', cursor: 'pointer' }}>
+            <FontAwesomeIcon icon={faMagnifyingGlass} />
+            <span style={{ textAlign: 'center', color: "#fffa", paddingLeft: padding, paddingRight: padding, minWidth: Math.min(500, window.width / 3), textAlignLast: 'left' }}>Add a song to queue...</span>
         </div>
     )
 }

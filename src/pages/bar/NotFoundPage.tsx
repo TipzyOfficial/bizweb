@@ -1,4 +1,3 @@
-import { To } from "react-router-dom";
 import { router } from "../../App";
 import { Colors, padding } from "../../lib/Constants";
 

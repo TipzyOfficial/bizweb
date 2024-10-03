@@ -17,6 +17,7 @@ import { NotFoundPage } from './pages/bar/NotFoundPage';
 import { getCookies, getStored } from './lib/utils';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { Search } from './pages/bar/Search';
 
 export const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_KEY ?? "");
 
@@ -46,6 +47,10 @@ export const router = createBrowserRouter([{
     {
       path: "/dashboard",
       Component: Dashboard
+    },
+    {
+      path: "/search",
+      Component: Search
     },
     {
       path: "/account",

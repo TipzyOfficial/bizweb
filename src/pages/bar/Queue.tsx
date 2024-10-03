@@ -82,7 +82,7 @@ export default function Queue(props: QueueProps) {
                         <TZButton title="Cancel" onClick={onCancel} backgroundColor={Colors.red}></TZButton>
                     </div> : <></>
             }
-            <span className="App-montserrat-normaltext" style={{ paddingBottom: 7 }}>Next up:</span>
+            <span className="App-montserrat-normaltext" style={{ paddingBottom: 7 }}>Next up: (drag to reorder)</span>
             <div style={{ paddingBottom: padding }} />
             {
                 queueOrder ?

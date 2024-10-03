@@ -3,6 +3,14 @@ import Cookies from "universal-cookie";
 import { Business } from "./user";
 import { SongType } from "./song";
 
+export const onlyAlphanumeric = (str: string): string => {
+    return str.replace(/[^0-9A-Z]+/gi, "");
+}
+
+export const onlyAlphanumericSpaces = (str: string): string => {
+    return str.replace(/[^0-9A-Z ]+/gi, "");
+}
+
 export function millisToMinutesAndSeconds(millis: number) {
     let minutes = Math.floor(millis / 60000);
     let seconds = Math.floor((millis % 60000) / 1000);
