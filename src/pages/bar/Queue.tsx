@@ -81,8 +81,6 @@ export default function Queue(props: QueueProps) {
 
     return (
         <div style={{ width: "100%" }}>
-            <span className="App-montserrat-normaltext" style={{ paddingBottom: 7 }}>Now playing:</span>
-            <div style={{ paddingBottom: padding }} />
             <div style={{ padding: padding, backgroundColor: "#fff1", borderRadius: radius }}>
                 <div style={{ display: 'flex' }}>
                     <div style={{ flexGrow: 1, width: '100%' }}>
@@ -168,16 +166,19 @@ const Container = memo(function Container(props: {
     return (
         <div ref={drop} style={{ flex: 1 }}>
             {cards.map((card) => (
-                <SongCard
-                    key={card.id}
-                    id={card.id}
-                    song={card}
-                    moveCard={moveCard}
-                    findCard={findCard}
-                    dims={props.dims}
-                    onDrop={() => setEditingQueue(true)}
-                    disable={props.disable}
-                />
+                card === undefined ?
+                    <></>
+                    :
+                    <SongCard
+                        key={card.id}
+                        id={card.id}
+                        song={card}
+                        moveCard={moveCard}
+                        findCard={findCard}
+                        dims={props.dims}
+                        onDrop={() => setEditingQueue(true)}
+                        disable={props.disable}
+                    />
             ))}
         </div>
     )
@@ -198,6 +199,10 @@ const SongCard: FC<SongCardProps> = memo(function Card({
         () => ({
             type: 'card',
             item: { id, originalIndex },
+            isDragging(monitor) {
+                const item = monitor.getItem()
+                return id === item.id
+            },
             collect: (monitor) => ({
                 isDragging: monitor.isDragging(),
             }),

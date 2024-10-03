@@ -368,6 +368,7 @@ export default function Dashboard() {
 
     useInterval(refreshAllData, refreshQueueTime, 500, false);
 
+    console.log("UE REFRESH ALL")
     ///() => rejectAll()
 
     const Requests = () => {
@@ -543,92 +544,90 @@ export default function Dashboard() {
 
     return (
         <DisplayOrLoading condition={ready} loadingScreen={<LoadingScreen />}>
-            <>
-                <AlertModal onHide={() => setAlertContent(undefined)} content={alertContent} />
-                <div className="App-body-top">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: "100%", padding: padding, backgroundColor: "#0001" }}>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <SmallLogo />
-                            <span className="App-montserrat-normaltext" style={{ paddingLeft: padding, fontWeight: 'bold', color: "#fff8" }}>Biz Dashboard</span>
-                        </div>
-                        <div>
-                            <SearchBar />
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <span style={{ paddingRight: padding, fontWeight: 'bold' }}>Bar's ID: {bar.business_id}</span>
-                            <ProfileButton position="relative" name={bar.business_name}></ProfileButton>
-                        </div>
+            <div className="App-body-top">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: "100%", padding: padding, backgroundColor: "#0001" }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <SmallLogo />
+                        <span className="App-montserrat-normaltext" style={{ paddingLeft: padding, fontWeight: 'bold', color: "#fff8" }}>Biz Dashboard</span>
                     </div>
-                    <div className="App-dashboard-grid" style={{ overflow: 'hidden' }}>
-                        <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll', position: 'relative' }}>
-                            {queueLoading ? <div style={{ position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background + "88" }}>
-                                <Spinner />
-                            </div> : <></>}
-                            <div style={{ paddingBottom: padding }} />
-                            <PlaybackComponent setDisableTyping={setDisableTyping} />
-                            {currentlyPlaying ?
-                                <Queue pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
-                                    console.log('reordering', reordering)
+                    <div>
+                        <SearchBar />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={{ paddingRight: padding, fontWeight: 'bold' }}>Bar's ID: {bar.business_id}</span>
+                        <ProfileButton position="relative" name={bar.business_name}></ProfileButton>
+                    </div>
+                </div>
+                <div className="App-dashboard-grid" style={{ overflow: 'hidden' }}>
+                    <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll', position: 'relative' }}>
+                        {queueLoading ? <div style={{ position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background + "88" }}>
+                            <Spinner />
+                        </div> : <></>}
+                        <div style={{ paddingBottom: padding }} />
+                        <PlaybackComponent setDisableTyping={setDisableTyping} />
+                        {currentlyPlaying ?
+                            <Queue pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
+                                console.log('reordering', reordering)
 
-                                    if (!reordering) {
-                                        try {
-                                            await reorderQueue();
-                                            setReordering(false);
-                                        }
-                                        catch (e) {
-                                            setReordering(false);
-                                            throw e;
-                                        }
+                                if (!reordering) {
+                                    try {
+                                        await reorderQueue();
+                                        setReordering(false);
                                     }
-                                }} />
-                                :
-                                <NotPlaying />
-                            }
+                                    catch (e) {
+                                        setReordering(false);
+                                        throw e;
+                                    }
+                                }
+                            }} />
+                            :
+                            <NotPlaying />
+                        }
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden' }}>
+                        <div style={{ flex: 1, height: "100%", overflowY: 'scroll' }}>
+                            <Requests />
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden' }}>
-                            <div style={{ flex: 1, height: "100%", overflowY: 'scroll' }}>
-                                <Requests />
-                            </div>
-                            <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
-                                <Toggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
-                                    await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
-                                    setToggles(...await getToggles(usc));
-                                }} />
-                                <div style={{ paddingLeft: padding }} />
-                                <Dropdown>
-                                    <Dropdown.Toggle variant="primary" style={{ height: "100%" }} id="dropdown-basic">
-                                        {acceptRadioValue === "Manual" ? "Manually accept" :
-                                            acceptRadioValue === "Auto" ? "Auto-accept" :
-                                                acceptRadioValue === "TipzyAI" ? "Tipzy decides" : "..."}
-                                    </Dropdown.Toggle>
-                                    <Dropdown.Menu variant="dark">
-                                        <Dropdown.Item onClick={async () => onSetAccept("Manual")}>Manually accept</Dropdown.Item>
-                                        <Dropdown.Item onClick={async () => onSetAccept("Auto")}>Auto-accept</Dropdown.Item>
-                                        <Dropdown.Item onClick={async () => onSetAccept("TipzyAI")}>Let Tipzy Decide</Dropdown.Item>
-                                    </Dropdown.Menu>
-                                </Dropdown>
-                                {/* <Toggle title="Auto-accept" value={toggleAutoRequests} onClick={async () => {
+                        <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
+                            <Toggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
+                                await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
+                                setToggles(...await getToggles(usc));
+                            }} />
+                            <div style={{ paddingLeft: padding }} />
+                            <Dropdown>
+                                <Dropdown.Toggle variant="primary" style={{ height: "100%" }} id="dropdown-basic">
+                                    {acceptRadioValue === "Manual" ? "Manually accept" :
+                                        acceptRadioValue === "Auto" ? "Auto-accept" :
+                                            acceptRadioValue === "TipzyAI" ? "Tipzy decides" : "..."}
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu variant="dark">
+                                    <Dropdown.Item onClick={async () => onSetAccept("Manual")}>Manually accept</Dropdown.Item>
+                                    <Dropdown.Item onClick={async () => onSetAccept("Auto")}>Auto-accept</Dropdown.Item>
+                                    <Dropdown.Item onClick={async () => onSetAccept("TipzyAI")}>Let Tipzy Decide</Dropdown.Item>
+                                </Dropdown.Menu>
+                            </Dropdown>
+                            {/* <Toggle title="Auto-accept" value={toggleAutoRequests} onClick={async () => {
                                 await setAutoAcceptingRequests(usc, !toggleAutoRequests);
                                 setToggles(...await getToggles(usc));
                             }} /> */}
-                                <div style={{ paddingLeft: padding }} />
-                                <Toggle title="Take requests" value={toggleAllowRequests} onClick={async () => {
-                                    await setAllowingRequests(usc, !toggleAllowRequests);
-                                    setToggles(...await getToggles(usc));
-                                }} />
-                            </div>
+                            <div style={{ paddingLeft: padding }} />
+                            <Toggle title="Take requests" value={toggleAllowRequests} onClick={async () => {
+                                await setAllowingRequests(usc, !toggleAllowRequests);
+                                setToggles(...await getToggles(usc));
+                            }} />
                         </div>
-                        <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll' }}>
-                            <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
-                            {/* <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} /> */}
-                            <div style={{ paddingBottom: padding }} />
-                            <div style={{ display: "flex" }}>
-                                <Toggle title="DJ Mode" disabled value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></Toggle>
-                            </div>
+                    </div>
+                    <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll' }}>
+                        <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
+                        {/* <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} /> */}
+                        <div style={{ paddingBottom: padding }} />
+                        <div style={{ display: "flex" }}>
+                            <Toggle title="DJ Mode" disabled value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></Toggle>
                         </div>
                     </div>
                 </div>
-            </>
+                <AlertModal onHide={() => setAlertContent(undefined)} content={alertContent} />
+            </div>
         </DisplayOrLoading>
     )
 }

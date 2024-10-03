@@ -26,7 +26,6 @@ export const AlertModal = (props: AlertModalProps) => {
 
 
     const determineClose = () => {
-        console.log("determining", closing)
         if (closing) return false;
         return props.content !== undefined
     }

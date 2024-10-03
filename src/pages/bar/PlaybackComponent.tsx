@@ -76,15 +76,15 @@ export default function PlaybackComponent(props: { setDisableTyping: (b: boolean
 
     return (
         <>
-            <div style={{ width: "100%", padding: padding, backgroundColor: Colors.tertiaryDark + "aa", borderRadius: radius, cursor: 'pointer', opacity: opacity }} onMouseEnter={() => setOpacity(0.5)} onMouseLeave={() => setOpacity(1)} onClick={() => setVisible(true)}>
+            <div style={{ width: "100%", padding: padding, backgroundColor: Colors.tertiaryDark, borderRadius: radius, cursor: 'pointer', opacity: opacity }} onMouseEnter={() => setOpacity(0.5)} onMouseLeave={() => setOpacity(1)} onClick={() => setVisible(true)}>
                 {ss ?
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span className="App-montserrat-smallertext" style={{}}>Current playlist:</span>
-                        <span className="App-montserrat-normaltext" style={{ paddingBottom: 5, fontWeight: 'bold', color: Colors.primaryRegular }}>{currentPlaylist}</span>
+                        <span className="App-montserrat-normaltext" style={{ paddingBottom: 5, fontWeight: 'bold', color: Colors.primaryLight }}>{currentPlaylist}</span>
                         <span className="App-smalltext" style={{ color: "#fff8" }}>(Click to change)</span>
                     </div>
                     :
-                    <span className="App-montserrat-normaltext" style={{ paddingBottom: 7, fontWeight: 'bold', color: Colors.primaryRegular }}>Set up your streaming service!</span>
+                    <span className="App-montserrat-normaltext" style={{ paddingBottom: 7, fontWeight: 'bold', color: Colors.primaryLight }}>Set up your streaming service!</span>
                 }
             </div>
             <PlaybackModal show={visible} setShow={setVisible} streaming={ss !== null || ss !== undefined} update={getStreamingService} />
