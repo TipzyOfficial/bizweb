@@ -18,8 +18,8 @@ type SongDraggableType = SongType// { id: string, song: SongType }
 export interface SongCardProps {
     id: string,
     song: SongType,
-    moveCard: (id: string, to: number) => void,
-    findCard: (id: string) => { index: number },
+    moveCard: (id: string | undefined, to: number | undefined) => void,
+    findCard: (id: string | undefined) => { index: number },
     dims?: number,
     onDrop: () => void,
     disable?: boolean
@@ -137,7 +137,8 @@ const Container = memo(function Container(props: {
     const [editingQueue, setEditingQueue] = props.editingQueue;
 
     const findCard = useCallback(
-        (id: string) => {
+        (id: string | undefined) => {
+            if (id === undefined) return { card: undefined, index: -1 };
             const card = cards.filter((c) => `${c.id}` === id)[0] as SongType
             return {
                 card,
@@ -148,16 +149,21 @@ const Container = memo(function Container(props: {
     )
 
     const moveCard = useCallback(
-        (id: string, atIndex: number) => {
+        (id: string | undefined, atIndex: number | undefined) => {
+            if (id === undefined || atIndex === undefined) {
+                return;
+            }
             const { card, index } = findCard(id);
-            setCards(
-                update(cards, {
-                    $splice: [
-                        [index, 1],
-                        [atIndex, 0, card],
-                    ],
-                }),
-            )
+            if (card) {
+                setCards(
+                    update(cards, {
+                        $splice: [
+                            [index, 1],
+                            [atIndex, 0, card],
+                        ],
+                    }),
+                )
+            }
         },
         [findCard, cards, setCards],
     )
@@ -193,8 +199,7 @@ const SongCard: FC<SongCardProps> = memo(function Card({
     onDrop,
     disable,
 }) {
-    const fdim = useFdim();
-    const originalIndex = findCard(id).index;
+    const originalIndex = id ? findCard(id).index : undefined;
     const [{ isDragging }, drag] = useDrag(
         () => ({
             type: 'card',
@@ -211,7 +216,7 @@ const SongCard: FC<SongCardProps> = memo(function Card({
                 const { id: droppedId, originalIndex } = item
                 const didDrop = monitor.didDrop()
                 if (!didDrop) {
-                    moveCard(droppedId, originalIndex)
+                    // moveCard(droppedId, originalIndex)
                 } else {
                     onDrop();
                 }
