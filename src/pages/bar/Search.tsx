@@ -27,7 +27,7 @@ const SearchModal = (props: { completed?: boolean, loading: boolean, visible: bo
                 <span className="App-montserrat-normaltext" style={{ fontWeight: 'bold', paddingBottom: padding }}>{props.title}</span>
                 <Img />
                 <span className="App-montserrat-normaltext" style={{ fontWeight: 'bold', paddingTop: padding }}>{props.song?.title ?? "No song"}</span>
-                <span className="App-smalltext">{artistsStringListToString(props.song?.artists ?? ["No artist"])}</span>
+                <span className="App-smalltext">{(props.song?.explicit ? "🅴 " : "") + artistsStringListToString(props.song?.artists ?? ["No artist"])}</span>
                 <div style={{ paddingTop: padding }}>
                     <TZButton completed={props.completed} loading={props.loading} title="Confirm" backgroundColor={props.completed ? Colors.green : Colors.tertiaryDark} onClick={props.onConfirm}></TZButton>
                 </div>
@@ -206,8 +206,10 @@ export function SearchComponent(props: { onClick: (song: SongType) => any }) {
                         <SearchBar value={query} setValue={setQuery} />
                     </div>
                 </form>
-                <div style={{ flex: 1, cursor: 'pointer' }}>
-                    <span className="App-montserrat-smallertext" onClick={() => router.navigate("/dashboard")} style={{ paddingLeft: padding, fontWeight: 'bold' }}>Close</span>
+                <div style={{ flex: 1, display: "flex", height: "100%" }}>
+                    <div onClick={() => router.navigate("/dashboard")} style={{ paddingLeft: padding, paddingRight: padding, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold' }}>Close</span>
+                    </div>
                 </div>
             </div>
             {suggestion && !isAiSuggestion ?
