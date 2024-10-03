@@ -233,8 +233,9 @@ export default function Dashboard() {
         const [cur, q] = await getQueueUpdatePause();
 
         if (!_.isEqual(cur, currentlyPlaying)) setCurrentlyPlaying(cur);
-        console.log("qqueue", q, queue, queueOrder);
         if (!_.isEqual(q, queue)) setQueue(q);
+
+        console.log("qqueue", q, queue, queueOrder);
 
         return [cur, q];
     }

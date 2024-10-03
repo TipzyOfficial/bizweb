@@ -212,7 +212,7 @@ const SongCard: FC<SongCardProps> = memo(function Card({
                 }
             },
         }),
-        [id, originalIndex, moveCard],
+        [id, originalIndex, moveCard, disable],
     );
 
     const [, drop] = useDrop(
@@ -236,3 +236,13 @@ const SongCard: FC<SongCardProps> = memo(function Card({
         </div>
     )
 })
+
+// , (a, b) => {
+//     return (
+//         // // a.id === b.id &&
+//         // a.song === b.song &&
+//         // a.dims === b.dims &&
+//         // a.disable === b.disable
+//         false
+//     )
+// })
