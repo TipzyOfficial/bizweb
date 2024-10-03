@@ -6,7 +6,7 @@ import FlatList from "flatlist-react/lib";
 import { memo, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCirclePlus, faMusic } from "@fortawesome/free-solid-svg-icons";
-import { millisToMinutesAndSeconds, numberToPrice } from "../lib/utils";
+import { millisToMinutesAndSeconds, numberToPrice, useInterval } from "../lib/utils";
 import LogoLetter from "../assets/LogoLetter.svg";
 
 export function artistsStringListToString(artists: string[]) {
@@ -18,9 +18,48 @@ export function artistsStringListToString(artists: string[]) {
     return out.substring(2);
 }
 
-export default function Song(props: { song: SongType, dims?: number, noImage?: boolean, number?: number, roundedEdges?: boolean }) {
-    // const big = props.big ?? false;
+export default function Song(props: { song: SongType, dims?: number, noImage?: boolean, number?: number, roundedEdges?: boolean, requestDate?: Date }) {
+    const etaval = props.requestDate ?? (props.song?.expectedPlaytime ? new Date(props.song?.expectedPlaytime) : undefined);
 
+    const calcEtaVal = () => {
+        if (props.requestDate) {
+            return (etaval ? Date.now() - etaval.getTime() : undefined)
+        }
+        return (etaval ? etaval.getTime() - Date.now() : undefined)
+    }
+
+    const [eta, setETAInner] = useState(calcEtaVal());
+    const goodETA = 600000;
+    const okETA = 180000;
+    const etaBuffer = -7000;
+
+    // console.log("albumartL:", props.song?.albumart)
+
+    useInterval(() => {
+        if (eta !== undefined && etaval !== undefined) {
+            setETAInner(calcEtaVal())
+        }
+    }, 1000);
+
+    // const time = eta ? new Date(eta) : undefined;
+
+    const isLate = eta && eta < etaBuffer;
+
+    const goodColor = () => {
+        if (!eta) return Colors.primaryRegular
+        if (props.requestDate) {
+            return eta > goodETA ?
+                Colors.red :
+                eta > okETA ?
+                    Colors.primaryRegular :
+                    Colors.green
+        }
+        return eta > goodETA ?
+            Colors.green :
+            eta > okETA ?
+                Colors.primaryRegular :
+                Colors.red
+    }
     const radius = 5;
     const bigDims = 128;
     const dims = props.dims ?? 50;
@@ -32,26 +71,38 @@ export default function Song(props: { song: SongType, dims?: number, noImage?: b
     const duration = props.song.duration;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-            {props.number ? <span>{props.number}. </span> : <></>}
-            {props.noImage ? <></> : <Img></Img>}
-            <div style={{ paddingLeft: props.noImage ? 0 : dims / 10, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <span className="onelinetext" style={{ fontSize: dims / 3, color: props.song.tipzyRequest ? Colors.primaryRegular : "white", width: '100%', fontWeight: props.song.manuallyQueued ? '700' : '500' }}>
-                    {props.song.title}
-                </span>
-                <div style={{ display: 'flex', flexShrink: 1 }}>
-                    <span className="onelinetext" style={{ fontSize: dims / 4, color: "#fffa", fontWeight: 'normal' }}>
-                        {props.song.explicit ? "🅴" : ""} {artistsStringListToString(props.song.artists)}
-                    </span>
+        <div style={isLate ? { padding: padding, borderRadius: radius, borderStyle: 'dashed', borderColor: 'red', borderWidth: 1, flex: 1 } : { flex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                {props.number ? <span>{props.number}. </span> : <></>}
+                {props.noImage ? <></> : <Img></Img>}
+                <div style={{ paddingLeft: props.noImage ? 0 : dims / 10, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span className="onelinetext" style={{ fontSize: dims / 3, color: props.song.tipzyRequest ? Colors.primaryRegular : "white", fontWeight: props.song.manuallyQueued ? '700' : '500' }}>
+                            {props.song.title}
+                        </span>
+                        {eta ?
+                            <div style={{ paddingLeft: padding, paddingRight: padding }}>
+                                <span className="App-montserrat-smallertext" style={{ padding: padding / 2, borderRadius: radius, backgroundColor: goodColor(), fontWeight: 'bold' }}> {isLate ? "LATE" : millisToMinutesAndSeconds(eta > 0 ? eta : 0)}</span>
+                            </div>
+                            : <></>}
+                    </div>
+                    <div style={{ display: 'flex', flexShrink: 1 }}>
+                        <span className="onelinetext" style={{ fontSize: dims / 4, color: "#fffa", fontWeight: 'normal' }}>
+                            {props.song.explicit ? "🅴" : ""} {artistsStringListToString(props.song.artists)}
+                        </span>
 
-                    {duration ? <span className="onelinetextclip" style={{ fontSize: dims / 4, color: "#fffa", fontWeight: 'normal' }}>&nbsp;{`• ${millisToMinutesAndSeconds(duration)}`}</span> : <></>}
+                        {duration ? <span className="onelinetextclip" style={{ fontSize: dims / 4, color: "#fffa", fontWeight: 'normal' }}>&nbsp;{`• ${millisToMinutesAndSeconds(duration)}`}</span> : <></>}
+                    </div>
+                    {/* <span className="onelinetextclip" style={{ fontSize: dims / 4, color: "#fffa", fontWeight: 'normal' }}>&nbsp;{`• ${props.song.expectedPlaytime ? millisToMinutesAndSeconds(new Date(props.song.expectedPlaytime).getTime()) : "--:--"}`}</span> */}
                 </div>
-                {/* <span className="onelinetextclip" style={{ fontSize: dims / 4, color: "#fffa", fontWeight: 'normal' }}>&nbsp;{`• ${props.song.expectedPlaytime ? millisToMinutesAndSeconds(new Date(props.song.expectedPlaytime).getTime()) : "--:--"}`}</span> */}
+                {props.song.tipzyRequest ?
+                    <img src={LogoLetter} style={{ width: logoDim, height: logoDim }} alt="This song was requested by a tipper." />
+                    : <></>
+                }
             </div>
-            {props.song.tipzyRequest ?
-                <img src={LogoLetter} style={{ width: logoDim, height: logoDim }} alt="This song was requested by a tipper." />
-                : <></>
-            }
+            {isLate ? <div style={{ paddingTop: padding }}>
+                Tipper expected this song to play <span style={{ fontWeight: 'bold', color: Colors.red }}>{millisToMinutesAndSeconds(Math.abs(eta))}</span> mins ago. Make sure it's played ASAP.
+            </div> : <></>}
         </div>
     )
 }

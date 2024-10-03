@@ -7,7 +7,7 @@ import ProfileButton from "../../components/ProfileButton";
 import Queue from "./Queue";
 import { fetchWithToken, getBusiness } from "../..";
 import { SongRequestType, SongType } from "../../lib/song";
-import { getCookies, parseSongJson, useInterval } from "../../lib/utils";
+import { etaBuffer, getCookies, millisToMinutesAndSeconds, parseSongJson, useInterval } from "../../lib/utils";
 import _, { eq } from "lodash";
 import BigLogo, { SmallLogo } from "../../components/BigLogo";
 import Song from "../../components/Song";
@@ -53,6 +53,8 @@ const LoadingScreen = () =>
         <span>Loading your dashboard...</span>
     </div>;
 
+
+
 export default function Dashboard() {
     const usc = useContext(UserSessionContext);
     const bar = usc.user;
@@ -69,7 +71,7 @@ export default function Dashboard() {
     const [toggleAllowRequests, setToggleAllowRequests] = useState(usc.user.allowing_requests);
     const [acceptRadioValue, setAcceptRadioValue] = useState<AcceptingType>(checkAutoAccept(usc.user.auto_accept_requests, usc.user.gpt_accept_requests));
     const fdim = useFdim();
-    const songDims = fdim / 12;
+    const songDims = fdim / 15;
     const [financeStats, setFinanceStats] = useState<FinanceStatsType | undefined>();
     const [miniumumPrice, setMinimumPrice] = useState<number | undefined>();
     const [currentPrice, setCurrentPrice] = useState<number | undefined>();
@@ -401,16 +403,21 @@ export default function Dashboard() {
 
         return (
             <div style={{ width: "100%" }}>
-                <span className="App-smalltext">{request.user.first_name} {request.user.last_name}</span>
-                <div style={{ width: "100%", display: "flex", alignItems: 'center' }}>
-                    <Song song={request.song} dims={songDims} />
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div>
+                        <span className="App-smalltext" style={{ fontWeight: 'bold', color: Colors.primaryRegular }}> {request.price === 0 ? "FREE REQUEST" : `$${request.price.toFixed(2)}`}</span>
+                    </div>
+                    <span className="App-smalltext">{request.user.first_name} {request.user.last_name}</span>
+                </div>
+                <div style={{ width: "100%", display: "flex", alignItems: 'center', paddingTop: padding, paddingBottom: padding }}>
+                    <Song song={request.song} dims={songDims} requestDate={request.date} />
                     <div style={{ display: "flex", alignItems: 'center' }}>
                         <Button icon={faXmark} color={"white"} onClick={() => rejectOnPress(request.id, props.index)}></Button>
                         <div style={{ paddingLeft: padding }}></div>
                         <Button icon={faCheck} color={Colors.primaryRegular} onClick={() => acceptOnPress(request.id, props.index)}></Button>
                     </div>
                 </div>
-                <span className="App-smalltext">Vibe check: {request.fitAnalysis}. </span>
+                <span className="App-smalltext" style={{ fontWeight: "bold" }}>Vibe check: {request.fitAnalysis}. </span>
                 <span className="App-smalltext">{request.fitReasoning}</span>
             </div>
         )

@@ -3,6 +3,10 @@ import Cookies from "universal-cookie";
 import { Business } from "./user";
 import { SongType } from "./song";
 
+export const goodETA = 600000;
+export const okETA = 180000;
+export const etaBuffer = -7000;
+
 export const onlyAlphanumeric = (str: string): string => {
     return str.replace(/[^0-9A-Z]+/gi, "");
 }
