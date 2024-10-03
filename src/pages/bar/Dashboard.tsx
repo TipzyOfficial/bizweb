@@ -212,6 +212,16 @@ export default function Dashboard() {
         if (currPrice !== currentPrice) setCurrentPrice(currPrice);
     }
 
+    const refreshQueue = async (): Promise<[NowPlayingType | undefined, SongType[] | undefined]> => {
+        //queue
+        const [cur, q] = await getQueue(usc);
+        if (!_.isEqual(cur, currentlyPlaying)) setCurrentlyPlaying(cur);
+        console.log("qqueue", q, queue, queueOrder);
+        if (!_.isEqual(q, queue)) setQueue(q);
+
+        return [cur, q];
+    }
+
     const refreshAllData = async () => {
         console.log("refreshing all");
         //reqs
@@ -219,10 +229,7 @@ export default function Dashboard() {
         if (!_.isEqual(requests, songRequests)) setSongRequests(requests);
 
         //queue
-        const [cur, q] = await getQueue(usc);
-        if (!_.isEqual(cur, currentlyPlaying)) setCurrentlyPlaying(cur);
-        console.log("qqueue", q, queue, queueOrder);
-        if (!_.isEqual(q, queue)) setQueue(q);
+        await refreshQueue();
 
         //stats
         const stats = await getStats(usc);
@@ -240,24 +247,34 @@ export default function Dashboard() {
         setDeletedIds(temp);
     }
 
-    const acceptOnPress = (id: number, index: number) => {
+    const acceptOnPress = async (r: SongRequestType, index: number) => {
+        const id = r.id;
         // setRequests([]);
         addDeletedIds(id);
         const newRq = [...songRequests];
         newRq.splice(index, 1);
         // console.log(newRq);
         setSongRequests(newRq);
-        fetchWithToken(usc, `business/request/accept/?request_id=${id}`, "PATCH").then(response => {
+        const json = await fetchWithToken(usc, `business/request/accept/?request_id=${id}`, "PATCH").then(response => {
             console.log("response", response);
             if (!response) throw new Error("null response");
             if (!response.ok) throw new Error("bad response: " + response.status);
             return (response.json());
-        }).then((json) => {
-            console.log("json", json);
-            if (json.status !== 200) alert(`Problem accepting song. Status: ${json.status}. Data: ${json.detail} Error: ${json.error}`)
-            // refreshRequests();
+        });
+        console.log("json", json);
+        if (json.status !== 200) alert(`Problem accepting song. Status: ${json.status}. Data: ${json.detail} Error: ${json.error}`)
+        else {
+            const cq = await refreshQueue();
+            const q = cq[1];
+            console.log("first refresh queue", q);
+
+            //since sometimes queue doesnt update immediately?
+            if (q && q[q.length - 1].id !== r.song.id) {
+                setTimeout(() => {
+                    refreshQueue().then((a) => console.log("didn't work...refresh queue", a));
+                }, 1000);
+            }
         }
-        ).catch((e: Error) => alert(`Error accepting request. ${e.message}`));
     }
 
     const rejectOnPress = (id: number, index: number) => {
@@ -305,7 +322,8 @@ export default function Dashboard() {
         // console.log(ev.code);
         if (!disableTyping) {
             if (ev.code === acceptCode) {
-                acceptOnPress(songRequests[0].id, 0);
+                acceptOnPress(songRequests[0], 0).catch((e: Error) => alert(`Error accepting request. ${e.message}`));
+                ;
             } else if (ev.code === rejectCode) {
                 rejectOnPress(songRequests[0].id, 0);
             }
@@ -414,7 +432,7 @@ export default function Dashboard() {
                     <div style={{ display: "flex", alignItems: 'center' }}>
                         <Button icon={faXmark} color={"white"} onClick={() => rejectOnPress(request.id, props.index)}></Button>
                         <div style={{ paddingLeft: padding }}></div>
-                        <Button icon={faCheck} color={Colors.primaryRegular} onClick={() => acceptOnPress(request.id, props.index)}></Button>
+                        <Button icon={faCheck} color={Colors.primaryRegular} onClick={() => acceptOnPress(request, props.index).catch((e: Error) => alert(`Error accepting request. ${e.message}`))}></Button>
                     </div>
                 </div>
                 <span className="App-smalltext" style={{ fontWeight: "bold" }}>Vibe check: {request.fitAnalysis}. </span>
