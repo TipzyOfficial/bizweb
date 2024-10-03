@@ -1,4 +1,4 @@
-import { Spinner } from "react-bootstrap";
+import { Modal, Spinner } from "react-bootstrap";
 import { DisplayOrLoading } from "../../components/DisplayOrLoading";
 import { Colors, padding, radius, useFdim } from "../../lib/Constants";
 import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
@@ -23,14 +23,15 @@ import PlaybackComponent from "./PlaybackComponent";
 import Price from "./Price";
 import useWindowDimensions from "../../lib/useWindowDimensions";
 import { router } from "../../App";
+import { AlertContentType, AlertModal } from "../../components/Modals";
 
 const cookies = getCookies();
 
 type AcceptingType = "Manual" | "Auto" | "TipzyAI" | undefined;
 
-type NowPlayingType = [SongType, { progressMs: number, durationMs: number }]
+// type NowPlayingType = [SongType, { progressMs: number, durationMs: number }]
 
-export type CurrentlyPlayingType = [SongType, { progressMs: number, durationMs: number }]
+export type CurrentlyPlayingType = [SongType, { progressMs: number, durationMs: number, paused: boolean }]
 
 function checkAutoAccept(auto?: boolean, gpt?: boolean): AcceptingType {
     if (auto === undefined && gpt === undefined) return undefined;
@@ -53,7 +54,7 @@ const LoadingScreen = () =>
         <span>Loading your dashboard...</span>
     </div>;
 
-
+const refreshQueueTime = 5000;
 
 export default function Dashboard() {
     const usc = useContext(UserSessionContext);
@@ -77,6 +78,11 @@ export default function Dashboard() {
     const [currentPrice, setCurrentPrice] = useState<number | undefined>();
     const [disableTyping, setDisableTyping] = useState(false);
     const [seeMoreStats, setSeeMoreStats] = useState(false);
+    const [pausedUI, setPausedUI] = useState(false);
+    const [somethingPressed, setSomethingPressed] = useState(false);
+
+    // const [alertVisible, setAlertVisible] = useState(false);
+    const [alertContent, setAlertContent] = useState<AlertContentType>(undefined);
 
     const qO = useState(queue ?? []);
     const [queueOrder, setQueueOrder] = qO; //queue AFTER we mess w it. what we actually display.
@@ -87,7 +93,7 @@ export default function Dashboard() {
     const eQ: [boolean, Dispatch<SetStateAction<boolean>>] = [editingQueue, setEditingQueue]; //is "editing" on?
     const [reordering, setReordering] = useState(false); //is actively reordering queue?
 
-    const setCurrentlyPlaying = (s: [SongType, { progressMs: number, durationMs: number }] | undefined) => {
+    const setCurrentlyPlaying = (s: CurrentlyPlayingType | undefined) => {
         if (s === undefined && currentlyPlaying === undefined) return;
         if (s === undefined) setCurrentlyPlayingIn(undefined);
         else {
@@ -188,11 +194,11 @@ export default function Dashboard() {
         console.log("reorder response", json);
         if (json.status !== 200) throw new Error(`${json.detail ?? json.toString()}`);
         console.log("done reordering")
-        const locked = await getQueue(usc);
-        const nQ = locked[1]
-        setQueue(nQ, true);
+        const [cur, q, lock] = await getQueueUpdatePause();
+
+        setQueue(q, true);
         setEditingQueueIn(false);
-        if (locked[2].isLocked) setEditingQueue(true);
+        if (lock.isLocked) setEditingQueue(true);
     }
 
 
@@ -212,9 +218,20 @@ export default function Dashboard() {
         if (currPrice !== currentPrice) setCurrentPrice(currPrice);
     }
 
-    const refreshQueue = async (): Promise<[NowPlayingType | undefined, SongType[] | undefined]> => {
+    const getQueueUpdatePause = async () => {
+        const cq = await getQueue(usc);
+        const [cur,] = cq
+
+        const paused = cur ? cur[1].paused : undefined;
+        if (!somethingPressed && paused !== undefined && paused !== pausedUI) setPausedUI(paused);
+
+        return cq;
+    }
+
+    const refreshQueue = async (): Promise<[CurrentlyPlayingType | undefined, SongType[] | undefined]> => {
         //queue
-        const [cur, q] = await getQueue(usc);
+        const [cur, q] = await getQueueUpdatePause();
+
         if (!_.isEqual(cur, currentlyPlaying)) setCurrentlyPlaying(cur);
         console.log("qqueue", q, queue, queueOrder);
         if (!_.isEqual(q, queue)) setQueue(q);
@@ -348,7 +365,7 @@ export default function Dashboard() {
         refreshAllData().then(() => setReady(true)).catch(() => setReady(true));
     }, []);
 
-    useInterval(refreshAllData, 5000, 500, false);
+    useInterval(refreshAllData, refreshQueueTime, 500, false);
 
     ///() => rejectAll()
 
@@ -461,93 +478,156 @@ export default function Dashboard() {
         setToggleDJMode(djmode);
     }
 
-    const queueLoading = reordering;
+    const togglePlayStreaming = async (play: boolean) => {
+        if (somethingPressed) return;
+        setSomethingPressed(true);
+        const func = play ? fetchWithToken(usc, `business/soundtrack/play/`, 'POST') : fetchWithToken(usc, `business/soundtrack/pause/`, 'POST');
+        const json = await func.then((r) => r.json());
+        setPausedUI(!play);
+        setSomethingPressed(false);
+        // console.log("json pause/play", json);
+        if (json.status !== 200) {
+            throw new Error(`bad response: ${json}`);
+        }
+    }
+
+    const onPause = async () => {
+        togglePlayStreaming(pausedUI);
+    }
+
+    const skip = async () => {
+        const skipTimeout = refreshQueueTime;
+        if (somethingPressed) return;
+        setSomethingPressed(true);
+        const json = await fetchWithToken(usc, `business/soundtrack/skip/`, 'POST').then((r) => r.json());
+        if (json.status !== 200) throw new Error(`bad response: ${json}`);
+        const [, q, r] = await getQueueUpdatePause();
+        if (q && r.top && r.top.id === q[0].id) {
+            setTimeout(async () => {
+                const r = await getQueueUpdatePause();
+                console.log("Getting queue done", r)
+                setSomethingPressed(false);
+            }, skipTimeout)
+        } else {
+            setSomethingPressed(false);
+        }
+    }
+
+    const onSkip = async () => {
+        if (currentlyPlaying ? currentlyPlaying[0].manuallyQueued : false) {
+            setAlertContent({
+                title: "THIS SONG IS A TIPZY REQUEST!",
+                text: "If you skip it you might piss somebody off. Are you sure you want to skip this song?",
+                buttons: [
+                    { text: "Cancel", color: Colors.red },
+                    { text: "Skip", color: Colors.tertiaryDark, onClick: skip },
+                ]
+            })
+            // prompt("THIS SONG IS A TIPZY REQUEST", "If you skip it you might piss somebody off. Are you sure you want to skip this song?", [
+            //     {
+            //         text: "Cancel"
+            //     },
+            //     {
+            //         text: "Skip",
+            //         style: 'destructive',
+            //         onPress: skip
+            //     }
+            // ])
+        } else {
+            skip();
+        }
+    }
+
+    const queueLoading = reordering || somethingPressed;
 
     return (
         <DisplayOrLoading condition={ready} loadingScreen={<LoadingScreen />}>
-            <div className="App-body-top">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: "100%", padding: padding, backgroundColor: "#0001" }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <SmallLogo />
-                        <span className="App-montserrat-normaltext" style={{ paddingLeft: padding, fontWeight: 'bold', color: "#fff8" }}>Biz Dashboard</span>
-                    </div>
-                    <div>
-                        <SearchBar />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <span style={{ paddingRight: padding, fontWeight: 'bold' }}>Bar's ID: {bar.business_id}</span>
-                        <ProfileButton position="relative" name={bar.business_name}></ProfileButton>
-                    </div>
-                </div>
-                <div className="App-dashboard-grid" style={{ overflow: 'hidden' }}>
-                    <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll', position: 'relative' }}>
-                        {queueLoading ? <div style={{ position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background + "88" }}>
-                            <Spinner />
-                        </div> : <></>}
-                        <div style={{ paddingBottom: padding }} />
-                        <PlaybackComponent setDisableTyping={setDisableTyping} />
-                        {currentlyPlaying ?
-                            <Queue disable={reordering} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} reorderQueue={async () => {
-                                console.log('reordering', reordering)
-
-                                if (!reordering) {
-                                    try {
-                                        await reorderQueue();
-                                        setReordering(false);
-                                    }
-                                    catch (e) {
-                                        setReordering(false);
-                                        throw e;
-                                    }
-                                }
-                            }} />
-                            :
-                            <NotPlaying />
-                        }
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden' }}>
-                        <div style={{ flex: 1, height: "100%", overflowY: 'scroll' }}>
-                            <Requests />
+            <>
+                <AlertModal onHide={() => setAlertContent(undefined)} content={alertContent} />
+                <div className="App-body-top">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: "100%", padding: padding, backgroundColor: "#0001" }}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <SmallLogo />
+                            <span className="App-montserrat-normaltext" style={{ paddingLeft: padding, fontWeight: 'bold', color: "#fff8" }}>Biz Dashboard</span>
                         </div>
-                        <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
-                            <Toggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
-                                await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
-                                setToggles(...await getToggles(usc));
-                            }} />
-                            <div style={{ paddingLeft: padding }} />
-                            <Dropdown>
-                                <Dropdown.Toggle variant="primary" style={{ height: "100%" }} id="dropdown-basic">
-                                    {acceptRadioValue === "Manual" ? "Manually accept" :
-                                        acceptRadioValue === "Auto" ? "Auto-accept" :
-                                            acceptRadioValue === "TipzyAI" ? "Tipzy decides" : "..."}
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu variant="dark">
-                                    <Dropdown.Item onClick={async () => onSetAccept("Manual")}>Manually accept</Dropdown.Item>
-                                    <Dropdown.Item onClick={async () => onSetAccept("Auto")}>Auto-accept</Dropdown.Item>
-                                    <Dropdown.Item onClick={async () => onSetAccept("TipzyAI")}>Let Tipzy Decide</Dropdown.Item>
-                                </Dropdown.Menu>
-                            </Dropdown>
-                            {/* <Toggle title="Auto-accept" value={toggleAutoRequests} onClick={async () => {
+                        <div>
+                            <SearchBar />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <span style={{ paddingRight: padding, fontWeight: 'bold' }}>Bar's ID: {bar.business_id}</span>
+                            <ProfileButton position="relative" name={bar.business_name}></ProfileButton>
+                        </div>
+                    </div>
+                    <div className="App-dashboard-grid" style={{ overflow: 'hidden' }}>
+                        <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll', position: 'relative' }}>
+                            {queueLoading ? <div style={{ position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background + "88" }}>
+                                <Spinner />
+                            </div> : <></>}
+                            <div style={{ paddingBottom: padding }} />
+                            <PlaybackComponent setDisableTyping={setDisableTyping} />
+                            {currentlyPlaying ?
+                                <Queue pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
+                                    console.log('reordering', reordering)
+
+                                    if (!reordering) {
+                                        try {
+                                            await reorderQueue();
+                                            setReordering(false);
+                                        }
+                                        catch (e) {
+                                            setReordering(false);
+                                            throw e;
+                                        }
+                                    }
+                                }} />
+                                :
+                                <NotPlaying />
+                            }
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden' }}>
+                            <div style={{ flex: 1, height: "100%", overflowY: 'scroll' }}>
+                                <Requests />
+                            </div>
+                            <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
+                                <Toggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
+                                    await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
+                                    setToggles(...await getToggles(usc));
+                                }} />
+                                <div style={{ paddingLeft: padding }} />
+                                <Dropdown>
+                                    <Dropdown.Toggle variant="primary" style={{ height: "100%" }} id="dropdown-basic">
+                                        {acceptRadioValue === "Manual" ? "Manually accept" :
+                                            acceptRadioValue === "Auto" ? "Auto-accept" :
+                                                acceptRadioValue === "TipzyAI" ? "Tipzy decides" : "..."}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu variant="dark">
+                                        <Dropdown.Item onClick={async () => onSetAccept("Manual")}>Manually accept</Dropdown.Item>
+                                        <Dropdown.Item onClick={async () => onSetAccept("Auto")}>Auto-accept</Dropdown.Item>
+                                        <Dropdown.Item onClick={async () => onSetAccept("TipzyAI")}>Let Tipzy Decide</Dropdown.Item>
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                                {/* <Toggle title="Auto-accept" value={toggleAutoRequests} onClick={async () => {
                                 await setAutoAcceptingRequests(usc, !toggleAutoRequests);
                                 setToggles(...await getToggles(usc));
                             }} /> */}
-                            <div style={{ paddingLeft: padding }} />
-                            <Toggle title="Take requests" value={toggleAllowRequests} onClick={async () => {
-                                await setAllowingRequests(usc, !toggleAllowRequests);
-                                setToggles(...await getToggles(usc));
-                            }} />
+                                <div style={{ paddingLeft: padding }} />
+                                <Toggle title="Take requests" value={toggleAllowRequests} onClick={async () => {
+                                    await setAllowingRequests(usc, !toggleAllowRequests);
+                                    setToggles(...await getToggles(usc));
+                                }} />
+                            </div>
                         </div>
-                    </div>
-                    <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll' }}>
-                        <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
-                        {/* <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} /> */}
-                        <div style={{ paddingBottom: padding }} />
-                        <div style={{ display: "flex" }}>
-                            <Toggle title="DJ Mode" disabled value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></Toggle>
+                        <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll' }}>
+                            <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
+                            {/* <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} /> */}
+                            <div style={{ paddingBottom: padding }} />
+                            <div style={{ display: "flex" }}>
+                                <Toggle title="DJ Mode" disabled value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></Toggle>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </>
         </DisplayOrLoading>
     )
 }
@@ -729,7 +809,7 @@ const getStats = async (usc: UserSessionContextType): Promise<FinanceStatsType |
 
 // const getQueueIsLocked = async (resetAnyway?: boolean, resetSomethingPressed?: boolean): Promise<{ isLocked: boolean | undefined, top: SongType | undefined }> => {
 
-const getQueue = async (usc: UserSessionContextType): Promise<[NowPlayingType | undefined, SongType[] | undefined, { isLocked: boolean | undefined, top: SongType | undefined }]> => {
+const getQueue = async (usc: UserSessionContextType): Promise<[CurrentlyPlayingType | undefined, SongType[] | undefined, { isLocked: boolean | undefined, top: SongType | undefined }]> => {
     return fetchWithToken(usc, `business/queue/`, 'GET').then(response => response.json())
         .then(json => {
             if (!json.data) {
@@ -740,17 +820,18 @@ const getQueue = async (usc: UserSessionContextType): Promise<[NowPlayingType | 
 
             const npD = data.now_playing;
             const npS: SongType | undefined = npD ? parseSongJson(npD) : undefined;
-            const np: NowPlayingType | undefined = npS ? [npS, { progressMs: npD.progress_ms, durationMs: npD.duration_ms }] : undefined;
+
+            const paused = npD ? npD.state === "paused" : true;
+
+            const np: CurrentlyPlayingType | undefined = npS ? [npS, { progressMs: npD.progress_ms, durationMs: npD.duration_ms, paused: paused }] : undefined;
             const qD = data.queue;
             const q: SongType[] = [];
             qD.forEach((e: any) => {
                 const song: SongType = parseSongJson(e);
                 q.push(song);
             })
-            // console.log("refreshed")
 
-
-            return [np, q, { isLocked: isLocked, top: q[0] }]
+            return [np, q, { isLocked: isLocked, top: q[0] }];
         })
 }
 

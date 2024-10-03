@@ -10,6 +10,8 @@ import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import TZButton from "../../components/TZButton";
 import { CurrentlyPlayingType } from "./Dashboard";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faForwardStep, faPause, faPlay, IconDefinition } from "@fortawesome/free-solid-svg-icons";
 
 
 type SongDraggableType = SongType// { id: string, song: SongType }
@@ -28,19 +30,37 @@ interface Item {
 };
 
 type QueueProps = {
+    pauseOverride?: boolean;
     current: CurrentlyPlayingType,
     queueOrder: [SongType[], React.Dispatch<React.SetStateAction<SongType[]>>],
     editingQueue: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
     songDims?: number,
     reorderQueue: () => Promise<any>,
     disable?: boolean,
+    onPauseClick: () => any,
+    onSkipClick: () => any,
+}
+
+function PlaybackButton(props: { icon: IconDefinition, onClick: () => any, disable?: boolean }) {
+    const fdim = useFdim();
+    const iconsize = fdim / 30;
+
+    const [hovered, setHovered] = useState(0);
+
+    return (
+        <div onClick={() => {
+            if (!props.disable) props.onClick();
+        }} style={{ opacity: props.disable ? 1 : 1 - hovered * 0.5 }} onMouseDown={() => setHovered(1)} onMouseUp={() => setHovered(0.5)} onMouseEnter={() => setHovered(0.5)} onMouseLeave={() => setHovered(0)}>
+            <FontAwesomeIcon fontSize={iconsize} icon={props.icon} />
+        </div>
+    )
 }
 
 export default function Queue(props: QueueProps) {
     // const queue = props.queue;
     const current = props.current[0];
     const progress = props.current[1];
-    const fdim = useFdim();
+    const paused = props.pauseOverride === undefined ? progress.paused : props.pauseOverride;
 
     const queueOrder = props.queueOrder[0];
     const [editingQueue, setEditingQueue] = props.editingQueue;
@@ -64,7 +84,17 @@ export default function Queue(props: QueueProps) {
             <span className="App-montserrat-normaltext" style={{ paddingBottom: 7 }}>Now playing:</span>
             <div style={{ paddingBottom: padding }} />
             <div style={{ padding: padding, backgroundColor: "#fff1", borderRadius: radius }}>
-                <Song song={current ?? { title: "No song playing", artists: ["No artist"], id: "", albumart: "", explicit: false }} dims={props.songDims}></Song>
+                <div style={{ display: 'flex' }}>
+                    <div style={{ flexGrow: 1, width: '100%' }}>
+                        <Song song={current ?? { title: "No song playing", artists: ["No artist"], id: "", albumart: "", explicit: false }} dims={props.songDims}></Song>
+                    </div>
+                    <div style={{ width: "100%", display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, paddingLeft: padding, paddingRight: padding }}>
+                        <PlaybackButton icon={paused ? faPlay : faPause} disable={props.disable} onClick={props.onPauseClick} />
+                        <div style={{ width: padding * 2 }} />
+                        <PlaybackButton icon={faForwardStep} disable={props.disable} onClick={props.onSkipClick} />
+                    </div>
+
+                </div>
                 {progress ?
                     <>
                         <div style={{ paddingBottom: padding }} />
@@ -73,6 +103,7 @@ export default function Queue(props: QueueProps) {
                         </div>
                     </> : <></>}
             </div>
+
             <div style={{ paddingBottom: padding * 2 }} />
             {
                 editingQueue ?
