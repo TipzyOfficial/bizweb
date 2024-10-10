@@ -2,7 +2,7 @@ import { Input as BaseInput, InputProps } from '@mui/base/Input';
 import { TextareaAutosize } from '@mui/base/TextareaAutosize';
 import { styled } from '@mui/system';
 import React from 'react';
-import { Colors, radius } from '../lib/Constants';
+import { Colors, padding, radius } from '../lib/Constants';
 
 export const Input = React.forwardRef(function CustomInput(
     props: InputProps & { focused?: boolean },
@@ -15,26 +15,25 @@ export const Input = React.forwardRef(function CustomInput(
     // const onBlur = props.onBlur;
 
     return (
-        <div style={{
-            paddingLeft: borderWidth, paddingRight: borderWidth, paddingBottom: borderWidth, paddingTop: borderWidth + 0.5,
+        <div id={"outer"} style={{
+            padding: borderWidth,
             borderRadius: radius
-        }} className={props.focused ? "App-animated-gradient-light" : "App-animated-gradient"}>
-            <div style={{ width: "100%", borderRadius: radius - borderWidth, backgroundColor: Colors.background, overflow: 'hidden' }}>
-
+        }}
+            className={props.focused ? "App-animated-gradient-light" : "App-animated-gradient"}
+        >
+            <div style={{
+                width: (document.getElementById("outer")?.clientWidth ?? 0) - borderWidth * 2 - 1,
+                borderRadius: radius - borderWidth,
+                backgroundColor: Colors.background,
+                overflow: 'hidden'
+            }}>
                 <BaseInput
                     slots={{
                         root: RootDiv,
                         input: 'input',
                         textarea: TextareaElement,
                     }}
-                    // onFocus={(e) => {
-                    //     setFocused(true);
-                    //     if (onFocus) onFocus(e);
-                    // }}
-                    // onBlur={(e) => {
-                    //     setFocused(false);
-                    //     if (onBlur) onBlur(e);
-                    // }}
+                    style={{ borderRadius: radius }}
                     ref={ref}
                     {...props}
                 />
@@ -52,7 +51,7 @@ const TextareaElement = styled(TextareaAutosize)(
     ({ theme }) => `
     width: 100%;
     resize: none;
-    padding: 20px;
+    padding: ${padding}px;
     border-width: 0;
     border-radius: 0;
     color: ${"white"};

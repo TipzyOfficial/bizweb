@@ -66,7 +66,7 @@ export function PlaylistGenerator(props: { setDisableTyping: (b: boolean) => any
                 <Input
                     placeholder="What do you want to listen to?"
                     value={prompt} onChange={(e) => setPrompt(e.target.value)}
-                    style={{ fontSize: 25 }}
+                    style={{ fontSize: 20 }}
                     multiline
                     maxRows={5}
                     focused={focused}
