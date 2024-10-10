@@ -109,6 +109,7 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
     const [password, setPassword] = useState("");
     const [playlists, setPlaylists] = useState<PlaylistType[] | undefined>(undefined);
     const [done, setDone] = useState(false);
+    const [toggleLogin, setToggleLogin] = useState(false);
 
     const playlistPage = () => {
         setPage(1);
@@ -195,6 +196,7 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
     return (
         <Modal show={props.show} data-bs-theme={"dark"}
             onShow={() => {
+                setToggleLogin(false);
                 setLoginLoading(false);
                 setDone(false);
                 setPage(0);
@@ -208,18 +210,24 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
                     <div style={{ paddingTop: padding, paddingBottom: padding }}>
                         <TZButton title="Select Playlist" backgroundColor="#f23440" onClick={() => playlistPage()}></TZButton>
                     </div>
-                    {props.streaming ? "You're using your most recent Soundtrack credentials right now, but here is the log in screen you need to log in again for any reason." : "To select a Soundtrack playlist, please log in to Soundtrack first."} We won't store your login details!
-                    <div style={{ paddingTop: padding }}></div>
-                    <input className="input" style={{ width: "100%" }} placeholder="email@address.com" onChange={(e) => setEmail(e.target.value)} />
-                    <div style={{ paddingTop: padding }}></div>
-                    <input className="input" style={{ width: "100%" }} placeholder="Password" type="password" onChange={(e) => setPassword(e.target.value)} />
-                    <div style={{ paddingTop: padding }}></div>
-                    <TZButton title="Sign in to Soundtrack" backgroundColor="#f23440"
-                        loading={loginLoading}
-                        onClick={() =>
-                            onLoginSoundtrack().catch(e => { alert(`Login failed. Check if your credentials are entered in correctly. If you still have issues, contact support. (${e})`); setLoginLoading(false); })
-                        }
-                    />
+                    {props.streaming && !toggleLogin ?
+                        <span style={{ color: Colors.primaryRegular, cursor: 'pointer' }} onClick={() => setToggleLogin(true)}>Not logged into Soundtrack?</span>
+                        :
+                        <>
+                            {props.streaming ? "You're using your most recent Soundtrack credentials right now, but here is the sign-in screen in case you've run into any problems." : "To select a Soundtrack playlist, please log in to Soundtrack first."} We won't store your login details!
+                            <div style={{ paddingTop: padding }}></div>
+                            <input className="input" style={{ width: "100%" }} placeholder="email@address.com" onChange={(e) => setEmail(e.target.value)} />
+                            <div style={{ paddingTop: padding }}></div>
+                            <input className="input" style={{ width: "100%" }} placeholder="Password" type="password" onChange={(e) => setPassword(e.target.value)} />
+                            <div style={{ paddingTop: padding }}></div>
+                            <TZButton title="Sign in to Soundtrack" backgroundColor="#f23440"
+                                loading={loginLoading}
+                                onClick={() =>
+                                    onLoginSoundtrack().catch(e => { alert(`Login failed. Check if your credentials are entered in correctly. If you still have issues, contact support. (${e})`); setLoginLoading(false); })
+                                }
+                            />
+                        </>
+                    }
                 </Modal.Body>
                 :
                 <Modal.Body style={{ color: "white" }}>

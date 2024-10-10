@@ -24,6 +24,7 @@ import Price from "./Price";
 import useWindowDimensions from "../../lib/useWindowDimensions";
 import { router } from "../../App";
 import { AlertContentType, AlertModal } from "../../components/Modals";
+import { PlaylistGenerator } from "./PlaylistGenerator";
 
 const cookies = getCookies();
 
@@ -375,9 +376,25 @@ export default function Dashboard() {
         const outlineColor = Colors.tertiaryDark;
         return (
             <div style={{ width: "100%", height: "100%", paddingRight: padding }}>
-                <TZHeader title="Requests" backgroundColor={Colors.darkBackground} leftComponent={
-                    <RejectAllButton onClick={rejectAll} />
-                }></TZHeader>
+                <TZHeader title="Requests" backgroundColor={Colors.darkBackground}
+                    leftComponent={
+                        <RejectAllButton onClick={rejectAll} />
+                    }
+                    rightComponent={
+                        <Dropdown>
+                            <Dropdown.Toggle variant="primary" style={{ height: "100%" }} id="dropdown-basic">
+                                {acceptRadioValue === "Manual" ? "Manually accept" :
+                                    acceptRadioValue === "Auto" ? "Auto-accept" :
+                                        acceptRadioValue === "TipzyAI" ? "Tipzy decides" : "..."}
+                            </Dropdown.Toggle>
+                            <Dropdown.Menu variant="dark">
+                                <Dropdown.Item onClick={async () => onSetAccept("Manual")}>Manually accept</Dropdown.Item>
+                                <Dropdown.Item onClick={async () => onSetAccept("Auto")}>Auto-accept</Dropdown.Item>
+                                <Dropdown.Item onClick={async () => onSetAccept("TipzyAI")}>Let Tipzy Decide</Dropdown.Item>
+                            </Dropdown.Menu>
+                        </Dropdown>
+                    }
+                ></TZHeader>
                 {currentlyPlaying ?
                     (songRequests.length > 0 ?
                         <div style={{ paddingBottom: padding, paddingLeft: padding, paddingRight: padding, width: "100%" }}>
@@ -563,8 +580,8 @@ export default function Dashboard() {
                         {queueLoading ? <div style={{ position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background + "88" }}>
                             <Spinner />
                         </div> : <></>}
+                        <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
                         <div style={{ paddingBottom: padding }} />
-                        <PlaybackComponent setDisableTyping={setDisableTyping} />
                         {currentlyPlaying ?
                             <Queue pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
                                 console.log('reordering', reordering)
@@ -594,18 +611,9 @@ export default function Dashboard() {
                                 setToggles(...await getToggles(usc));
                             }} />
                             <div style={{ paddingLeft: padding }} />
-                            <Dropdown>
-                                <Dropdown.Toggle variant="primary" style={{ height: "100%" }} id="dropdown-basic">
-                                    {acceptRadioValue === "Manual" ? "Manually accept" :
-                                        acceptRadioValue === "Auto" ? "Auto-accept" :
-                                            acceptRadioValue === "TipzyAI" ? "Tipzy decides" : "..."}
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu variant="dark">
-                                    <Dropdown.Item onClick={async () => onSetAccept("Manual")}>Manually accept</Dropdown.Item>
-                                    <Dropdown.Item onClick={async () => onSetAccept("Auto")}>Auto-accept</Dropdown.Item>
-                                    <Dropdown.Item onClick={async () => onSetAccept("TipzyAI")}>Let Tipzy Decide</Dropdown.Item>
-                                </Dropdown.Menu>
-                            </Dropdown>
+                            <div style={{ display: "flex" }}>
+                                <Toggle title="DJ Mode" disabled value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></Toggle>
+                            </div>
                             {/* <Toggle title="Auto-accept" value={toggleAutoRequests} onClick={async () => {
                                 await setAutoAcceptingRequests(usc, !toggleAutoRequests);
                                 setToggles(...await getToggles(usc));
@@ -618,12 +626,10 @@ export default function Dashboard() {
                         </div>
                     </div>
                     <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll' }}>
-                        <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
+                        <PlaybackComponent setDisableTyping={setDisableTyping} />
+                        <PlaylistGenerator setDisableTyping={setDisableTyping} />
                         {/* <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} /> */}
                         <div style={{ paddingBottom: padding }} />
-                        <div style={{ display: "flex" }}>
-                            <Toggle title="DJ Mode" disabled value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></Toggle>
-                        </div>
                     </div>
                 </div>
                 <AlertModal onHide={() => setAlertContent(undefined)} content={alertContent} />

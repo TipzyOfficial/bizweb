@@ -102,7 +102,7 @@ export default function Queue(props: QueueProps) {
                     </> : <></>}
             </div>
 
-            <div style={{ paddingBottom: padding * 2 }} />
+            <div style={{ paddingBottom: padding }} />
             {
                 editingQueue ?
                     <div style={{ display: 'flex' }}>

@@ -247,11 +247,27 @@
   font-style: normal;
 }
 
+.App-montserrat-aitext {
+  font-size: calc(15px + 0.5vmin);
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+  background: linear-gradient(90deg, #FCC679, #e293ae);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+}
+
 .App-montserrat-smallertext {
   font-size: calc(12px + 0.5vmin);
   font-family: "Montserrat", sans-serif;
   font-optical-sizing: auto;
   font-style: normal;
+}
+
+.App-modal .modal-content {
+  background-color: #17171E;
 }
 
 .App-animated-gradient {
@@ -265,23 +281,19 @@
   transition: width .2s;
 }
 
-.App-modal .modal-content {
-  background-color: #17171E;
-}
-
-.App-animated-gradient-fast {
-  background: linear-gradient(90deg, #D98205, #CA3C6D, #D98205);
+.App-animated-gradient-light {
+  background: linear-gradient(90deg, #FCC679, #e293ae, #FCC679);
   /* background: linear-gradient(90deg, #FCC679, #d5648b, #FCC679); */
   background-size: 200% 200%;
-  -webkit-animation: Animation 2s ease infinite;
-  -moz-animation: Animation 2s ease infinite;
-  animation: Animation 2s ease infinite;
+  -webkit-animation: Animation 3s ease infinite;
+  -moz-animation: Animation 3s ease infinite;
+  animation: Animation 3s ease infinite;
   -webkit-transition: .2s;
   transition: width .2s;
 }
 
-.App-animated-gradient-fast-light {
-  background: linear-gradient(90deg, #FCC679, #e293ae, #FCC679);
+.App-animated-gradient-fast {
+  background: linear-gradient(90deg, #D98205, #CA3C6D, #D98205);
   /* background: linear-gradient(90deg, #FCC679, #d5648b, #FCC679); */
   background-size: 200% 200%;
   -webkit-animation: Animation 2s ease infinite;

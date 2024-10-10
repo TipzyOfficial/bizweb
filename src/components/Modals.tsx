@@ -39,7 +39,6 @@ export const AlertModal = (props: AlertModalProps) => {
             // backdrop="static"
             // keyboard={false}
             onExited={() => {
-                console.log("setclosing false")
                 setClosing(false);
                 props.onHide();
             }}
