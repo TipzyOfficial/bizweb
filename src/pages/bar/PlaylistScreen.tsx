@@ -14,14 +14,42 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircle as faCircleEmpty } from "@fortawesome/free-regular-svg-icons";
 import { faCircle as faCircleFilled, faQuestion, faQuestionCircle, faWarning, faX, faXmark, faXmarkCircle } from "@fortawesome/free-solid-svg-icons";
 import _ from "lodash";
+import PlaybackComponent from "./PlaybackComponent";
 
+const TabButton = (props: { tab: number, id: number, onClick: (v: number) => any, text: string }) => {
+    const [opacity, setOpacity] = useState(1);
 
-export function PlaylistGenerator(props: { setDisableTyping: (b: boolean) => any }) {
+    return (
+        <div style={{
+            width: "100%", padding: padding, opacity: opacity, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer',
+            backgroundColor: props.tab === props.id ? "#FFF1" : "#FFF0", color: props.tab === props.id ? "#FFF" : "#FFFA",
+        }}
+            onPointerLeave={() => {
+                setOpacity(1);
+            }}
+            onPointerEnter={() => {
+                setOpacity(0.85);
+            }}
+            onPointerDown={() => {
+                setOpacity(0.5);
+            }}
+            onPointerUp={() => {
+                setOpacity(1);
+            }}
+            onClick={() => props.onClick(props.id)}
+        >
+            <span className="App-tertiarytitle">{props.text}</span>
+        </div>
+    )
+}
+
+export function PlaylistScreen(props: { setDisableTyping: (b: boolean) => any }) {
     const [focused, setFocusedIn] = useState(false);
     const [loading, setLoading] = useState(false);
     const [prompt, setPrompt] = useState("");
     const [show, setShow] = useState(false);
     const [songs, setSongs] = useState<SongType[] | undefined | null>(undefined);
+    const [tab, setTab] = useState(0);
     // const [selectedSongs, setSelectedSongs] = useState<Set<string>>(new Set([]));
     const usc = useContext(UserSessionContext)
 
@@ -58,33 +86,46 @@ export function PlaylistGenerator(props: { setDisableTyping: (b: boolean) => any
     }
 
     return (
-        <div
-            style={{ width: "100%", display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center' }}>
-            <span className="App-montserrat-aitext" style={{ fontWeight: 'bold' }}>✨ Find songs that match your vibe ✨</span>
-            <span className="App-smalltext" style={{ paddingBottom: padding, textAlign: 'center' }}>Using AI, you can find songs you like instantly from a single prompt!</span>
-            <div style={{ width: "75%" }}>
-                <Input
-                    placeholder="What do you want to listen to?"
-                    value={prompt} onChange={(e) => setPrompt(e.target.value)}
-                    style={{ fontSize: 20 }}
-                    multiline
-                    maxRows={5}
-                    focused={focused}
-                    onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-                />
-                <div style={{ height: padding }}></div>
-                <TZButton title="Generate" loading={loading} onClick={onSubmit}></TZButton>
+        <>
+            <div style={{ display: 'flex', width: "100%", paddingBottom: padding }}>
+                <TabButton text="By You ✨" tab={tab} id={0} onClick={setTab}></TabButton>
+                <TabButton text="Playlists" tab={tab} id={1} onClick={setTab}></TabButton>
             </div>
-            <PGMMemo prompt={prompt} show={show}
-                onHide={() => {
-                    setShow(false);
-                    setTimeout(() => { setLoading(false); }, 1000);
-                }} songs={songs}
-            // selectedSongs={selectedSongs} setSelectedSongs={setSelectedSongs} 
-            />
-        </div>
+            <div
+                style={{ width: "100%", display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center', paddingLeft: padding, paddingRight: padding }}>
+
+                {tab === 0 ? //AI SCREEN
+                    <>
+                        <span className="App-montserrat-aitext" style={{ fontWeight: 'bold' }}>✨ Find songs that match your vibe ✨</span>
+                        <span className="App-smalltext" style={{ paddingBottom: padding, textAlign: 'center' }}>Using AI, you can find songs you like instantly from a single prompt!</span>
+                        <div style={{ width: "75%" }}>
+                            <Input
+                                placeholder="What do you want to listen to?"
+                                value={prompt} onChange={(e) => setPrompt(e.target.value)}
+                                style={{ fontSize: 20 }}
+                                multiline
+                                maxRows={5}
+                                focused={focused}
+                                onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+                            />
+                            <div style={{ height: padding }}></div>
+                            <TZButton title="Generate" loading={loading} onClick={onSubmit}></TZButton>
+                        </div>
+                        <PGMMemo prompt={prompt} show={show}
+                            onHide={() => {
+                                setShow(false);
+                                setTimeout(() => { setLoading(false); }, 1000);
+                            }} songs={songs}
+                        />
+                    </>
+
+                    : <PBCMemo setDisableTyping={setDisableTyping} />}
+            </div>
+        </>
     );
 }
+
+const PBCMemo = memo(PlaybackComponent);
 
 const PGMMemo = memo(PlaylistGeneratorModal, (a, b) => {
     return a.songs === b.songs &&

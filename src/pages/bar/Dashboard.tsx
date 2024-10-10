@@ -24,7 +24,7 @@ import Price from "./Price";
 import useWindowDimensions from "../../lib/useWindowDimensions";
 import { router } from "../../App";
 import { AlertContentType, AlertModal } from "../../components/Modals";
-import { PlaylistGenerator } from "./PlaylistGenerator";
+import { PlaylistScreen } from "./PlaylistScreen";
 
 const cookies = getCookies();
 
@@ -625,9 +625,8 @@ export default function Dashboard() {
                             }} />
                         </div>
                     </div>
-                    <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll' }}>
-                        <PlaybackComponent setDisableTyping={setDisableTyping} />
-                        <PlaylistGenerator setDisableTyping={setDisableTyping} />
+                    <div style={{ height: "100%", overflowY: 'scroll' }}>
+                        <PlaylistScreen setDisableTyping={setDisableTyping} />
                         {/* <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} /> */}
                         <div style={{ paddingBottom: padding }} />
                     </div>
