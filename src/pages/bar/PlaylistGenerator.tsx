@@ -12,7 +12,7 @@ import { Modal, Spinner } from "react-bootstrap";
 import Song from "../../components/Song";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircle as faCircleEmpty } from "@fortawesome/free-regular-svg-icons";
-import { faCircle as faCircleFilled, faWarning } from "@fortawesome/free-solid-svg-icons";
+import { faCircle as faCircleFilled, faQuestion, faQuestionCircle, faWarning, faX, faXmark, faXmarkCircle } from "@fortawesome/free-solid-svg-icons";
 import _ from "lodash";
 
 
@@ -47,13 +47,14 @@ export function PlaylistGenerator(props: { setDisableTyping: (b: boolean) => any
     }
 
     const onSubmit = async () => {
+        if (prompt.length === 0) return;
         if (loading) return;
         setSongs(undefined);
         setShow(true);
         setLoading(true);
         const s = await generatePlaylist().catch(e => { console.log("Error generating", e); return null });
         setSongs(s);
-        setLoading(false)
+        setLoading(false);
     }
 
     return (
@@ -74,7 +75,11 @@ export function PlaylistGenerator(props: { setDisableTyping: (b: boolean) => any
                 <div style={{ height: padding }}></div>
                 <TZButton title="Generate" loading={loading} onClick={onSubmit}></TZButton>
             </div>
-            <PGMMemo prompt={prompt} show={show} setShow={setShow} songs={songs}
+            <PGMMemo prompt={prompt} show={show}
+                onHide={() => {
+                    setShow(false);
+                    setTimeout(() => { setLoading(false); }, 1000);
+                }} songs={songs}
             // selectedSongs={selectedSongs} setSelectedSongs={setSelectedSongs} 
             />
         </div>
@@ -84,13 +89,13 @@ export function PlaylistGenerator(props: { setDisableTyping: (b: boolean) => any
 const PGMMemo = memo(PlaylistGeneratorModal, (a, b) => {
     return a.songs === b.songs &&
         a.show === b.show &&
-        a.setShow === b.setShow
+        a.onHide === b.onHide
     // && a.selectedSongs === b.selectedSongs &&
     // a.setSelectedSongs === b.setSelectedSongs;
 });
 
 function PlaylistGeneratorModal(props: {
-    prompt: string, show: boolean, setShow: (b: boolean) => any, songs: SongType[] | undefined | null,
+    prompt: string, show: boolean, onHide: () => any, songs: SongType[] | undefined | null,
     // selectedSongs: Set<string>, setSelectedSongs: (s: Set<string>) => any 
 }) {
     const songs = props.songs;
@@ -128,15 +133,17 @@ function PlaylistGeneratorModal(props: {
     }
 
     return (
-        <Modal centered show={props.show} onHide={() => {
+        <Modal centered show={props.show} backdrop="static" onHide={() => {
             setSelectedSongs(new Set<string>());
-            props.setShow(false);
+            props.onHide();
         }} data-bs-theme={"dark"} size={"lg"} >
-            {songs ?
-                <Modal.Title>
-                    <div style={{ padding: padding, display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: "white" }}>
-                        <span>Results for "{props.prompt}"</span>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', flex: 1 }}>
+            <Modal.Header closeButton style={{ color: "white", }}>
+                <span className="onelinetextplain" style={{ fontSize: "calc(15px + 0.5vmin)", height: "100%", textOverflow: 'ellipsis' }}>Results for "{props.prompt}"</span>
+            </Modal.Header>
+            <div style={{ position: "relative", display: 'flex', justifyContent: 'flex-start', alignItems: 'center', color: "white" }}>
+                {songs && songs.length !== 0 ?
+                    <>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', flex: 1, position: 'absolute', zIndex: 100, top: padding, right: padding }}>
                             <div>
                                 <TZButton backgroundColor={Colors.green} title="Select all" fontSize={15} onClick={onSelectAllClick}></TZButton>
                             </div>
@@ -145,31 +152,49 @@ function PlaylistGeneratorModal(props: {
                                 <TZButton backgroundColor={Colors.red} title="Deselect all" fontSize={15} onClick={onDeselectAllClick}></TZButton>
                             </div>
                         </div>
-                    </div>
-                </Modal.Title>
-                : <></>
-            }
-            <Modal.Body style={{ color: "white", overflow: 'scroll', maxHeight: window.screen.height * 0.6, padding: 0 }}>
+                    </>
+                    : <></>
+                }
+            </div>
+
+            <Modal.Body style={{ color: "white", overflow: 'scroll', maxHeight: window.screen.height * 0.62, padding: 0 }}>
                 {songs ?
-                    songs.map((song) => <PGMRenderItem song={song} setSelected={(b) => setSelected(b, song)} selectedSongs={selectedSongs} />)
-                    :
-                    songs === null ?
-                        <div style={{ padding: padding, width: "100%", display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                            <FontAwesomeIcon icon={faWarning} color="white"></FontAwesomeIcon>
-                            <span>Unfortunately, there was an error getting your songs. Please try again.</span>
+                    songs.length === 0 ?
+                        <div style={{
+                            paddingLeft: padding, paddingRight: padding, paddingTop: padding * 2, paddingBottom: padding * 2,
+                            width: "100%", display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'
+                        }}>
+                            <FontAwesomeIcon icon={faQuestionCircle} color="white"></FontAwesomeIcon>
+                            <div style={{ height: padding }} />
+                            <span className="App-smalltext" style={{ textAlign: 'center' }}>Hm. We can't seem to find any songs matching that prompt.<br />Try telling us the general atmopshere you want, and artists/genres that you want included.</span>
                         </div>
                         :
-                        <div style={{ padding: padding, width: "100%", minHeight: window.screen.height * 0.3, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                            <Spinner />
+                        <>
                             <div style={{ height: padding }} />
-                            <span>Hang on...this may take a moment.</span>
-                        </div>
+                            {songs.map((song) => <PGMRenderItem song={song} setSelected={(b) => setSelected(b, song)} selectedSongs={selectedSongs} />)}
+                        </>
+                    :
+                    <div style={{ padding: padding, width: "100%", minHeight: window.screen.height * 0.3, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                        {songs === null ?
+                            <>
+                                <FontAwesomeIcon icon={faWarning} color="white"></FontAwesomeIcon>
+                                <div style={{ height: padding }} />
+                                <span className="App-smalltext">Unfortunately, there was an error getting your songs. Please try again.</span>
+                            </>
+                            :
+                            <>
+                                <Spinner />
+                                <div style={{ height: padding }} />
+                                <span className="App-smalltext" >Hang on...this may take a moment.</span>
+                            </>
+                        }
+                    </div>
                 }
             </Modal.Body>
-            {songs ?
-                <Modal.Body style={{ color: "white", overflow: 'scroll', }}>
+            {songs && songs.length !== 0 ?
+                <Modal.Footer style={{ color: "white", overflow: 'scroll', }}>
                     <TZButton title={selectedSongs.size > 0 ? `Select ${selectedSongs.size} songs` : "Select songs"} onClick={onAddSongsClick} disabled={selectedSongs.size === 0} />
-                </Modal.Body>
+                </Modal.Footer>
                 : <></>}
         </Modal>
     )
