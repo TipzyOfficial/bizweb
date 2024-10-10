@@ -17,15 +17,18 @@ export const Input = React.forwardRef(function CustomInput(
     return (
         <div id={"outer"} style={{
             padding: borderWidth,
-            borderRadius: radius
+            borderRadius: radius,
+            margin: -borderWidth,
         }}
             className={props.focused ? "App-animated-gradient-light" : "App-animated-gradient"}
         >
             <div style={{
-                width: (document.getElementById("outer")?.clientWidth ?? 0) - borderWidth * 2 - 1,
+                width: "100%", //(document.getElementById("outer")?.clientWidth ?? 0) - borderWidth * 2 - 1,
                 borderRadius: radius - borderWidth,
                 backgroundColor: Colors.background,
-                overflow: 'hidden'
+                overflow: 'hidden',
+                border: `solid ${borderWidth}px transparent;`, /* !importanté */
+                backgroundClip: 'padding-box',
             }}>
                 <BaseInput
                     slots={{
@@ -38,7 +41,7 @@ export const Input = React.forwardRef(function CustomInput(
                     {...props}
                 />
             </div>
-        </div>
+        </div >
     );
 });
 

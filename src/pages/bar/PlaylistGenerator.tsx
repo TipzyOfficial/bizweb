@@ -100,7 +100,9 @@ function PlaylistGeneratorModal(props: {
 }) {
     const songs = props.songs;
     const [selectedSongs, setSelectedSongs] = useState<Set<string>>(new Set());
-    const [defaultSelect, setDefaultSelect] = useState(false); //dummy to basically force rerender
+    // const [defaultSelect, setDefaultSelect] = useState(false); //dummy to basically force rerender
+    const usc = useContext(UserSessionContext);
+    const [sending, setSending] = useState(false);
 
     const setSelected = (b: boolean, song: SongType) => {
         const s = _.cloneDeep(selectedSongs);
@@ -116,8 +118,43 @@ function PlaylistGeneratorModal(props: {
         // setChange(!change);
     }
 
-    const onAddSongsClick = () => {
-        alert(selectedSongs.size);
+    const addSongsToPlaylist = async (name: string, selectedSongs: string[]) => {
+        const sending = JSON.stringify({
+            name: name,
+            description: props.prompt,
+            track_ids: JSON.stringify(selectedSongs)
+        });
+
+        console.log("SENDING:", sending);
+
+        const json = await fetchWithToken(usc, `business/playlist/save/`, 'POST', sending).then(r => r.json());
+
+        const data = json.data;
+
+        if (json.status === 200) {
+            alert(`Successfully created ${data.name}, id: ${data.id}`);
+            props.onHide();
+        } else {
+            throw new Error(`Code ${json.status}: ${json.detail}${json.error}`)
+        }
+    }
+
+    const onAddSongsClick = async () => {
+        if (sending) return;
+        setSending(true);
+        //alert(selectedSongs.size);
+        const name = prompt("What do you want to call your playlist?");
+
+        const ids = [...selectedSongs];
+
+        if (name) {
+            await addSongsToPlaylist(name, ids).catch((e: Error) => {
+                alert(e.message.substring(0, 300));
+                console.log(e.message)
+            });
+        }
+
+        setSending(false);
     }
 
     const onSelectAllClick = () => {
@@ -193,7 +230,7 @@ function PlaylistGeneratorModal(props: {
             </Modal.Body>
             {songs && songs.length !== 0 ?
                 <Modal.Footer style={{ color: "white", overflow: 'scroll', }}>
-                    <TZButton title={selectedSongs.size > 0 ? `Select ${selectedSongs.size} songs` : "Select songs"} onClick={onAddSongsClick} disabled={selectedSongs.size === 0} />
+                    <TZButton title={selectedSongs.size > 0 ? `Create playlist with ${selectedSongs.size} songs` : "Select songs"} onClick={onAddSongsClick} loading={sending} disabled={selectedSongs.size === 0} />
                 </Modal.Footer>
                 : <></>}
         </Modal>
