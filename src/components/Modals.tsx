@@ -3,14 +3,16 @@ import { Modal } from "react-bootstrap"
 import TZButton from "./TZButton"
 import { Colors, padding } from "../lib/Constants"
 
+type AlertButtonType = {
+    text: string,
+    color?: string,
+    onClick?: () => any
+}
+
 export type AlertContentType = {
     title: string,
     text: string,
-    buttons?: {
-        text: string,
-        color?: string,
-        onClick?: () => any
-    }[]
+    buttons?: AlertButtonType[]
 } | undefined
 
 type AlertModalProps = {
@@ -34,6 +36,25 @@ export const AlertModal = (props: AlertModalProps) => {
 
     const buttons = props.content?.buttons;
 
+    const AlertButton = (props: { v: AlertButtonType, index: number }) => {
+        const [loading, setLoading] = useState(false);
+        const [v, index] = [props.v, props.index];
+
+        return (
+            <>
+                {index !== 0 ? <div style={{ width: padding }} /> : <></>}
+                <TZButton loading={loading} title={v.text} backgroundColor={v.color} onClick={async () => {
+                    setLoading(true);
+                    if (v.onClick) {
+                        await v.onClick().catch((e: Error) => { console.log(e); setLoading(false); });
+                    }
+                    setLoading(false);
+                    onHide();
+                }}></TZButton>
+            </>
+        )
+    }
+
     return (
         <Modal centered show={determineClose()} onHide={onHide}
             // backdrop="static"
@@ -56,14 +77,8 @@ export const AlertModal = (props: AlertModalProps) => {
                 </div>
                 <div style={{ display: 'flex', paddingTop: padding }}>
                     {buttons ?
-                        buttons.map((v, index) =>
-                            <>
-                                {index !== 0 ? <div style={{ width: padding }} /> : <></>}
-                                <TZButton title={v.text} backgroundColor={v.color} onClick={() => {
-                                    if (v.onClick) v.onClick();
-                                    onHide();
-                                }}></TZButton>
-                            </>)
+                        buttons.map((v, index) => <AlertButton v={v} index={index} />
+                        )
                         :
                         <TZButton title="Cancel" onClick={onHide} backgroundColor={Colors.red}></TZButton>
                     }

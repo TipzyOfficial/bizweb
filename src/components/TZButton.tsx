@@ -4,7 +4,7 @@ import { Spinner } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle as faSuccess, faXmarkCircle as faFailure } from '@fortawesome/free-solid-svg-icons';
 
-function TZButton(props: { onClick?: () => void; title?: string, backgroundColor?: string, width?: number | string, disabled?: boolean, fontSize?: number, color?: string, loading?: boolean, completed?: boolean, leftComponent?: JSX.Element }) {
+function TZButton(props: { onClick?: () => void; title?: string, backgroundColor?: string, width?: number | string, disabled?: boolean, fontSize?: number | string, color?: string, loading?: boolean, completed?: boolean, leftComponent?: JSX.Element }) {
     const [opacity, setOpacity] = useState(1);
 
     return (

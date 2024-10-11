@@ -9,19 +9,20 @@ import { UserSessionContext } from "../../lib/UserSessionContext";
 import { SongType } from "../../lib/song";
 import { parseSongJson } from "../../lib/utils";
 import { Modal, Spinner } from "react-bootstrap";
-import Song from "../../components/Song";
+import Song, { artistsStringListToString } from "../../components/Song";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircle as faCircleEmpty } from "@fortawesome/free-regular-svg-icons";
-import { faCircle as faCircleFilled, faQuestion, faQuestionCircle, faWarning, faX, faXmark, faXmarkCircle } from "@fortawesome/free-solid-svg-icons";
+import { faCircle as faCircleFilled, faCirclePlay, faCirclePlus, faQuestion, faQuestionCircle, faWarning, faX, faXmark, faXmarkCircle } from "@fortawesome/free-solid-svg-icons";
 import _ from "lodash";
 import PlaybackComponent from "./PlaybackComponent";
+import { AlertContentType } from "../../components/Modals";
 
 const TabButton = (props: { tab: number, id: number, onClick: (v: number) => any, text: string }) => {
     const [opacity, setOpacity] = useState(1);
 
     return (
         <div style={{
-            width: "100%", padding: padding, opacity: opacity, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer',
+            width: "100%", padding: padding, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer',
             backgroundColor: props.tab === props.id ? "#FFF1" : "#FFF0", color: props.tab === props.id ? "#FFF" : "#FFFA",
         }}
             onPointerLeave={() => {
@@ -43,16 +44,17 @@ const TabButton = (props: { tab: number, id: number, onClick: (v: number) => any
     )
 }
 
-export function PlaylistScreen(props: { setDisableTyping: (b: boolean) => any }) {
+export function PlaylistScreen(props: { setDisableTyping: (b: boolean) => any, setAlertContent: (a: AlertContentType) => any }) {
     const [focused, setFocusedIn] = useState(false);
     const [loading, setLoading] = useState(false);
     const [prompt, setPrompt] = useState("");
     const [show, setShow] = useState(false);
     const [songs, setSongs] = useState<SongType[] | undefined | null>(undefined);
     const [tab, setTab] = useState(0);
+    const [selectedSongs, setSelectedSongs] = useState<Set<string>>(new Set());
+
     // const [selectedSongs, setSelectedSongs] = useState<Set<string>>(new Set([]));
     const usc = useContext(UserSessionContext)
-
 
     const setDisableTyping = props.setDisableTyping;
 
@@ -85,38 +87,139 @@ export function PlaylistScreen(props: { setDisableTyping: (b: boolean) => any })
         setLoading(false);
     }
 
+    const onHide = () => {
+        setSongs(undefined);
+        setSelectedSongs(new Set<string>());
+        setTimeout(() => { setLoading(false); }, 1000);
+        setShow(false);
+    }
+
+    const onCancelClick = () => {
+        onHide();
+    }
+
+    const onSelectAllClick = () => {
+        if (songs) {
+            setSelectedSongs(new Set<string>(songs?.map(s => s.id)));
+        }
+    }
+
+    const onDeselectAllClick = () => {
+        if (songs) {
+            setSelectedSongs(new Set<string>());
+        }
+    }
+
+
+    const internalRequest = async (song: SongType) => {
+        const json = await fetchWithToken(usc, `business/request/`, 'POST', JSON.stringify({
+            track_id: song?.id ?? "",
+            track_name: song?.title ?? "No title",
+            artist: song ? artistsStringListToString(song.artists) : "No artist",
+            image_url: song?.albumart ?? "",
+            price: 0,
+            token_count: 0,
+            explicit: song.explicit,
+            duration_ms: song.duration,
+        })).then(r => r.json()).catch(() => { return { status: 501 } });
+
+        if (json.status === 200) {
+            alert(`Successfully queued up ${song.title} by ${artistsStringListToString(song.artists)}!`);
+        } else {
+            throw new Error(`Problem queueing that song: ${JSON.stringify(json)}`);
+        }
+    }
+
+    const onQueueClick = async (song: SongType) => {
+        props.setAlertContent({
+            title: "Queue Song", text: `You're about to queue ${song.title} by ${artistsStringListToString(song.artists)}.`,
+            buttons: [{ text: "Cancel", color: Colors.red }, { text: "Continue", color: Colors.tertiaryDark, onClick: () => internalRequest(song) }]
+        })
+        // await internalRequest(song);
+    }
+
     return (
         <>
-            <div style={{ display: 'flex', width: "100%", paddingBottom: padding }}>
-                <TabButton text="By You ✨" tab={tab} id={0} onClick={setTab}></TabButton>
-                <TabButton text="Playlists" tab={tab} id={1} onClick={setTab}></TabButton>
+            <div style={{ position: "sticky", top: 0, backgroundColor: Colors.background, width: "100%", display: 'flex', flex: 0, flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ display: 'flex', width: "100%", }}>
+                    <TabButton text="By You ✨" tab={tab} id={0} onClick={setTab}></TabButton>
+                    <TabButton text="Playlists" tab={tab} id={1} onClick={setTab}></TabButton>
+                </div >
+                {tab === 0 && songs && songs.length !== 0 ?
+                    <>
+                        <div style={{}}>
+                        </div>
+                        <div style={{ width: "100%", display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: "white" }}>
+                            <>
+                                <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex' }}>
+                                        <TZButton backgroundColor={"#0000"} title="Cancel" fontSize={15} onClick={onCancelClick}></TZButton>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                    <span className="onelinetextplain" style={{ textAlign: 'center', fontSize: "calc(10px + 0.5vmin)", textOverflow: 'ellipsis' }}>Results for "{prompt}"</span>
+                                </div>
+                                <div style={{ flex: 1, minWidth: "-webkit-min-content", display: 'flex', justifyContent: 'flex-end', flexBasis: 0 }}>
+                                    <div style={{ display: 'flex' }}>
+                                        <TZButton color={Colors.green} backgroundColor={"#0000"} title="Select all" fontSize={15} onClick={onSelectAllClick}></TZButton>
+                                    </div>
+                                    <div>
+                                        <TZButton color={Colors.red} backgroundColor={"#0000"} title="Deselect all" fontSize={15} onClick={onDeselectAllClick}></TZButton>
+                                    </div>
+                                </div>
+                            </>
+                        </div>
+                    </>
+                    : <div style={{ height: padding }}></div>
+                }
             </div>
+
             <div
-                style={{ width: "100%", display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center', paddingLeft: padding, paddingRight: padding }}>
+                style={{ width: "100%", display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center' }}>
 
                 {tab === 0 ? //AI SCREEN
                     <>
-                        <span className="App-montserrat-aitext" style={{ fontWeight: 'bold' }}>✨ Find songs that match your vibe ✨</span>
-                        <span className="App-smalltext" style={{ paddingBottom: padding, textAlign: 'center' }}>Using AI, you can find songs you like instantly from a single prompt!</span>
-                        <div style={{ width: "75%" }}>
-                            <Input
-                                placeholder="What do you want to listen to?"
-                                value={prompt} onChange={(e) => setPrompt(e.target.value)}
-                                style={{ fontSize: 20 }}
-                                multiline
-                                maxRows={5}
-                                focused={focused}
-                                onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-                            />
-                            <div style={{ height: padding }}></div>
-                            <TZButton title="Generate" loading={loading} onClick={onSubmit}></TZButton>
+                        <div style={{ width: "100%", display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', flex: 1, }}>
+                            {show ?
+                                <></>
+                                :
+                                <>
+                                    <span className="App-montserrat-aitext" style={{ fontWeight: 'bold' }}>✨ Find songs that match your vibe ✨</span>
+                                    <span className="App-smalltext" style={{ paddingBottom: padding, textAlign: 'center' }}>Using AI, you can find songs you like instantly from a single prompt!</span>
+
+                                    <div style={{ width: "75%" }}>
+                                        <Input
+                                            placeholder="What do you want to listen to?"
+                                            value={prompt} onChange={(e) => setPrompt(e.target.value)}
+                                            style={{ fontSize: 20 }}
+                                            multiline
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") {
+                                                    e.preventDefault();
+                                                    onSubmit();
+                                                }
+                                            }}
+
+                                            maxRows={5}
+                                            focused={focused}
+                                            onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+                                        />
+                                        <div style={{ height: padding }}></div>
+                                        <div style={{ display: 'flex' }}>
+                                            <TZButton title="Generate" loading={loading} onClick={onSubmit}></TZButton>
+                                        </div>
+                                    </div>
+                                </>
+                            }
+                            <div style={{ width: "100%", overflow: 'auto', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                <PGMMemo prompt={prompt} show={show}
+                                    selectedSongs={selectedSongs}
+                                    setSelectedSongs={setSelectedSongs}
+                                    onHide={onHide} songs={songs}
+                                    onQueueClick={onQueueClick}
+                                />
+                            </div>
                         </div>
-                        <PGMMemo prompt={prompt} show={show}
-                            onHide={() => {
-                                setShow(false);
-                                setTimeout(() => { setLoading(false); }, 1000);
-                            }} songs={songs}
-                        />
                     </>
 
                     : <PBCMemo setDisableTyping={setDisableTyping} />}
@@ -131,19 +234,21 @@ const PGMMemo = memo(PlaylistGeneratorModal, (a, b) => {
     return a.songs === b.songs &&
         a.show === b.show &&
         a.onHide === b.onHide
-    // && a.selectedSongs === b.selectedSongs &&
-    // a.setSelectedSongs === b.setSelectedSongs;
+        && a.selectedSongs === b.selectedSongs &&
+        a.setSelectedSongs === b.setSelectedSongs &&
+        a.onQueueClick === b.onQueueClick;
 });
 
 function PlaylistGeneratorModal(props: {
     prompt: string, show: boolean, onHide: () => any, songs: SongType[] | undefined | null,
-    // selectedSongs: Set<string>, setSelectedSongs: (s: Set<string>) => any 
+    selectedSongs: Set<string>, setSelectedSongs: (s: Set<string>) => any, onQueueClick: (s: SongType) => any
 }) {
     const songs = props.songs;
-    const [selectedSongs, setSelectedSongs] = useState<Set<string>>(new Set());
     // const [defaultSelect, setDefaultSelect] = useState(false); //dummy to basically force rerender
     const usc = useContext(UserSessionContext);
     const [sending, setSending] = useState(false);
+    const [selectedSongs, setSelectedSongs] = [props.selectedSongs, props.setSelectedSongs] //useState<Set<string>>(new Set());
+
 
     const setSelected = (b: boolean, song: SongType) => {
         const s = _.cloneDeep(selectedSongs);
@@ -198,111 +303,140 @@ function PlaylistGeneratorModal(props: {
         setSending(false);
     }
 
-    const onSelectAllClick = () => {
-        if (songs) {
-            setSelectedSongs(new Set<string>(songs?.map(s => s.id)));
-        }
-    }
-
-    const onDeselectAllClick = () => {
-        if (songs) {
-            setSelectedSongs(new Set<string>());
-        }
+    const BackButton = () => {
+        return (
+            <TZButton title="Back" fontSize={"calc(10px + 0.5vmin)"} backgroundColor="#0000" color={Colors.primaryRegular} onClick={props.onHide} />
+        )
     }
 
     return (
-        <Modal centered show={props.show} backdrop="static" onHide={() => {
-            setSelectedSongs(new Set<string>());
-            props.onHide();
-        }} data-bs-theme={"dark"} size={"lg"} >
-            <Modal.Header closeButton style={{ color: "white", }}>
-                <span className="onelinetextplain" style={{ fontSize: "calc(15px + 0.5vmin)", height: "100%", textOverflow: 'ellipsis' }}>Results for "{props.prompt}"</span>
-            </Modal.Header>
-            <div style={{ position: "relative", display: 'flex', justifyContent: 'flex-start', alignItems: 'center', color: "white" }}>
-                {songs && songs.length !== 0 ?
-                    <>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', flex: 1, position: 'absolute', zIndex: 100, top: padding, right: padding }}>
-                            <div>
-                                <TZButton backgroundColor={Colors.green} title="Select all" fontSize={15} onClick={onSelectAllClick}></TZButton>
+        // <Modal centered show={props.show} backdrop="static" onHide={() => {
+        //     setSelectedSongs(new Set<string>());
+        //     props.onHide();
+        // }} data-bs-theme={"dark"} size={"lg"} >
+        // <Modal.Header closeButton style={{ color: "white", }}>
+        //         <span className="onelinetextplain" style={{ fontSize: "calc(15px + 0.5vmin)", height: "100%", textOverflow: 'ellipsis' }}>Results for "{props.prompt}"</span>
+        //     </Modal.Header>
+        props.show ?
+            <div style={{ width: "100%", overflowY: "scroll", flex: 1, display: 'flex', flexDirection: 'column', }}>
+                {
+                    songs ?
+                        songs.length === 0 ?
+                            <div style={{
+                                paddingLeft: padding, paddingRight: padding, paddingTop: padding * 2, paddingBottom: padding * 2,
+                                width: "100%", display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'
+                            }}>
+                                <FontAwesomeIcon icon={faQuestionCircle} color="white"></FontAwesomeIcon>
+                                <span className="App-smalltext" style={{ textAlign: 'center', padding: padding }}>Hm. We can't seem to find any songs matching "{props.prompt}".<br />Try telling us the general atmopshere you want, and artists/genres that you want included.</span>
+                                <BackButton />
                             </div>
-                            <div style={{ width: padding }} />
-                            <div>
-                                <TZButton backgroundColor={Colors.red} title="Deselect all" fontSize={15} onClick={onDeselectAllClick}></TZButton>
-                            </div>
-                        </div>
-                    </>
-                    : <></>
-                }
-            </div>
-
-            <Modal.Body style={{ color: "white", overflow: 'scroll', maxHeight: window.screen.height * 0.62, padding: 0 }}>
-                {songs ?
-                    songs.length === 0 ?
-                        <div style={{
-                            paddingLeft: padding, paddingRight: padding, paddingTop: padding * 2, paddingBottom: padding * 2,
-                            width: "100%", display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'
-                        }}>
-                            <FontAwesomeIcon icon={faQuestionCircle} color="white"></FontAwesomeIcon>
-                            <div style={{ height: padding }} />
-                            <span className="App-smalltext" style={{ textAlign: 'center' }}>Hm. We can't seem to find any songs matching that prompt.<br />Try telling us the general atmopshere you want, and artists/genres that you want included.</span>
-                        </div>
-                        :
-                        <>
-                            <div style={{ height: padding }} />
-                            {songs.map((song) => <PGMRenderItem song={song} setSelected={(b) => setSelected(b, song)} selectedSongs={selectedSongs} />)}
-                        </>
-                    :
-                    <div style={{ padding: padding, width: "100%", minHeight: window.screen.height * 0.3, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                        {songs === null ?
-                            <>
-                                <FontAwesomeIcon icon={faWarning} color="white"></FontAwesomeIcon>
-                                <div style={{ height: padding }} />
-                                <span className="App-smalltext">Unfortunately, there was an error getting your songs. Please try again.</span>
-                            </>
                             :
-                            <>
-                                <Spinner />
-                                <div style={{ height: padding }} />
-                                <span className="App-smalltext" >Hang on...this may take a moment.</span>
-                            </>
-                        }
-                    </div>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', }}>
+                                <div style={{
+                                    display: 'flex', flex: "1 0 0", flexDirection: 'column', overflowY: "scroll", width: "100%",
+                                }}>
+                                    <div style={{ overflowY: "scroll", }}>
+                                        {songs.map((song) => <PGMRenderItem song={song} setSelected={(b) => setSelected(b, song)} selectedSongs={selectedSongs} onQueueClick={props.onQueueClick} />)}
+                                    </div>
+                                </div>
+                                <div style={{
+                                    width: "100%", flex: 0, padding: padding,
+                                    // paddingRight: padding, paddingBottom: padding 
+                                }}>
+                                    <TZButton title={selectedSongs.size > 0 ? `Create playlist with ${selectedSongs.size} songs` : "Select songs"} onClick={onAddSongsClick} loading={sending} disabled={selectedSongs.size === 0} />
+                                </div>
+                            </div>
+                        :
+                        <div style={{ padding: padding, width: "100%", minHeight: window.screen.height * 0.3, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                            {songs === null ?
+                                <>
+                                    <FontAwesomeIcon icon={faWarning} color="white"></FontAwesomeIcon>
+                                    <div style={{ height: padding }} />
+                                    <span className="App-smalltext">Unfortunately, there was an error getting your songs. Please try again.</span>
+                                    <BackButton />
+                                </>
+                                :
+                                <>
+                                    <Spinner />
+                                    <div style={{ height: padding }} />
+                                    <span className="App-smalltext" >Hang on...this may take a moment.</span>
+                                    <BackButton />
+                                </>
+                            }
+                        </div>
                 }
-            </Modal.Body>
-            {songs && songs.length !== 0 ?
-                <Modal.Footer style={{ color: "white", overflow: 'scroll', }}>
-                    <TZButton title={selectedSongs.size > 0 ? `Create playlist with ${selectedSongs.size} songs` : "Select songs"} onClick={onAddSongsClick} loading={sending} disabled={selectedSongs.size === 0} />
-                </Modal.Footer>
-                : <></>}
-        </Modal>
+
+            </div > : <></>
+
+        // {songs && songs.length !== 0 ?
+        //     <Modal.Footer style={{ color: "white", overflow: 'scroll', }}>
+        //         <TZButton title={selectedSongs.size > 0 ? `Create playlist with ${selectedSongs.size} songs` : "Select songs"} onClick={onAddSongsClick} loading={sending} disabled={selectedSongs.size === 0} />
+        //     </Modal.Footer>
+        //     : <></>}
+        // </Modal>
     )
 }
 
-const PGMRenderItem = (props: { song: SongType, setSelected: (b: boolean) => any, selectedSongs: Set<string> }) => {
+const PGMRenderItem = (props: { song: SongType, setSelected: (b: boolean) => any, selectedSongs: Set<string>, onQueueClick: (song: SongType) => Promise<any> }) => {
     const [hoverStatus, setHoverStatus] = useState(0);
     // const [selected, setSelected] = useState(false);
     const selectedSongs = props.selectedSongs;
-    const selected = props.selectedSongs.has(props.song.id);
+    const selected = selectedSongs.has(props.song.id);
+    const [queueLoading, setQueueLoading] = useState(false);
+
+    const QueueButton = () => {
+        const [hoverStatus, setHoverStatus] = useState(0);
+
+        return (
+            <div onClick={async () => {
+                if (queueLoading) return;
+                setQueueLoading(true);
+                await props.onQueueClick(props.song).catch((e) => {
+                    console.log(e);
+                    setQueueLoading(false);
+                });
+                setQueueLoading(false);
+            }}
+                onPointerEnter={() => setHoverStatus(0.5)} onPointerLeave={() => setHoverStatus(0)} onPointerDown={() => setHoverStatus(1)} onPointerUp={() => setHoverStatus(0.5)}
+                style={{ display: 'flex', backgroundColor: `#fff${3 - hoverStatus * 2}`, alignItems: 'center', padding: 5, borderRadius: radius }}>
+                <FontAwesomeIcon color={selected ? Colors.primaryRegular : "#fff8"} icon={faCirclePlus}></FontAwesomeIcon>
+                <span style={{ paddingLeft: 5 }}>Queue</span>
+                {queueLoading ?
+                    <>
+                        <div style={{ width: 5 }} />
+                        <Spinner size="sm"></Spinner>
+                    </>
+                    : <></>}
+            </div>)
+    }
 
     return (
         <div style={{ width: "100%", paddingBottom: padding }}>
-            <div
-                onPointerEnter={() => setHoverStatus(0.5)} onPointerLeave={() => setHoverStatus(0)} onPointerDown={() => setHoverStatus(1)} onPointerUp={() => setHoverStatus(0.5)}
-                style={{
-                    width: "100%", display: "flex", alignItems: 'center', paddingLeft: padding, paddingRight: padding,
-                    backgroundColor: hoverStatus === 1 ? "#fff3" : hoverStatus === 0.5 ? "#fff1" : "#fff0", cursor: 'Pointer'
-                }}
-                onClick={() => {
-                    // setSelected(!selected);
-                    props.setSelected(!selected);
-                }}
-            >
-                <div style={{ paddingRight: padding, opacity: selected ? 1 : 0.5 }}>
-                    <FontAwesomeIcon icon={selected ? faCircleFilled : faCircleEmpty}></FontAwesomeIcon>
+            <div style={{
+                width: "100%", display: 'flex', paddingLeft: padding, paddingRight: padding,
+                backgroundColor: hoverStatus === 1 ? "#fff3" : hoverStatus === 0.5 ? "#fff1" : "#fff0", cursor: 'Pointer'
+
+            }}>
+                <div
+                    onPointerEnter={() => setHoverStatus(0.5)} onPointerLeave={() => setHoverStatus(0)} onPointerDown={() => setHoverStatus(1)} onPointerUp={() => setHoverStatus(0.5)}
+                    style={{
+                        width: "100%", display: "flex", alignItems: 'center',
+                    }}
+                    onClick={() => {
+                        // setSelected(!selected);
+                        props.setSelected(!selected);
+                    }}
+                >
+                    <div style={{ paddingRight: padding, }}>
+                        <FontAwesomeIcon color={selected ? Colors.primaryRegular : "#fff8"} icon={selected ? faCircleFilled : faCircleEmpty}></FontAwesomeIcon>
+                    </div>
+                    <Song song={props.song} />
                 </div>
-                <Song song={props.song} />
+                <div style={{ paddingLeft: 5, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <QueueButton />
+                </div>
             </div>
-        </div>
+        </div >
 
     )
 }

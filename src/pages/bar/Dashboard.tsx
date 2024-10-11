@@ -625,10 +625,10 @@ export default function Dashboard() {
                             }} />
                         </div>
                     </div>
-                    <div style={{ height: "100%", overflowY: 'scroll' }}>
-                        <PlaylistScreen setDisableTyping={setDisableTyping} />
+                    <div style={{ height: "100%", overflowY: 'scroll', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                        <PlaylistScreen setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} />
                         {/* <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} /> */}
-                        <div style={{ paddingBottom: padding }} />
+                        {/* <div style={{ paddingBottom: padding }} /> */}
                     </div>
                 </div>
                 <AlertModal onHide={() => setAlertContent(undefined)} content={alertContent} />

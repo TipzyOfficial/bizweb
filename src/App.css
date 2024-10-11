@@ -225,6 +225,20 @@
 .App-tertiarytitle {
   font-size: calc(12px + 1vmin);
   font-weight: bold;
+  white-space: nowrap;
+}
+
+.App-tertiarytitleoneline {
+  font-size: calc(12px + 1vmin);
+  font-weight: bold;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  line-clamp: 1;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  justify-content: flex-start;
 }
 
 .App-typetitle {
