@@ -228,7 +228,15 @@ export function PlaylistScreen(props: { setDisableTyping: (b: boolean) => any, s
     );
 }
 
-const PBCMemo = memo(PlaybackComponent);
+const PBCMemo = memo(
+    (props: { setDisableTyping: (b: boolean) => any }) => {
+        return (
+            <div style={{ padding: padding, width: "100%" }}>
+                <PlaybackComponent setDisableTyping={props.setDisableTyping} />
+            </div>
+        );
+    }
+);
 
 const PGMMemo = memo(PlaylistGeneratorModal, (a, b) => {
     return a.songs === b.songs &&
@@ -399,7 +407,7 @@ const PGMRenderItem = (props: { song: SongType, setSelected: (b: boolean) => any
             }}
                 onPointerEnter={() => setHoverStatus(0.5)} onPointerLeave={() => setHoverStatus(0)} onPointerDown={() => setHoverStatus(1)} onPointerUp={() => setHoverStatus(0.5)}
                 style={{ display: 'flex', backgroundColor: `#fff${3 - hoverStatus * 2}`, alignItems: 'center', padding: 5, borderRadius: radius }}>
-                <FontAwesomeIcon color={selected ? Colors.primaryRegular : "#fff8"} icon={faCirclePlus}></FontAwesomeIcon>
+                <FontAwesomeIcon color={"white"} icon={faCirclePlus}></FontAwesomeIcon>
                 <span style={{ paddingLeft: 5 }}>Queue</span>
                 {queueLoading ?
                     <>
