@@ -382,9 +382,9 @@ export default function Dashboard() {
                     }
                     rightComponent={
                         <Dropdown>
-                            <Dropdown.Toggle variant="primary" style={{ height: "100%" }} id="dropdown-basic">
-                                {acceptRadioValue === "Manual" ? "Manually accept" :
-                                    acceptRadioValue === "Auto" ? "Auto-accept" :
+                            <Dropdown.Toggle variant="tertiary" style={{ height: "100%", color: "white", fontWeight: "bold" }} id="dropdown-basic">
+                                {acceptRadioValue === "Manual" ? "Manually accepting requests" :
+                                    acceptRadioValue === "Auto" ? "Auto-accepting requests" :
                                         acceptRadioValue === "TipzyAI" ? "Tipzy decides" : "..."}
                             </Dropdown.Toggle>
                             <Dropdown.Menu variant="dark">

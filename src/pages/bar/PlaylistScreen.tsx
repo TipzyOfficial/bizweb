@@ -1,4 +1,4 @@
-import { memo, useContext, useRef, useState } from "react";
+import { memo, useContext, useEffect, useRef, useState } from "react";
 import { Colors, padding, radius } from "../../lib/Constants";
 import { Input } from "../../components/GiantInput";
 
@@ -7,8 +7,8 @@ import TZButton from "../../components/TZButton";
 import { fetchWithToken } from "../..";
 import { UserSessionContext } from "../../lib/UserSessionContext";
 import { SongType } from "../../lib/song";
-import { parseSongJson } from "../../lib/utils";
-import { Modal, Spinner } from "react-bootstrap";
+import { parseSongJson, useInterval } from "../../lib/utils";
+import { Modal, ProgressBar, Spinner } from "react-bootstrap";
 import Song, { artistsStringListToString } from "../../components/Song";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircle as faCircleEmpty } from "@fortawesome/free-regular-svg-icons";
@@ -16,6 +16,7 @@ import { faCircle as faCircleFilled, faCirclePlay, faCirclePlus, faQuestion, faQ
 import _ from "lodash";
 import PlaybackComponent from "./PlaybackComponent";
 import { AlertContentType } from "../../components/Modals";
+import LoadingBar from "../../components/LoadingBar";
 
 const TabButton = (props: { tab: number, id: number, onClick: (v: number) => any, text: string }) => {
     const [opacity, setOpacity] = useState(1);
@@ -365,7 +366,7 @@ function PlaylistGeneratorModal(props: {
                                 </>
                                 :
                                 <>
-                                    <Spinner />
+                                    <LoadingBar width={100} />
                                     <div style={{ height: padding }} />
                                     <span className="App-smalltext" >Hang on...this may take a moment.</span>
                                     <BackButton />

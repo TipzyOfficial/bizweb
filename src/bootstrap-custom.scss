@@ -1,0 +1,14 @@
+// change the theme
+$theme-colors: (
+    "primary": #FA9D17,
+    "secondary": #CA3C6D,
+    "tertiary": #6E63EF,
+);
+
+// .btn {
+//     border-radius: 10;
+//     color: white;
+// }
+
+// Import Bootstrap and its default variables
+@import '~bootstrap/scss/bootstrap.scss';

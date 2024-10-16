@@ -1,7 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import '../node_modules/bootstrap/dist/css/bootstrap.min.css'
+// import '../node_modules/bootstrap/dist/css/bootstrap.min.css'
+import './bootstrap-custom.scss';
 import App, { goToBar, goToLogin } from './App';
 import { clearData, getCookies, getStored, setStored } from './lib/utils';
 import reportWebVitals from './reportWebVitals';

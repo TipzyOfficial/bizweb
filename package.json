@@ -52,6 +52,7 @@
     "react-lottie": "^1.2.4",
     "react-router-dom": "^6.23.0",
     "react-scripts": "^5.0.1",
+    "sass": "^1.79.5",
     "sort-by": "^1.2.0",
     "stream": "^0.0.2",
     "styled-components": "^6.1.13",
