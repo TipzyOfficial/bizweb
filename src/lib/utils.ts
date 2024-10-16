@@ -103,6 +103,8 @@ export const clearData = () => {
     cookies.remove("notifs");
     cookies.remove("notis");
     cookies.remove("email");
+
+    console.log("clearing localstorage");
     localStorage.clear();
 }
 

@@ -47,7 +47,7 @@ const convertToTokenReturnType = (at: string, rt: string, expires_in: number): T
 export async function fetchNoToken(urlEnding: string, fetchMethod?: string, body?: string, signal?: AbortSignal): Promise<Response> {
     // const c = getCookies();
 
-    // console.log("fwt at url:", urlEnding, "at and ea", accessToken, expiresAt)
+    // debuglog("fwt at url:", urlEnding, "at and ea", accessToken, expiresAt)
 
     const theFetch = async () => {
         return body ?
@@ -78,6 +78,10 @@ export async function fetchNoToken(urlEnding: string, fetchMethod?: string, body
     return response;
 }
 
+const debuglog = (...s: any[]) => {
+    // alert(s.toString());
+    console.log(s);
+}
 
 /**
  * runs a fetch request with a certain access token. if the access token is expired, it will run reloadToken.
@@ -92,20 +96,25 @@ export async function fetchNoToken(urlEnding: string, fetchMethod?: string, body
 export async function fetchWithToken(accessToken: string, urlEnding: string, expiresAt: number, getRefreshToken: (() => string | null), logout: (() => void), resetTokenValues: ((tokens: TokenReturnType) => Promise<void>), fetchMethod?: string, body?: string, signal?: AbortSignal): Promise<Response | null> {
     // const c = getCookies();
 
-    // console.log("fwt at url:", urlEnding, "at and ea", accessToken, expiresAt)
+    // debuglog("fwt at url:", urlEnding, "at and ea", accessToken, expiresAt)
+    // expiresAt = 100;
+
+    console.log(expiresAt, Date.now());
 
     let myAccessToken = accessToken;//c.get("access_token");
 
     const newTokens = async () => {
-        const refreshToken = await getRefreshToken();
-        if (refreshToken === null) { console.log("no refresh token stored!"); return 0; }
+        const refreshToken = getRefreshToken();
+        if (refreshToken === null) { debuglog("no refresh token stored!"); return 0; }
         const tokens: TokenReturnType | null = await getAccessToken(refreshToken)
-            .catch((e) => { console.log("error access: ", e.message); return null });
+            .catch((e) => { debuglog("error access: ", e.message); return null });
         if (tokens === null) {
-            // console.log("problem getting access tokens!");
+            // debuglog("problem getting access tokens!");
             return 0;
         }
+        debuglog(`RESETING TOKEN VALUES at ${tokens.access_token} ea ${tokens.expires_at} rt ${tokens.refresh_token}`);
         resetTokenValues(tokens);
+        window.location.reload();
         myAccessToken = tokens.access_token;
         return 1;
     }
@@ -113,7 +122,7 @@ export async function fetchWithToken(accessToken: string, urlEnding: string, exp
     if (isNaN(expiresAt) || expiresAt <= Date.now()) {
         const res = await newTokens();
         if (res === 0) {
-            console.log("tokens expired. logging out. " + urlEnding)
+            debuglog("tokens expired. logging out. " + urlEnding)
             logout();
             return null;
         }
@@ -144,26 +153,25 @@ export async function fetchWithToken(accessToken: string, urlEnding: string, exp
     const response = await theFetch();
 
     if (response.status === 401) {
-        console.log("401 error. Trying again.");
+        const text = await response.text();
+        debuglog(urlEnding + "401 error. Trying again." + text);
         const newt = await newTokens().catch(() => {
             //throw new Error("problem with your refresh token.");
-            console.log("problem with your refresh token.");
             logout();
             return;
         });
 
         if (newt === 0) {
-            console.log("problem with your refresh token.");
             logout();
             return null;
         }
 
         //throw new Error("problem with your refresh token.");
-        // console.log("trying again with new tokens now!")
+        // debuglog("trying again with new tokens now!")
         const response2 = await theFetch();
 
         if (response.status === 401) {
-            console.log("for some reason, your access token failed again. signing out.")
+            debuglog("for some reason, your access token failed again. signing out.")
             logout();
             return null;
         }
@@ -175,7 +183,7 @@ export async function fetchWithToken(accessToken: string, urlEnding: string, exp
         // .then((res) => {
 
         // }).catch((e: Error) => {
-        //     console.log("couldn't refresh tokens.");
+        //     debuglog("couldn't refresh tokens.");
         //     // logout();
         //     return null;
         // });
@@ -203,7 +211,7 @@ export async function getUser(userType: "tipper" | "business", accessToken: stri
             throw new Error(`Bad response. Response: ${response ? response.status + ".." : "null response"}`)
         }
         return response.json();
-    }).catch((e) => console.log(e));
+    }).catch((e) => debuglog(e));
 }
 
 /**
@@ -211,8 +219,8 @@ export async function getUser(userType: "tipper" | "business", accessToken: stri
  * @param refresh_token the refresh token
  * @returns access_token, refresh_token, and expires_at.
  */
-export async function getAccessToken(refresh_token: string): Promise<TokenReturnType | null> {
-    // console.log("id", process.env.REACT_APP_CLIENT_ID, "Secret", process.env.REACT_APP_CLIENT_SECRET);
+export async function getAccessToken(refresh_token: string, auth?: boolean): Promise<TokenReturnType | null> {
+    // debuglog("id", process.env.REACT_APP_CLIENT_ID, "Secret", process.env.REACT_APP_CLIENT_SECRET);
     return fetch(`${ServerInfo.baseurl}auth/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -224,21 +232,22 @@ export async function getAccessToken(refresh_token: string): Promise<TokenReturn
         })
     }).then(response => {
         if (response.status === 401) {
-            console.log("bad response getting access token.", response.status, response.statusText)
+            debuglog("bad response getting access token.", response.status, response.statusText)
             return response.text();
         }
         else if (!response.ok) {
             // throw new Error(`Bad response. Response: ${response.status}`);
-            console.log("bad response.", response.status, response.statusText)
+            debuglog("ACCESS TOKEN bad response.", response.status, response.statusText) //1
             return response.text();
         }
         return response.json();
     }).then(json => {
         if ((typeof json) === "string") {
-            console.log("text", json)
+            debuglog("get access token", json)
             return null;
         }
-        return convertToTokenReturnType(json.access_token, json.refresh_token, json.expires_in);
+        return convertToTokenReturnType(json.access_token, json.refresh_token, json.expires_in
+        );
     }).catch((error: Error) => { throw error })
 }
 

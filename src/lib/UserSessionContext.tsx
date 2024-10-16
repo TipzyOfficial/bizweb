@@ -8,10 +8,11 @@ import Cookies from 'universal-cookie';
 import { useLocation } from 'react-router-dom';
 import { getCookies, getStored } from './utils';
 import _ from 'lodash';
+import { error } from 'console';
 
 export const defaultConsumer: () => Business = () => {
-    const cookies = getCookies();
-    return new Business(new Users(getStored("access_token") ?? "", parseInt(getStored("expires_at") ?? "0") ?? 0, ""))
+    const expiresat = parseInt(getStored("expires_at") ?? "0");
+    return new Business(new Users(getStored("access_token") ?? "", expiresat ?? 0, ""))
 }
 
 export type UserSessionContextType = {
@@ -83,40 +84,33 @@ export function UserSessionContextProvider(props: { children: JSX.Element }) {
     const setup = async () => {
         if (!getStored("refresh_token") || !getStored("access_token")) {
             if (usc.user.user.access_token) {
-                checkIfAccountExists(usc).then((r) => {
-                    console.log("rdata", r.data)
-                    refreshUserData(r.data)
-                    setReady(true);
-                })
-                    .catch((e) => {
-                        console.log("no session detected." + e)
-                        setReady(true)
-                    });
+                const r = await checkIfAccountExists(usc).catch((e: Error) => { throw new Error(`USC: no session detected. ${e.message}`) })
+                console.log("rdata", r.data)
+                refreshUserData(r.data)
+                setReady(true);
             } else {
-                setReady(true)
+                setReady(true);
             }
         } else {
             refreshUserData(user);
-            checkIfAccountExists(usc).then((r) => {
-                if (!r.result) {
-                    console.log("account doesn't exist, logging out.")
-                    Logout(usc);
-                    setReady(true);
-                    return;
-                }
-                refreshUserData(r.data)
+            const r = await checkIfAccountExists(usc).catch((e: Error) => { throw new Error(`USC: problem init user. ${e.message}`) });
+            if (!r.result) {
+                console.log("account doesn't exist, logging out.")
+                Logout(usc);
                 setReady(true);
-            })
-                .catch((e) => {
-                    console.log("problem init user." + e)
-                    setReady(true)
-                });
+                return;
+            }
+            refreshUserData(r.data)
+            setReady(true);
         }
 
     }
 
     useEffect(() => {
-        setup();
+        setup().catch((e) => {
+            console.log(e);
+            setReady(true)
+        });
         // if(location.pathname === "/login" || location.pathname === "/register") return;
     }, []);
 
