@@ -76,10 +76,12 @@ export default function DJSettings(props: DJSettingsProps) {
         const [hovered, setHovered] = useState(false);
 
         return (
-            <div className="App-montserrat-normaltext" onClick={() => setExpanded(!expanded)} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-                style={{ textAlign: 'left', width: "100%", fontWeight: 'bold', display: 'flex', padding: padding, alignItems: 'center', cursor: 'pointer', backgroundColor: hovered ? "#fff1" : undefined }}>
-                <FontAwesomeIcon icon={faBars} />
-                <span style={{ paddingLeft: padding }}>Configure your DJ</span>
+            <div style={{ paddingLeft: padding, paddingRight: padding, paddingTop: padding }}>
+                <div className="App-montserrat-normaltext" onClick={() => setExpanded(!expanded)} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+                    style={{ textAlign: 'left', width: "100%", fontWeight: 'bold', display: 'flex', padding: padding, alignItems: 'center', cursor: 'pointer', opacity: hovered ? 0.7 : 1, borderColor: Colors.tertiaryDark, color: "white", borderStyle: "solid", borderWidth: 1, borderRadius: radius }}>
+                    <FontAwesomeIcon color={Colors.tertiaryDark} icon={faBars} />
+                    <span style={{ paddingLeft: padding }}>Configure your Virtual DJ</span>
+                </div>
             </div>
         )
     }
@@ -113,6 +115,10 @@ export default function DJSettings(props: DJSettingsProps) {
                                 <div style={{ display: 'flex', flexDirection: 'column', paddingLeft: padding }}>
                                     {/* <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold' }}>Bangers only</span> */}
                                     <TZToggle title="Bangers Only" value={bangersOnly} onClick={onBangersClicked} />
+                                </div>
+                                <div style={{ flex: 1, paddingLeft: padding }}>
+                                    <span>Virtual DJ is an unfinished feature.<br />For now, enjoy this preview of its interface!</span>
+
                                 </div>
                             </div>
                         </div>

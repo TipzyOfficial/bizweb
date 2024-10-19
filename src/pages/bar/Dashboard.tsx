@@ -613,7 +613,7 @@ export default function Dashboard() {
                         }
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden' }}>
-                        <div style={{ backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
+                        <div style={{ display: "flex", justifyContent: 'space-between' }}>
                             <DJSettings genres={GENRES} expandState={[djExpanded, setDJExpanded]} selectedState={[djSelectedGenres, setDJSelectedGenres]} energyState={[djEnergy, setDJEnergy]} bangersState={[djBangersOnly, setDJBangersOnly]} />
                         </div>
                         <div style={{ flex: 1, height: "100%", overflowY: 'scroll' }}>
