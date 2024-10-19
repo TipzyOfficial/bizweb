@@ -13,10 +13,7 @@ import BigLogo, { SmallLogo } from "../../components/BigLogo";
 import Song from "../../components/Song";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faMagnifyingGlass, faXmark, IconDefinition } from "@fortawesome/free-solid-svg-icons";
-import { faCheckSquare as faYes, faSquare as faNo } from "@fortawesome/free-regular-svg-icons";
 import Dropdown from 'react-bootstrap/Dropdown';
-
-
 import TZHeader from "../../components/TZHeader";
 import Stats from "./Stats";
 import PlaybackComponent from "./PlaybackComponent";
@@ -25,14 +22,22 @@ import useWindowDimensions from "../../lib/useWindowDimensions";
 import { router } from "../../App";
 import { AlertContentType, AlertModal } from "../../components/Modals";
 import { PlaylistScreen } from "./PlaylistScreen";
+import DJSettings from "./DJSettings";
+import TZToggle from "../../components/TZToggle";
 
-const cookies = getCookies();
+const GENRES = [
+    "Classic Rock",
+    "Alternative",
+    "Rap",
+    "Pop",
+    "Dance",
+    "Country",
+    "RnB",
+    "Singalong",
+]
 
 type AcceptingType = "Manual" | "Auto" | "TipzyAI" | undefined;
-
-// type NowPlayingType = [SongType, { progressMs: number, durationMs: number }]
-
-export type CurrentlyPlayingType = [SongType, { progressMs: number, durationMs: number, paused: boolean }]
+export type CurrentlyPlayingType = [SongType, { progressMs: number, durationMs: number, paused: boolean }];
 
 function checkAutoAccept(auto?: boolean, gpt?: boolean): AcceptingType {
     if (auto === undefined && gpt === undefined) return undefined;
@@ -81,7 +86,6 @@ export default function Dashboard() {
     const [seeMoreStats, setSeeMoreStats] = useState(false);
     const [pausedUI, setPausedUI] = useState(false);
     const [somethingPressed, setSomethingPressed] = useState(false);
-
     // const [alertVisible, setAlertVisible] = useState(false);
     const [alertContent, setAlertContent] = useState<AlertContentType>(undefined);
 
@@ -93,6 +97,13 @@ export default function Dashboard() {
     }
     const eQ: [boolean, Dispatch<SetStateAction<boolean>>] = [editingQueue, setEditingQueue]; //is "editing" on?
     const [reordering, setReordering] = useState(false); //is actively reordering queue?
+
+    //DJ Controls
+    const [djExpanded, setDJExpanded] = useState(false);
+    const [djSelectedGenres, setDJSelectedGenres] = useState(new Set<string>());
+    const [djEnergy, setDJEnergy] = useState(50);
+    const [djBangersOnly, setDJBangersOnly] = useState(false);
+
 
     const setCurrentlyPlaying = (s: CurrentlyPlayingType | undefined) => {
         if (s === undefined && currentlyPlaying === undefined) return;
@@ -383,8 +394,8 @@ export default function Dashboard() {
                     rightComponent={
                         <Dropdown>
                             <Dropdown.Toggle variant="tertiary" style={{ height: "100%", color: "white", fontWeight: "bold" }} id="dropdown-basic">
-                                {acceptRadioValue === "Manual" ? "Manually accepting requests" :
-                                    acceptRadioValue === "Auto" ? "Auto-accepting requests" :
+                                {acceptRadioValue === "Manual" ? "Manually accepting" :
+                                    acceptRadioValue === "Auto" ? "Auto-accepting" :
                                         acceptRadioValue === "TipzyAI" ? "Tipzy decides" : "..."}
                             </Dropdown.Toggle>
                             <Dropdown.Menu variant="dark">
@@ -394,7 +405,7 @@ export default function Dashboard() {
                             </Dropdown.Menu>
                         </Dropdown>
                     }
-                ></TZHeader>
+                />
                 {currentlyPlaying ?
                     (songRequests.length > 0 ?
                         <div style={{ paddingBottom: padding, paddingLeft: padding, paddingRight: padding, width: "100%" }}>
@@ -602,24 +613,27 @@ export default function Dashboard() {
                         }
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden' }}>
+                        <div style={{ backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
+                            <DJSettings genres={GENRES} expandState={[djExpanded, setDJExpanded]} selectedState={[djSelectedGenres, setDJSelectedGenres]} energyState={[djEnergy, setDJEnergy]} bangersState={[djBangersOnly, setDJBangersOnly]} />
+                        </div>
                         <div style={{ flex: 1, height: "100%", overflowY: 'scroll' }}>
                             <Requests />
                         </div>
                         <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
-                            <Toggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
+                            <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
                                 await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
                                 setToggles(...await getToggles(usc));
                             }} />
                             <div style={{ paddingLeft: padding }} />
                             <div style={{ display: "flex" }}>
-                                <Toggle title="DJ Mode" disabled value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></Toggle>
+                                <TZToggle title="DJ Mode" disabled value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></TZToggle>
                             </div>
                             {/* <Toggle title="Auto-accept" value={toggleAutoRequests} onClick={async () => {
                                 await setAutoAcceptingRequests(usc, !toggleAutoRequests);
                                 setToggles(...await getToggles(usc));
                             }} /> */}
                             <div style={{ paddingLeft: padding }} />
-                            <Toggle title="Take requests" value={toggleAllowRequests} onClick={async () => {
+                            <TZToggle title="Take requests" value={toggleAllowRequests} onClick={async () => {
                                 await setAllowingRequests(usc, !toggleAllowRequests);
                                 setToggles(...await getToggles(usc));
                             }} />
@@ -736,34 +750,6 @@ const setBlockExplcitRequests = async (usc: UserSessionContextType, b: boolean) 
             if (json.status !== 200) throw new Error(json.details + json.error);
         })
         .catch((e: Error) => console.log("Error:", `Can't ${b ? "take" : "disable taking"} requests: ` + e.message));
-}
-
-function Toggle(props: { title: string, value: boolean, onClick: () => Promise<void>, disabled?: boolean }) {
-    const [hover, setHover] = useState(false);
-    const fdim = useFdim();
-    const dim = fdim / 40;
-    const [loading, setLoading] = useState(false);
-    const onClick = async () => {
-        if (!loading && !props.disabled) {
-            setLoading(true)
-            await props.onClick();
-            setLoading(false);
-        }
-    }
-    return (
-        <div
-            onMouseEnter={() => setHover(true)}
-            onMouseLeave={() => setHover(false)}
-            style={{
-                padding: padding, backgroundColor: Colors.tertiaryDark, borderRadius: radius, display: 'flex', alignItems: 'center', cursor: 'pointer',
-                opacity: props.disabled ? 0.5 : loading ? 0.6 : hover ? 0.8 : 1
-            }} onClick={onClick}>
-            {!loading ? <FontAwesomeIcon icon={props.value ? faYes : faNo} fontSize={dim}></FontAwesomeIcon> :
-                <Spinner style={{ width: dim, height: dim }} />
-            }
-            <span style={{ paddingLeft: padding, fontWeight: 'bold' }}>{props.title}</span>
-        </div>
-    );
 }
 
 function RejectAllButton(props: { onClick: () => void }) {
