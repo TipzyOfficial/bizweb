@@ -28,7 +28,7 @@ function GenreButton(props: { genre: string, selected: Set<string>, onClick: (b:
 
     return (
         <div style={{ padding: padding, backgroundColor: selected ? Colors.tertiaryDark : "#fff2", borderRadius: radius, cursor: 'pointer' }} onClick={onClick}>
-            <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold', }}>{props.genre}</span>
+            <span className="onelinetext-montserrat" style={{ fontWeight: 'bold', }}>{props.genre}</span>
         </div>
     )
 }
@@ -51,7 +51,6 @@ const GenreList = (props: DJSettingsProps & { onGenreClicked: (g: string, b: boo
 }
 
 export default function DJSettings(props: DJSettingsProps) {
-    const genres = props.genres;
     const [selected, setSelected] = props.selectedState;
     const [energy, setEnergy] = props.energyState;
     const [bangersOnly, setBangersOnly] = props.bangersState;
@@ -89,40 +88,45 @@ export default function DJSettings(props: DJSettingsProps) {
     return (
         <div style={{ width: "100%" }}>
             <Header />
+
             {
                 expanded ?
-                    <div style={{ display: 'flex' }}>
-                        <div style={{ padding: padding, display: 'flex' }}>
-                            <div style={{ flexShrink: 1, padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1 }}>
-                                <GenreList {...props} onGenreClicked={onGenreClicked} />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'row', paddingLeft: padding, flexGrow: 1 }}>
-                                <div style={{ paddingBottom: padding, display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: radius, backgroundColor: Colors.tertiaryDark, padding: padding }}>
-                                    <div style={{ width: "100%", flex: 1, display: "flex", justifyContent: 'space-around' }}>
-                                        <input type="range" className="slider-fader"
-                                            min={0} max={100}
-                                            value={energy}
-                                            onChange={(e) => onEnergyChange(parseInt(e.target.value))}
-                                        />
-                                        <div style={{ flex: 0, display: 'flex' }}>
-                                            <VolumeDisplay val={energy} />
-                                            <div style={{ width: 3 }} />
-                                            <VolumeDisplay val={energy} />
-                                        </div>
-                                    </div>
-                                    <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingTop: padding }}>Energy</span>
+                    <>
+                        <div style={{ display: 'flex' }}>
+                            <div style={{ padding: padding, display: 'flex' }}>
+                                <div style={{ flexShrink: 1, padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1 }}>
+                                    <GenreList {...props} onGenreClicked={onGenreClicked} />
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', paddingLeft: padding }}>
-                                    {/* <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold' }}>Bangers only</span> */}
-                                    <TZToggle title="Bangers Only" value={bangersOnly} onClick={onBangersClicked} />
-                                </div>
-                                <div style={{ flex: 1, paddingLeft: padding }}>
-                                    <span>Virtual DJ is an unfinished feature.<br />For now, enjoy this preview of its interface!</span>
 
+                                <div style={{ display: 'flex', flexDirection: 'row', paddingLeft: padding, flexGrow: 1 }}>
+                                    <div style={{ paddingBottom: padding, display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: radius, backgroundColor: Colors.tertiaryDark, padding: padding }}>
+                                        <div style={{ width: "100%", flex: 1, display: "flex", justifyContent: 'space-around' }}>
+                                            <input type="range" className="slider-fader"
+                                                min={0} max={100}
+                                                value={energy}
+                                                onChange={(e) => onEnergyChange(parseInt(e.target.value))}
+                                            />
+                                            <div style={{ flex: 0, display: 'flex' }}>
+                                                <VolumeDisplay val={energy} />
+                                                <div style={{ width: 3 }} />
+                                                <VolumeDisplay val={energy} />
+                                            </div>
+                                        </div>
+                                        <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingTop: padding }}>Energy</span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', paddingLeft: padding }}>
+                                        {/* <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold' }}>Bangers only</span> */}
+                                        <TZToggle title="Bangers Only" value={bangersOnly} onClick={onBangersClicked} />
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div> : <></>
+                        <div style={{ flex: 1, paddingLeft: padding }}>
+                            <span>Virtual DJ is an unfinished feature. For now, enjoy this preview of its interface!</span>
+                        </div>
+                    </>
+
+                    : <></>
             }
 
         </div>

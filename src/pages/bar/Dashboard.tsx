@@ -26,8 +26,9 @@ import DJSettings from "./DJSettings";
 import TZToggle from "../../components/TZToggle";
 
 const GENRES = [
-    "Classic Rock",
-    "Alternative",
+    "Rock",
+    "Alt Rock",
+    "2000s hits",
     "Rap",
     "Pop",
     "Dance",

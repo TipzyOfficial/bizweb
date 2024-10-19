@@ -83,8 +83,21 @@
 
 .onelinetext {
   font-size: calc(15px + 1vmin);
-  font-size: calc(15px + 1vmin);
   font-weight: bold;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  line-clamp: 1;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.onelinetext-montserrat {
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   line-clamp: 1;
