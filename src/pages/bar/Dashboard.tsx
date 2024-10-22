@@ -24,6 +24,7 @@ import { AlertContentType, AlertModal } from "../../components/Modals";
 import { PlaylistScreen } from "./PlaylistScreen";
 import DJSettings from "./DJSettings";
 import TZToggle from "../../components/TZToggle";
+import { Search } from "./Search";
 
 const GENRES = [
     "Rock",
@@ -103,6 +104,9 @@ export default function Dashboard() {
     }
     const eQ: [boolean, Dispatch<SetStateAction<boolean>>] = [editingQueue, setEditingQueue]; //is "editing" on?
     const [reordering, setReordering] = useState(false); //is actively reordering queue?
+
+    //show search
+    const [searchVisible, setSearchVisible] = useState(false);
 
     //show AI tab stuff
     const [aiTabVisible, setAITabVisible] = useState(true);
@@ -579,16 +583,37 @@ export default function Dashboard() {
 
     const queueLoading = reordering || somethingPressed;
 
+    const window = useWindowDimensions();
+
+    const onSearchModalClose = () => {
+        setSearchVisible(false);
+        setDisableTyping(false);
+
+    }
+
     return (
         <DisplayOrLoading condition={ready} loadingScreen={<LoadingScreen />}>
             <div className="App-body-top">
+                <Modal dialogClassName="search-modal" show={searchVisible} onShow={() => {
+                    setDisableTyping(true);
+                }} onHide={onSearchModalClose}
+                    style={{ color: "white" }}
+
+                    data-bs-theme={"dark"}>
+                    {/* <Modal.Title>
+                {props.content?.title}
+            </Modal.Title> */}
+                    {/* <Modal.Body style={{ color: "white", padding: 0, }}> */}
+                    <Search onClose={onSearchModalClose} />
+                    {/* </Modal.Body> */}
+                </Modal>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: "100%", padding: padding, backgroundColor: "#0001" }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <SmallLogo />
                         <span className="App-montserrat-normaltext" style={{ paddingLeft: padding, fontWeight: 'bold', color: "#fff8" }}>Biz Dashboard</span>
                     </div>
                     <div>
-                        <SearchBar />
+                        <SearchBar onClick={() => setSearchVisible(true)} />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <span style={{ paddingRight: padding, fontWeight: 'bold' }}>Bar's ID: {bar.business_id}</span>
@@ -894,11 +919,11 @@ function NotPlaying() {
     )
 }
 
-function SearchBar() {
+function SearchBar(props: { onClick: () => any }) {
     const window = useWindowDimensions();
     const [hovered, setHovered] = useState(false);
     return (
-        <div onClick={() => router.navigate("/search")} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} style={{ padding: padding, backgroundColor: hovered ? "#FFF2" : "#FFF1", borderRadius: radius * 2, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', cursor: 'pointer' }}>
+        <div onClick={props.onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} style={{ padding: padding, backgroundColor: hovered ? "#FFF2" : "#FFF1", borderRadius: radius * 2, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', cursor: 'pointer' }}>
             <FontAwesomeIcon icon={faMagnifyingGlass} />
             <span style={{ textAlign: 'center', color: "#fffa", paddingLeft: padding, paddingRight: padding, minWidth: Math.min(500, window.width / 3), textAlignLast: 'left' }}>Add a song to queue...</span>
         </div>

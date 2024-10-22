@@ -49,10 +49,6 @@ export const router = createBrowserRouter([{
       Component: Dashboard
     },
     {
-      path: "/search",
-      Component: Search
-    },
-    {
       path: "/account",
       Component: Account
     },

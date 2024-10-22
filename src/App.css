@@ -123,6 +123,12 @@
   white-space: nowrap;
 }
 
+.search-modal {
+  width: 90vw;
+  /* Occupy the 90% of the screen width */
+  max-width: 90vw;
+}
+
 .App-header {
   background-color: #17171E;
   min-height: 100vh;
@@ -303,7 +309,7 @@
 }
 
 .App-montserrat-smallertext {
-  font-size: calc(12px + 0.5vmin);
+  font-size: calc(10px + 0.5vmin);
   font-family: "Montserrat", sans-serif;
   font-optical-sizing: auto;
   font-style: normal;

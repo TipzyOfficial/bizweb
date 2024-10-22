@@ -36,7 +36,7 @@ function GenreButton(props: { genre: string, selected: Set<string>, onClick: (b:
 
     return (
         <div style={{ padding: padding, backgroundColor: selected ? Colors.tertiaryDark : "#fff2", borderRadius: radius, cursor: 'pointer' }} onClick={onClick}>
-            <span className="onelinetext-montserrat" style={{ fontWeight: 'bold', }}>{props.genre}</span>
+            <span className="onelinetext-montserrat" style={{ fontWeight: 'bold', fontSize: "calc(10px + 0.5vmin)" }}>{props.genre}</span>
         </div>
     )
 }

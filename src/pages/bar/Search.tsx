@@ -36,7 +36,7 @@ const SearchModal = (props: { completed?: boolean, loading: boolean, visible: bo
     )
 }
 
-export function Search() {
+export function Search(props: { onClose: () => any }) {
     const usc = useContext(UserSessionContext);
     const [song, setSong] = useState<SongType | undefined>(undefined);
     const [requesting, setRequesting] = useState(false);
@@ -72,7 +72,7 @@ export function Search() {
 
     return (
         <>
-            <SearchComponent onClick={(song) => {
+            <SearchComponent onClose={props.onClose} onClick={(song) => {
                 setSong(song);
             }} />
             <SearchModal completed={successMsg ? successMsg : undefined} loading={requesting}
@@ -90,7 +90,7 @@ export function Search() {
     )
 }
 
-export function SearchComponent(props: { onClick: (song: SongType) => any }) {
+export function SearchComponent(props: { onClick: (song: SongType) => any, onClose: () => any }) {
     const usc = useContext(UserSessionContext);
     const fdim = useFdim();
     const [query, setQuery] = useState("");
@@ -100,7 +100,8 @@ export function SearchComponent(props: { onClick: (song: SongType) => any }) {
     const [isAiSuggestion, setIsAiSuggestion] = useState(false);
     const songDims = fdim ? Math.max(Math.min(fdim / 15, 50), 30) : 30;
     const window = useWindowDimensions();
-    const width = Math.min(500, window.width / 3);
+    const width = "100%";
+    const onClose = props.onClose
 
     /**
      * searches for songs related to a certain query.
@@ -187,33 +188,30 @@ export function SearchComponent(props: { onClick: (song: SongType) => any }) {
     }
 
     return (
-        <div className="App-body-top">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: "100%", padding: padding, backgroundColor: "#0001" }}>
-                <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                    <SmallLogo />
-                    <span className="App-montserrat-normaltext" style={{ paddingLeft: padding, fontWeight: 'bold', color: "#fff8" }}>Biz Dashboard</span>
-                </div>
-                <form onSubmit={(e) => {
-                    e.preventDefault();
-                    getSearchResults(query, 50);
-                    setSuggestion(undefined);
-                    getSuggestion(query);
-                    setIsAiSuggestion(false);
-                }}>
+        <div style={{ display: 'flex', flexDirection: 'column', overflow: "scroll", height: "80vh", backgroundColor: Colors.background }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: "100%", padding: padding, backgroundColor: "#0001", }}>
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        getSearchResults(query, 50);
+                        setSuggestion(undefined);
+                        getSuggestion(query);
+                        setIsAiSuggestion(false);
+                    }}>
                     <div style={{
-                        minWidth: width,
+                        minWidth: window.width / 3,
                     }}>
                         <SearchBar value={query} setValue={setQuery} />
                     </div>
                 </form>
-                <div style={{ flex: 1, display: "flex", height: "100%" }}>
-                    <div onClick={() => router.navigate("/dashboard")} style={{ paddingLeft: padding, paddingRight: padding, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <div style={{ display: "flex", height: "100%" }}>
+                    <div onClick={onClose} style={{ paddingLeft: padding, paddingRight: padding, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold' }}>Close</span>
                     </div>
                 </div>
             </div>
             {suggestion && !isAiSuggestion ?
-                <div style={{ paddingTop: padding, paddingBottom: padding }}>
+                <div style={{ padding: padding }}>
                     <div style={{ padding: padding, borderStyle: 'solid', borderRadius: radius, borderWidth: 1, borderColor: Colors.primaryRegular, cursor: 'pointer', width: width }}
                         onClick={() => {
                             setQuery(suggestion);
@@ -229,10 +227,10 @@ export function SearchComponent(props: { onClick: (song: SongType) => any }) {
             }
             <div style={{
                 display: 'flex', flex: 1, flexDirection: 'column', paddingRight: padding, paddingLeft: padding,
-                width: Math.min(window.width, 1000), overflow: 'scroll',
+                width: "100%", overflow: 'scroll', maxHeight: "70vh"
             }}>
                 <DisplayOrLoading condition={!searching} loadingScreen={
-                    <div className="App-header">
+                    <div style={{ display: 'flex', flexDirection: "column", justifyContent: 'center', alignItems: 'center', flex: 1 }}>
                         <Spinner style={{ color: Colors.primaryRegular, width: 50, height: 50 }} />
                         <div style={{ padding: padding }} className="App-smalltext">Loading results...</div>
                     </div>
@@ -254,7 +252,7 @@ export function SearchComponent(props: { onClick: (song: SongType) => any }) {
 function SearchBar(props: { value: string, setValue: (s: string) => void }) {
     const [focused, setFocused] = useState(false);
     return (
-        <div onClick={() => router.navigate("/search")} style={{ paddingLeft: padding, backgroundColor: "#FFF1", borderRadius: radius * 2, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', outlineStyle: "solid", outlineWidth: focused ? 1 : 0, outlineColor: 'white' }}>
+        <div style={{ paddingLeft: padding, backgroundColor: "#FFF1", borderRadius: radius * 2, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', outlineStyle: "solid", outlineWidth: focused ? 1 : 0, outlineColor: 'white', width: "100%" }}>
             <FontAwesomeIcon icon={faMagnifyingGlass} />
             <input value={props.value} onChange={(e) => props.setValue(e.target.value)}
                 autoFocus

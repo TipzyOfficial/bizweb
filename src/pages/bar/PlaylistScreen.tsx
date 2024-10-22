@@ -1,5 +1,5 @@
 import { memo, useContext, useEffect, useRef, useState } from "react";
-import { Colors, padding, radius } from "../../lib/Constants";
+import { Colors, padding, radius, useFdim } from "../../lib/Constants";
 import { Input } from "../../components/GiantInput";
 
 import React from "react";
@@ -17,6 +17,7 @@ import _ from "lodash";
 import PlaybackComponent from "./PlaybackComponent";
 import { AlertContentType } from "../../components/Modals";
 import LoadingBar from "../../components/LoadingBar";
+import useWindowDimensions from "../../lib/useWindowDimensions";
 
 const AITABWIDTH = 20;
 
@@ -208,10 +209,10 @@ export function PlaylistScreen(props: { visibleState: [boolean, (b: boolean) => 
                                         <></>
                                         :
                                         <>
-                                            <div style={{ height: padding }}></div>
-                                            <span className="App-montserrat-aitext" style={{ fontWeight: 'bold' }}>✨ Find songs that match your vibe ✨</span>
-                                            <span className="App-smalltext" style={{ paddingBottom: padding, textAlign: 'center' }}>Using AI, you can find songs you like instantly from a single prompt!</span>
-
+                                            <div style={{ padding: padding, display: 'flex', flexDirection: 'column' }}>
+                                                <span className="App-montserrat-aitext" style={{ fontWeight: 'bold', textAlign: 'center' }}>✨ Find songs that match your vibe ✨</span>
+                                                <span className="App-smalltext" style={{ textAlign: 'center' }}>Using AI, you can find songs you like instantly from a single prompt!</span>
+                                            </div>
                                             <div style={{ width: "75%" }}>
                                                 <Input
                                                     placeholder="What do you want to listen to?"
@@ -372,6 +373,7 @@ function PlaylistGeneratorModal(props: {
                                     display: 'flex', flex: "1 0 0", flexDirection: 'column', overflowY: "scroll", width: "100%",
                                 }}>
                                     <div style={{ overflowY: "scroll", }}>
+                                        <div style={{ height: padding }} />
                                         {songs.map((song) => <PGMRenderItem song={song} setSelected={(b) => setSelected(b, song)} selectedSongs={selectedSongs} onQueueClick={props.onQueueClick} />)}
                                     </div>
                                 </div>
@@ -419,6 +421,8 @@ const PGMRenderItem = (props: { song: SongType, setSelected: (b: boolean) => any
     const selectedSongs = props.selectedSongs;
     const selected = selectedSongs.has(props.song.id);
     const [queueLoading, setQueueLoading] = useState(false);
+    const songDims = useWindowDimensions().width / 40;
+
 
     const QueueButton = () => {
         const [hoverStatus, setHoverStatus] = useState(0);
@@ -466,7 +470,7 @@ const PGMRenderItem = (props: { song: SongType, setSelected: (b: boolean) => any
                     <div style={{ paddingRight: padding, }}>
                         <FontAwesomeIcon color={selected ? Colors.primaryRegular : "#fff8"} icon={selected ? faCircleFilled : faCircleEmpty}></FontAwesomeIcon>
                     </div>
-                    <Song song={props.song} />
+                    <Song song={props.song} dims={songDims} />
                 </div>
                 <div style={{ paddingLeft: 5, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <QueueButton />
