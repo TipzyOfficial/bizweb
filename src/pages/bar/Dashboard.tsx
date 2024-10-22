@@ -426,7 +426,7 @@ export default function Dashboard() {
                         </div>
                         : <div style={{ padding: padding, width: "100%", display: 'flex', justifyContent: 'center', opacity: 0.7, textAlign: 'center' }}>
                             {acceptRadioValue === "Auto" ? <span>Since you're auto-accepting new requests, you won't see requests show up here for review.</span> :
-                                acceptRadioValue === "TipzyAI" ? <span>You're letting Virtual DJ check if each request is a good fit. If we don't think a song matches your vibe, we'll put it here for you to decide.</span>
+                                acceptRadioValue === "TipzyAI" ? <span>You're letting Virtual DJ check if each request is a good fit. If it doesn't think a song matches your vibe, it'll put it here for you to decide.</span>
                                     : <span>No new song requests...yet!</span>}
                         </div>)
                     : <div style={{ paddingLeft: padding }}><NotPlaying /></div>
