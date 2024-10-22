@@ -37,7 +37,7 @@ const GENRES = [
     "Singalong",
 ]
 
-type AcceptingType = "Manual" | "Auto" | "TipzyAI" | undefined;
+export type AcceptingType = "Manual" | "Auto" | "TipzyAI" | undefined;
 export type CurrentlyPlayingType = [SongType, { progressMs: number, durationMs: number, paused: boolean }];
 
 function checkAutoAccept(auto?: boolean, gpt?: boolean): AcceptingType {
@@ -87,6 +87,7 @@ export default function Dashboard() {
     const [seeMoreStats, setSeeMoreStats] = useState(false);
     const [pausedUI, setPausedUI] = useState(false);
     const [somethingPressed, setSomethingPressed] = useState(false);
+    const [volume, setVolume] = useState(0.7);
     // const [alertVisible, setAlertVisible] = useState(false);
     const [alertContent, setAlertContent] = useState<AlertContentType>(undefined);
 
@@ -388,23 +389,9 @@ export default function Dashboard() {
         const outlineColor = Colors.tertiaryDark;
         return (
             <div style={{ width: "100%", height: "100%", paddingRight: padding }}>
-                <TZHeader title="Requests" backgroundColor={Colors.darkBackground}
+                <TZHeader title="" backgroundColor={Colors.darkBackground}
                     leftComponent={
                         <RejectAllButton onClick={rejectAll} />
-                    }
-                    rightComponent={
-                        <Dropdown>
-                            <Dropdown.Toggle variant="tertiary" style={{ height: "100%", color: "white", fontWeight: "bold" }} id="dropdown-basic">
-                                {acceptRadioValue === "Manual" ? "Manually accepting" :
-                                    acceptRadioValue === "Auto" ? "Auto-accepting" :
-                                        acceptRadioValue === "TipzyAI" ? "Tipzy decides" : "..."}
-                            </Dropdown.Toggle>
-                            <Dropdown.Menu variant="dark">
-                                <Dropdown.Item onClick={async () => onSetAccept("Manual")}>Manually accept</Dropdown.Item>
-                                <Dropdown.Item onClick={async () => onSetAccept("Auto")}>Auto-accept</Dropdown.Item>
-                                <Dropdown.Item onClick={async () => onSetAccept("TipzyAI")}>Let Tipzy Decide</Dropdown.Item>
-                            </Dropdown.Menu>
-                        </Dropdown>
                     }
                 />
                 {currentlyPlaying ?
@@ -422,9 +409,9 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         </div>
-                        : <div style={{ padding: padding, width: "100%", display: 'flex', justifyContent: 'center', opacity: 0.7 }}>
+                        : <div style={{ padding: padding, width: "100%", display: 'flex', justifyContent: 'center', opacity: 0.7, textAlign: 'center' }}>
                             {acceptRadioValue === "Auto" ? <span>Since you're auto-accepting new requests, you won't see requests show up here for review.</span> :
-                                acceptRadioValue === "TipzyAI" ? <span>You're letting Tipzy check if each request is a good fit. If we don't think a song matches your vibe, we'll put it here for you to decide.</span>
+                                acceptRadioValue === "TipzyAI" ? <span>You're letting our Virtual DJ check if each request is a good fit. If we don't think a song matches your vibe, we'll put it here for you to decide.</span>
                                     : <span>No new song requests...yet!</span>}
                         </div>)
                     : <div style={{ paddingLeft: padding }}><NotPlaying /></div>
@@ -595,7 +582,7 @@ export default function Dashboard() {
                         <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
                         <div style={{ paddingBottom: padding }} />
                         {currentlyPlaying ?
-                            <Queue pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
+                            <Queue volumeState={[volume, setVolume]} pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
                                 console.log('reordering', reordering)
 
                                 if (!reordering) {
@@ -615,7 +602,14 @@ export default function Dashboard() {
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden' }}>
                         <div style={{ display: "flex", justifyContent: 'space-between' }}>
-                            <DJSettings genres={GENRES} expandState={[djExpanded, setDJExpanded]} selectedState={[djSelectedGenres, setDJSelectedGenres]} energyState={[djEnergy, setDJEnergy]} bangersState={[djBangersOnly, setDJBangersOnly]} />
+                            <DJSettings
+                                genres={GENRES}
+                                expandState={[djExpanded, setDJExpanded]}
+                                selectedState={[djSelectedGenres, setDJSelectedGenres]}
+                                energyState={[djEnergy, setDJEnergy]}
+                                bangersState={[djBangersOnly, setDJBangersOnly]}
+                                acceptRadioValueState={[acceptRadioValue, setAcceptRadioValue]}
+                                onSetAccept={onSetAccept} />
                         </div>
                         <div style={{ flex: 1, height: "100%", overflowY: 'scroll' }}>
                             <Requests />

@@ -31,7 +31,7 @@
   flex: 1;
   width: 100%;
   display: grid;
-  grid-template-columns: 1fr 1.5fr 1fr;
+  grid-template-columns: 1.5fr 3fr 2fr;
   color: white;
 }
 
@@ -405,6 +405,16 @@
   100% {
     background-position: 10% 0%
   }
+}
+
+.slider-volume {
+  -webkit-appearance: none;
+  border-radius: 25px;
+  width: 5px;
+  background-color: #17171E;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  vertical-align: bottom;
 }
 
 .slider-fader {

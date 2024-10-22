@@ -11,7 +11,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import TZButton from "../../components/TZButton";
 import { CurrentlyPlayingType } from "./Dashboard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faForwardStep, faPause, faPlay, IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { faForwardStep, faPause, faPlay, faVolumeDown, faVolumeLow, faVolumeMute, faVolumeUp, IconDefinition } from "@fortawesome/free-solid-svg-icons";
 
 
 type SongDraggableType = SongType// { id: string, song: SongType }
@@ -34,6 +34,7 @@ type QueueProps = {
     current: CurrentlyPlayingType,
     queueOrder: [SongType[], React.Dispatch<React.SetStateAction<SongType[]>>],
     editingQueue: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
+    volumeState: [number, React.Dispatch<React.SetStateAction<number>>]
     songDims?: number,
     reorderQueue: () => Promise<any>,
     disable?: boolean,
@@ -64,6 +65,7 @@ export default function Queue(props: QueueProps) {
 
     const queueOrder = props.queueOrder[0];
     const [editingQueue, setEditingQueue] = props.editingQueue;
+    const [volume, setVolume] = props.volumeState;
 
     // console.log("QO", props.queueOrder);
 
@@ -81,27 +83,54 @@ export default function Queue(props: QueueProps) {
 
     return (
         <div style={{ width: "100%" }}>
-            <div style={{ padding: padding, backgroundColor: "#fff1", borderRadius: radius }}>
-                <div style={{ display: 'flex' }}>
-                    <div style={{ flexGrow: 1, width: '100%' }}>
-                        <Song song={current ?? { title: "No song playing", artists: ["No artist"], id: "", albumart: "", explicit: false }} dims={props.songDims}></Song>
-                    </div>
-                    <div style={{ width: "100%", display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, paddingLeft: padding, paddingRight: padding }}>
-                        <PlaybackButton icon={paused ? faPlay : faPause} disable={props.disable} onClick={props.onPauseClick} />
-                        <div style={{ width: padding * 2 }} />
-                        <PlaybackButton icon={faForwardStep} disable={props.disable} onClick={props.onSkipClick} />
-                    </div>
-
-                </div>
-                {progress ?
-                    <>
-                        <div style={{ paddingBottom: padding }} />
-                        <div style={{ width: "100%", height: playbackHeight, backgroundColor: "#fff2" }}>
-                            <div className="App-animated-gradient-fast-light" style={{ width: `${(progress.progressMs / progress.durationMs) * 100}%`, height: "100%", backgroundColor: 'white' }}></div>
+            <div style={{ display: 'flex' }}>
+                <div style={{ padding: padding, backgroundColor: "#fff1", borderRadius: radius, flex: 1 }}>
+                    <div style={{ display: 'flex' }}>
+                        <div style={{ flexGrow: 1, width: '100%' }}>
+                            <Song song={current ?? { title: "No song playing", artists: ["No artist"], id: "", albumart: "", explicit: false }} dims={props.songDims}></Song>
                         </div>
-                    </> : <></>}
+                        <div style={{ width: "100%", display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, paddingLeft: padding, paddingRight: padding }}>
+                            <PlaybackButton icon={paused ? faPlay : faPause} disable={props.disable} onClick={props.onPauseClick} />
+                            <div style={{ width: padding * 2 }} />
+                            <PlaybackButton icon={faForwardStep} disable={props.disable} onClick={props.onSkipClick} />
+                        </div>
+                    </div>
+                    {progress ?
+                        <>
+                            <div style={{ paddingBottom: padding }} />
+                            <div style={{ width: "100%", height: playbackHeight, backgroundColor: "#fff2" }}>
+                                <div className="App-animated-gradient-fast-light" style={{ width: `${(progress.progressMs / progress.durationMs) * 100}%`, height: "100%", backgroundColor: 'white' }}></div>
+                            </div>
+                        </> : <></>}
+                </div>
+                <div style={{ width: padding }} />
+                <div style={{ padding: padding, position: "relative", backgroundColor: "#fff1", borderRadius: radius, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', height: "100%" }}>
+                        <input type="range" className="slider"
+                            // style={{
+                            //     // position: 'absolute',
+                            //     // height: "100%",
+                            //     flex: 0,
+                            //     borderRadius: 25,
+                            //     width: 5,
+                            //     backgroundColor: "#17171E",
+                            //     writingMode: "vertical-lr",
+                            //     direction: "rtl",
+                            //     verticalAlign: "bottom",
+                            // }}
+                            min={0} max={100}
+                            step={10}
+                            value={volume}
+                            onChange={(e) => setVolume(parseInt(e.target.value))}
+                        />
+                    </div>
+                    <div style={{ height: padding }} />
+                    <div style={{ padding: padding }} />
+                    <div style={{ position: "absolute", bottom: padding }}>
+                        <FontAwesomeIcon icon={volume > 50 ? faVolumeUp : volume > 0 ? faVolumeDown : faVolumeMute}></FontAwesomeIcon>
+                    </div>
+                </div>
             </div>
-
             <div style={{ paddingBottom: padding }} />
             {
                 editingQueue ?

@@ -5,7 +5,9 @@ import _ from "lodash";
 import TZToggle from "../../components/TZToggle";
 import { useInterval } from "../../lib/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars } from "@fortawesome/free-solid-svg-icons";
+import { faBars, faCheck, faLeaf } from "@fortawesome/free-solid-svg-icons";
+import { AcceptingType } from "./Dashboard";
+import { Dropdown } from "react-bootstrap";
 
 type DJSettingsProps = {
     genres: string[],
@@ -13,6 +15,8 @@ type DJSettingsProps = {
     selectedState: [Set<string>, (s: Set<string>) => any],
     energyState: [number, (n: number) => any],
     bangersState: [boolean, (b: boolean) => any],
+    onSetAccept: (s: AcceptingType) => any,
+    acceptRadioValueState: [AcceptingType, (s: AcceptingType) => any]
 }
 
 function GenreButton(props: { genre: string, selected: Set<string>, onClick: (b: boolean) => any }) {
@@ -55,6 +59,8 @@ export default function DJSettings(props: DJSettingsProps) {
     const [energy, setEnergy] = props.energyState;
     const [bangersOnly, setBangersOnly] = props.bangersState;
     const [expanded, setExpanded] = props.expandState;
+    const [acceptRadioValue, setAcceptRadioValue] = props.acceptRadioValueState;
+    const onSetAccept = props.onSetAccept;
 
 
     const onGenreClicked = (g: string, add: boolean) => {
@@ -85,19 +91,50 @@ export default function DJSettings(props: DJSettingsProps) {
         )
     }
 
+    const DropdownItem = (props: { accepting: AcceptingType, text: string, desc: string | JSX.Element }) => {
+
+        const accepting = props.accepting
+
+        const Surrounding = (props: { children: JSX.Element | JSX.Element[] }) => {
+            const condition = accepting === acceptRadioValue
+            return (
+                <div style={{ padding: 5 }}>
+                    <div style={{
+                        borderWidth: 1, borderRadius: radius,
+                        padding: padding, backgroundColor: condition ? "#fff2" : "#0000",
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', }}>
+                                {props.children}
+                            </div>
+                            {condition ? <FontAwesomeIcon icon={faCheck} color={Colors.tertiaryLight}></FontAwesomeIcon> : <></>}
+                        </div>
+                    </div>
+                </div >
+            );
+        }
+
+        return (
+            <Dropdown.Item style={{ padding: 0 }} onClick={async () => onSetAccept(props.accepting)}>
+                <Surrounding>
+                    <span className="App-montserrat-smallertext" style={{ color: 'white', fontWeight: 500 }}>{props.text}</span>
+                    <span className="App-smalltext" style={{ color: '#fff8', display: 'inline-block', lineHeight: 1.3 }}>{props.desc}</span>
+                </Surrounding>
+            </Dropdown.Item>
+        );
+    }
+
     return (
         <div style={{ width: "100%" }}>
             <Header />
-
             {
                 expanded ?
                     <>
-                        <div style={{ display: 'flex' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                             <div style={{ padding: padding, display: 'flex' }}>
                                 <div style={{ flexShrink: 1, padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1 }}>
                                     <GenreList {...props} onGenreClicked={onGenreClicked} />
                                 </div>
-
                                 <div style={{ display: 'flex', flexDirection: 'row', paddingLeft: padding, flexGrow: 1 }}>
                                     <div style={{ paddingBottom: padding, display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: radius, backgroundColor: Colors.tertiaryDark, padding: padding }}>
                                         <div style={{ width: "100%", flex: 1, display: "flex", justifyContent: 'space-around' }}>
@@ -114,16 +151,30 @@ export default function DJSettings(props: DJSettingsProps) {
                                         </div>
                                         <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingTop: padding }}>Energy</span>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', paddingLeft: padding }}>
-                                        {/* <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold' }}>Bangers only</span> */}
-                                        <TZToggle title="Bangers Only" value={bangersOnly} onClick={onBangersClicked} />
-                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', paddingLeft: padding }}>
+                                    {/* <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold' }}>Bangers only</span> */}
+                                    <TZToggle title="Bangers Only" value={bangersOnly} onClick={onBangersClicked} />
                                 </div>
                             </div>
+                            <div style={{ padding: padding }}>
+                                <Dropdown>
+                                    <Dropdown.Toggle className="App-montserrat-smallertext" variant="tertiary" style={{ height: "100%", color: "white", fontWeight: "bold", padding: padding, borderRadius: radius }} id="dropdown-basic">
+                                        {acceptRadioValue === "Manual" ? "Manually accepting" :
+                                            acceptRadioValue === "Auto" ? "Auto-accepting" :
+                                                acceptRadioValue === "TipzyAI" ? "Virtual DJ" : "..."}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu variant="dark" style={{ padding: 0, overflow: 'hidden', borderRadius: radius + 5 }} >
+                                        <DropdownItem accepting="Manual" text="Manually accepting" desc="All requests go by you." />
+                                        <DropdownItem accepting="Auto" text="Auto-accepting" desc={<span>Automatically accepts all reasonable requests.<br />Will only reject songs sent with obviously bad intentions.</span>} />
+                                        <DropdownItem accepting="TipzyAI" text="Virtual DJ" desc={<span>Lets our Virtual DJ accept/reject songs.<br />If it's unsure, it'll defer to you for the final say!</span>} />
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </div>
                         </div>
-                        <div style={{ flex: 1, paddingLeft: padding }}>
+                        {/* <div style={{ flex: 1, paddingLeft: padding }}>
                             <span>Virtual DJ is an unfinished feature. For now, enjoy this preview of its interface!</span>
-                        </div>
+                        </div> */}
                     </>
 
                     : <></>
