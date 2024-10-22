@@ -1,7 +1,7 @@
 import { Modal, Spinner } from "react-bootstrap";
 import { DisplayOrLoading } from "../../components/DisplayOrLoading";
 import { Colors, padding, radius, useFdim } from "../../lib/Constants";
-import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
+import { Dispatch, memo, SetStateAction, useContext, useEffect, useState } from "react";
 import { UserSessionContext, UserSessionContextType } from "../../lib/UserSessionContext";
 import ProfileButton from "../../components/ProfileButton";
 import Queue from "./Queue";
@@ -12,7 +12,7 @@ import _, { eq } from "lodash";
 import BigLogo, { SmallLogo } from "../../components/BigLogo";
 import Song from "../../components/Song";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faMagnifyingGlass, faXmark, IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faChevronLeft, faChevronRight, faMagnifyingGlass, faXmark, IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import Dropdown from 'react-bootstrap/Dropdown';
 import TZHeader from "../../components/TZHeader";
 import Stats from "./Stats";
@@ -38,6 +38,8 @@ const GENRES = [
 ]
 
 export type AcceptingType = "Manual" | "Auto" | "TipzyAI" | undefined;
+export type ShuffleType = "Playlist" | "TipzyAI" | undefined;
+
 export type CurrentlyPlayingType = [SongType, { progressMs: number, durationMs: number, paused: boolean }];
 
 function checkAutoAccept(auto?: boolean, gpt?: boolean): AcceptingType {
@@ -63,6 +65,8 @@ const LoadingScreen = () =>
 
 const refreshQueueTime = 5000;
 
+const AITABWIDTH = 17;
+
 export default function Dashboard() {
     const usc = useContext(UserSessionContext);
     const bar = usc.user;
@@ -87,7 +91,7 @@ export default function Dashboard() {
     const [seeMoreStats, setSeeMoreStats] = useState(false);
     const [pausedUI, setPausedUI] = useState(false);
     const [somethingPressed, setSomethingPressed] = useState(false);
-    const [volume, setVolume] = useState(0.7);
+    const [volume, setVolume] = useState(70);
     // const [alertVisible, setAlertVisible] = useState(false);
     const [alertContent, setAlertContent] = useState<AlertContentType>(undefined);
 
@@ -100,11 +104,16 @@ export default function Dashboard() {
     const eQ: [boolean, Dispatch<SetStateAction<boolean>>] = [editingQueue, setEditingQueue]; //is "editing" on?
     const [reordering, setReordering] = useState(false); //is actively reordering queue?
 
+    //show AI tab stuff
+    const [aiTabVisible, setAITabVisible] = useState(true);
+
     //DJ Controls
     const [djExpanded, setDJExpanded] = useState(false);
     const [djSelectedGenres, setDJSelectedGenres] = useState(new Set<string>());
     const [djEnergy, setDJEnergy] = useState(50);
     const [djBangersOnly, setDJBangersOnly] = useState(false);
+
+    const [shuffleValue, setShuffleValue] = useState<ShuffleType>("TipzyAI");
 
 
     const setCurrentlyPlaying = (s: CurrentlyPlayingType | undefined) => {
@@ -393,6 +402,12 @@ export default function Dashboard() {
                     leftComponent={
                         <RejectAllButton onClick={rejectAll} />
                     }
+                    rightComponent={
+                        <TZToggle title="Take requests" value={toggleAllowRequests} onClick={async () => {
+                            await setAllowingRequests(usc, !toggleAllowRequests);
+                            setToggles(...await getToggles(usc));
+                        }} />
+                    }
                 />
                 {currentlyPlaying ?
                     (songRequests.length > 0 ?
@@ -411,7 +426,7 @@ export default function Dashboard() {
                         </div>
                         : <div style={{ padding: padding, width: "100%", display: 'flex', justifyContent: 'center', opacity: 0.7, textAlign: 'center' }}>
                             {acceptRadioValue === "Auto" ? <span>Since you're auto-accepting new requests, you won't see requests show up here for review.</span> :
-                                acceptRadioValue === "TipzyAI" ? <span>You're letting our Virtual DJ check if each request is a good fit. If we don't think a song matches your vibe, we'll put it here for you to decide.</span>
+                                acceptRadioValue === "TipzyAI" ? <span>You're letting Virtual DJ check if each request is a good fit. If we don't think a song matches your vibe, we'll put it here for you to decide.</span>
                                     : <span>No new song requests...yet!</span>}
                         </div>)
                     : <div style={{ paddingLeft: padding }}><NotPlaying /></div>
@@ -481,6 +496,12 @@ export default function Dashboard() {
     const onSetAccept = async (v: AcceptingType) => {
         await setAccepting(usc, v);
         setToggles(...await getToggles(usc));
+    }
+
+    const onSetShuffle = async (v: ShuffleType) => {
+        // await setAccepting(usc, v);
+        // setToggles(...await getToggles(usc));
+        setShuffleValue(v);
     }
 
     const onSetDJMode = async (b: boolean) => {
@@ -574,9 +595,9 @@ export default function Dashboard() {
                         <ProfileButton position="relative" name={bar.business_name}></ProfileButton>
                     </div>
                 </div>
-                <div className="App-dashboard-grid" style={{ overflow: 'hidden' }}>
+                <div className="App-dashboard-grid" style={{ overflow: 'hidden', position: 'relative', gridTemplateColumns: aiTabVisible ? "1.5fr 3.5fr 1.5fr" : "1.5fr 5fr" }}>
                     <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll', position: 'relative' }}>
-                        {queueLoading ? <div style={{ position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background + "88" }}>
+                        {queueLoading ? <div style={{ position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background + "88", zIndex: 100 }}>
                             <Spinner />
                         </div> : <></>}
                         <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
@@ -600,7 +621,7 @@ export default function Dashboard() {
                             <NotPlaying />
                         }
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden', paddingRight: aiTabVisible ? 0 : AITABWIDTH }}>
                         <div style={{ display: "flex", justifyContent: 'space-between' }}>
                             <DJSettings
                                 genres={GENRES}
@@ -609,12 +630,37 @@ export default function Dashboard() {
                                 energyState={[djEnergy, setDJEnergy]}
                                 bangersState={[djBangersOnly, setDJBangersOnly]}
                                 acceptRadioValueState={[acceptRadioValue, setAcceptRadioValue]}
-                                onSetAccept={onSetAccept} />
+                                shuffleRadioValueState={[shuffleValue, setShuffleValue]}
+                                onSetShuffle={onSetShuffle}
+                                onSetAccept={onSetAccept}
+                                ExplicitButton={
+                                    <div style={{ display: "flex" }}>
+                                        <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
+                                            await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
+                                            setToggles(...await getToggles(usc));
+                                        }} />
+                                    </div>
+                                }
+                                PlaylistScreen={
+                                    <>
+                                        <PlaybackComponent setDisableTyping={setDisableTyping} />
+                                        <div style={{ display: "flex" }}>
+                                            <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
+                                                await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
+                                                setToggles(...await getToggles(usc));
+                                            }} />
+                                        </div>
+
+                                    </>
+
+                                }
+                            />
+
                         </div>
                         <div style={{ flex: 1, height: "100%", overflowY: 'scroll' }}>
                             <Requests />
                         </div>
-                        <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
+                        {/* <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
                             <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
                                 await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
                                 setToggles(...await getToggles(usc));
@@ -623,26 +669,45 @@ export default function Dashboard() {
                             <div style={{ display: "flex" }}>
                                 <TZToggle title="DJ Mode" disabled value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></TZToggle>
                             </div>
-                            {/* <Toggle title="Auto-accept" value={toggleAutoRequests} onClick={async () => {
-                                await setAutoAcceptingRequests(usc, !toggleAutoRequests);
-                                setToggles(...await getToggles(usc));
-                            }} /> */}
                             <div style={{ paddingLeft: padding }} />
-                            <TZToggle title="Take requests" value={toggleAllowRequests} onClick={async () => {
-                                await setAllowingRequests(usc, !toggleAllowRequests);
-                                setToggles(...await getToggles(usc));
-                            }} />
+                        </div> */}
+                    </div>
+                    <PlaylistScreen visibleState={[aiTabVisible, setAITabVisible]} setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} />
+                    {/* 
+                    {aiTabVisible ?
+                        <div style={{ height: "100%", overflowY: 'scroll', position: 'relative', display: 'flex', }}>
+                            <AISideTab close onClick={() => setAITabVisible(!aiTabVisible)} />
+                            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                <PlaylistScreen visibleState={[aiTabVisible, setAITabVisible]} setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} />
+                            </div>
+                            <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} />
+                            <div style={{ paddingBottom: padding }} />
                         </div>
-                    </div>
-                    <div style={{ height: "100%", overflowY: 'scroll', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-                        <PlaylistScreen setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} />
-                        {/* <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} /> */}
-                        {/* <div style={{ paddingBottom: padding }} /> */}
-                    </div>
+                        : <AISideTab onClick={() => setAITabVisible(!aiTabVisible)} />
+                    } */}
                 </div>
                 <AlertModal onHide={() => setAlertContent(undefined)} content={alertContent} />
             </div>
         </DisplayOrLoading>
+    )
+}
+
+const AISideTab = (props: { onClick: () => any, close?: boolean }) => {
+    const [hover, setHover] = useState(false);
+
+    return (
+        <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+            onClick={props.onClick}
+            style={{
+                height: "100%", width: AITABWIDTH,
+                position: props.close ? 'relative' : 'absolute', display: 'flex',
+                flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+                backgroundColor: "#fff4", zIndex: 99,
+                opacity: hover ? 0.7 : 1, cursor: 'pointer',
+                right: props.close !== true ? 0 : undefined,
+            }}>
+            <FontAwesomeIcon icon={props.close ? faChevronRight : faChevronLeft}></FontAwesomeIcon>
+        </div>
     )
 }
 
@@ -839,3 +904,7 @@ function SearchBar() {
         </div>
     )
 }
+
+// const DJSettingsMemo = memo(DJSettings, (prev, next) => {
+//     return true;
+// });

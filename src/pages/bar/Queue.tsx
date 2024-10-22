@@ -95,40 +95,48 @@ export default function Queue(props: QueueProps) {
                             <PlaybackButton icon={faForwardStep} disable={props.disable} onClick={props.onSkipClick} />
                         </div>
                     </div>
+                    {/* 
+                    <div style={{ paddingTop: padding, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+
+
+                    </div> */}
+
                     {progress ?
                         <>
-                            <div style={{ paddingBottom: padding }} />
-                            <div style={{ width: "100%", height: playbackHeight, backgroundColor: "#fff2" }}>
-                                <div className="App-animated-gradient-fast-light" style={{ width: `${(progress.progressMs / progress.durationMs) * 100}%`, height: "100%", backgroundColor: 'white' }}></div>
+                            {/* <div style={{ paddingBottom: padding }} /> */}
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <div style={{ width: "100%", height: playbackHeight, backgroundColor: "#fff2" }}>
+                                    <div className="App-animated-gradient-fast-light" style={{ width: `${(progress.progressMs / progress.durationMs) * 100}%`, height: "100%", backgroundColor: 'white' }}></div>
+                                </div>
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'row', position: "relative", justifyContent: 'flex-end', alignItems: 'center' }}>
+                                    <div style={{ position: "absolute", left: padding }}>
+                                        <FontAwesomeIcon icon={volume > 50 ? faVolumeUp : volume > 0 ? faVolumeDown : faVolumeMute}></FontAwesomeIcon>
+                                    </div>
+                                    <div style={{ width: padding }} />
+                                    <div style={{ padding: padding }} />
+                                    <div style={{ display: 'flex', height: "100%" }}>
+                                        <input type="range" className="slider-volume"
+                                            style={{ width: 100 }}
+                                            // style={{
+                                            //     // position: 'absolute',
+                                            //     // height: "100%",
+                                            //     flex: 0,
+                                            //     borderRadius: 25,
+                                            //     width: 5,
+                                            //     backgroundColor: "#17171E",
+                                            //     writingMode: "vertical-lr",
+                                            //     direction: "rtl",
+                                            //     verticalAlign: "bottom",
+                                            // }}
+                                            min={0} max={100}
+                                            step={10}
+                                            value={volume}
+                                            onChange={(e) => setVolume(parseInt(e.target.value))}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </> : <></>}
-                </div>
-                <div style={{ width: padding }} />
-                <div style={{ padding: padding, position: "relative", backgroundColor: "#fff1", borderRadius: radius, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', height: "100%" }}>
-                        <input type="range" className="slider"
-                            // style={{
-                            //     // position: 'absolute',
-                            //     // height: "100%",
-                            //     flex: 0,
-                            //     borderRadius: 25,
-                            //     width: 5,
-                            //     backgroundColor: "#17171E",
-                            //     writingMode: "vertical-lr",
-                            //     direction: "rtl",
-                            //     verticalAlign: "bottom",
-                            // }}
-                            min={0} max={100}
-                            step={10}
-                            value={volume}
-                            onChange={(e) => setVolume(parseInt(e.target.value))}
-                        />
-                    </div>
-                    <div style={{ height: padding }} />
-                    <div style={{ padding: padding }} />
-                    <div style={{ position: "absolute", bottom: padding }}>
-                        <FontAwesomeIcon icon={volume > 50 ? faVolumeUp : volume > 0 ? faVolumeDown : faVolumeMute}></FontAwesomeIcon>
-                    </div>
                 </div>
             </div>
             <div style={{ paddingBottom: padding }} />

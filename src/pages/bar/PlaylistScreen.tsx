@@ -12,11 +12,32 @@ import { Modal, ProgressBar, Spinner } from "react-bootstrap";
 import Song, { artistsStringListToString } from "../../components/Song";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircle as faCircleEmpty } from "@fortawesome/free-regular-svg-icons";
-import { faCircle as faCircleFilled, faCirclePlay, faCirclePlus, faQuestion, faQuestionCircle, faWarning, faX, faXmark, faXmarkCircle } from "@fortawesome/free-solid-svg-icons";
+import { faChevronLeft, faChevronRight, faCircle as faCircleFilled, faCirclePlay, faCirclePlus, faQuestion, faQuestionCircle, faWarning, faX, faXmark, faXmarkCircle } from "@fortawesome/free-solid-svg-icons";
 import _ from "lodash";
 import PlaybackComponent from "./PlaybackComponent";
 import { AlertContentType } from "../../components/Modals";
 import LoadingBar from "../../components/LoadingBar";
+
+const AITABWIDTH = 20;
+
+const AISideTab = (props: { onClick: () => any, close?: boolean }) => {
+    const [hover, setHover] = useState(false);
+
+    return (
+        <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+            onClick={props.onClick}
+            style={{
+                height: "100%", width: AITABWIDTH,
+                position: props.close ? 'relative' : 'absolute', display: 'flex',
+                flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+                backgroundColor: "#fff4", zIndex: 99,
+                opacity: hover ? 0.7 : 1, cursor: 'pointer',
+                right: props.close !== true ? 0 : undefined,
+            }}>
+            <FontAwesomeIcon icon={props.close ? faChevronRight : faChevronLeft}></FontAwesomeIcon>
+        </div>
+    )
+}
 
 const TabButton = (props: { tab: number, id: number, onClick: (v: number) => any, text: string }) => {
     const [opacity, setOpacity] = useState(1);
@@ -45,7 +66,7 @@ const TabButton = (props: { tab: number, id: number, onClick: (v: number) => any
     )
 }
 
-export function PlaylistScreen(props: { setDisableTyping: (b: boolean) => any, setAlertContent: (a: AlertContentType) => any }) {
+export function PlaylistScreen(props: { visibleState: [boolean, (b: boolean) => any], setDisableTyping: (b: boolean) => any, setAlertContent: (a: AlertContentType) => any }) {
     const [focused, setFocusedIn] = useState(false);
     const [loading, setLoading] = useState(false);
     const [prompt, setPrompt] = useState("");
@@ -53,6 +74,7 @@ export function PlaylistScreen(props: { setDisableTyping: (b: boolean) => any, s
     const [songs, setSongs] = useState<SongType[] | undefined | null>(undefined);
     const [tab, setTab] = useState(0);
     const [selectedSongs, setSelectedSongs] = useState<Set<string>>(new Set());
+    const [visible, setVisible] = props.visibleState;
 
     // const [selectedSongs, setSelectedSongs] = useState<Set<string>>(new Set([]));
     const usc = useContext(UserSessionContext)
@@ -140,92 +162,97 @@ export function PlaylistScreen(props: { setDisableTyping: (b: boolean) => any, s
     }
 
     return (
-        <>
-            <div style={{ position: "sticky", top: 0, backgroundColor: Colors.background, width: "100%", display: 'flex', flex: 0, flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ display: 'flex', width: "100%", }}>
-                    <TabButton text="By You ✨" tab={tab} id={0} onClick={setTab}></TabButton>
-                    <TabButton text="Playlists" tab={tab} id={1} onClick={setTab}></TabButton>
-                </div >
-                {tab === 0 && songs && songs.length !== 0 ?
-                    <>
-                        <div style={{}}>
-                        </div>
-                        <div style={{ width: "100%", display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: "white" }}>
+        visible ?
+            <div style={{ backgroundColor: "#0003", display: "flex" }}>
+                <AISideTab close onClick={() => setVisible(false)} />
+                <div style={{ display: "flex", flexDirection: 'column', flex: 1 }}>
+                    <div style={{ position: "sticky", top: 0, backgroundColor: Colors.background, width: "100%", display: 'flex', flex: 0, flexDirection: 'column', alignItems: 'center' }}>
+                        {/* <div style={{ display: 'flex', width: "100%", }}>
+                            <TabButton text="By You ✨" tab={tab} id={0} onClick={setTab}></TabButton>
+                            <TabButton text="Playlists" tab={tab} id={1} onClick={setTab}></TabButton>
+                        </div > */}
+                        {tab === 0 && songs && songs.length !== 0 ?
                             <>
-                                <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex' }}>
-                                        <TZButton backgroundColor={"#0000"} title="Cancel" fontSize={15} onClick={onCancelClick}></TZButton>
-                                    </div>
+                                <div style={{ width: "100%", display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: "white" }}>
+                                    <>
+                                        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex' }}>
+                                                <TZButton backgroundColor={"#0000"} title="Cancel" fontSize={15} onClick={onCancelClick}></TZButton>
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                            <span className="onelinetextplain" style={{ textAlign: 'center', fontSize: "calc(10px + 0.5vmin)", textOverflow: 'ellipsis' }}>Results for "{prompt}"</span>
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: "-webkit-min-content", display: 'flex', justifyContent: 'flex-end', flexBasis: 0 }}>
+                                            <div style={{ display: 'flex' }}>
+                                                <TZButton color={Colors.green} backgroundColor={"#0000"} title="Select all" fontSize={15} onClick={onSelectAllClick}></TZButton>
+                                            </div>
+                                            <div>
+                                                <TZButton color={Colors.red} backgroundColor={"#0000"} title="Deselect all" fontSize={15} onClick={onDeselectAllClick}></TZButton>
+                                            </div>
+                                        </div>
+                                    </>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    <span className="onelinetextplain" style={{ textAlign: 'center', fontSize: "calc(10px + 0.5vmin)", textOverflow: 'ellipsis' }}>Results for "{prompt}"</span>
-                                </div>
-                                <div style={{ flex: 1, minWidth: "-webkit-min-content", display: 'flex', justifyContent: 'flex-end', flexBasis: 0 }}>
-                                    <div style={{ display: 'flex' }}>
-                                        <TZButton color={Colors.green} backgroundColor={"#0000"} title="Select all" fontSize={15} onClick={onSelectAllClick}></TZButton>
-                                    </div>
-                                    <div>
-                                        <TZButton color={Colors.red} backgroundColor={"#0000"} title="Deselect all" fontSize={15} onClick={onDeselectAllClick}></TZButton>
+                            </>
+                            : <></>//<div style={{ height: padding }}></div>
+                        }
+                    </div>
+
+                    <div
+                        style={{ width: "100%", display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center' }}>
+
+                        {tab === 0 ? //AI SCREEN
+                            <>
+                                <div style={{ width: "100%", display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', flex: 1, }}>
+                                    {show ?
+                                        <></>
+                                        :
+                                        <>
+                                            <div style={{ height: padding }}></div>
+                                            <span className="App-montserrat-aitext" style={{ fontWeight: 'bold' }}>✨ Find songs that match your vibe ✨</span>
+                                            <span className="App-smalltext" style={{ paddingBottom: padding, textAlign: 'center' }}>Using AI, you can find songs you like instantly from a single prompt!</span>
+
+                                            <div style={{ width: "75%" }}>
+                                                <Input
+                                                    placeholder="What do you want to listen to?"
+                                                    value={prompt} onChange={(e) => setPrompt(e.target.value)}
+                                                    style={{ fontSize: 20 }}
+                                                    multiline
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            e.preventDefault();
+                                                            onSubmit();
+                                                        }
+                                                    }}
+
+                                                    maxRows={5}
+                                                    focused={focused}
+                                                    onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+                                                />
+                                                <div style={{ height: padding }}></div>
+                                                <div style={{ display: 'flex' }}>
+                                                    <TZButton title="Generate" loading={loading} onClick={onSubmit}></TZButton>
+                                                </div>
+                                            </div>
+                                        </>
+                                    }
+                                    <div style={{ width: "100%", overflow: 'auto', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                        <PGMMemo prompt={prompt} show={show}
+                                            selectedSongs={selectedSongs}
+                                            setSelectedSongs={setSelectedSongs}
+                                            onHide={onHide} songs={songs}
+                                            onQueueClick={onQueueClick}
+                                        />
                                     </div>
                                 </div>
                             </>
-                        </div>
-                    </>
-                    : <div style={{ height: padding }}></div>
-                }
+
+                            : <PBCMemo setDisableTyping={setDisableTyping} />}
+                    </div>
+                </div>
             </div>
-
-            <div
-                style={{ width: "100%", display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center' }}>
-
-                {tab === 0 ? //AI SCREEN
-                    <>
-                        <div style={{ width: "100%", display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', flex: 1, }}>
-                            {show ?
-                                <></>
-                                :
-                                <>
-                                    <span className="App-montserrat-aitext" style={{ fontWeight: 'bold' }}>✨ Find songs that match your vibe ✨</span>
-                                    <span className="App-smalltext" style={{ paddingBottom: padding, textAlign: 'center' }}>Using AI, you can find songs you like instantly from a single prompt!</span>
-
-                                    <div style={{ width: "75%" }}>
-                                        <Input
-                                            placeholder="What do you want to listen to?"
-                                            value={prompt} onChange={(e) => setPrompt(e.target.value)}
-                                            style={{ fontSize: 20 }}
-                                            multiline
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter") {
-                                                    e.preventDefault();
-                                                    onSubmit();
-                                                }
-                                            }}
-
-                                            maxRows={5}
-                                            focused={focused}
-                                            onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-                                        />
-                                        <div style={{ height: padding }}></div>
-                                        <div style={{ display: 'flex' }}>
-                                            <TZButton title="Generate" loading={loading} onClick={onSubmit}></TZButton>
-                                        </div>
-                                    </div>
-                                </>
-                            }
-                            <div style={{ width: "100%", overflow: 'auto', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                <PGMMemo prompt={prompt} show={show}
-                                    selectedSongs={selectedSongs}
-                                    setSelectedSongs={setSelectedSongs}
-                                    onHide={onHide} songs={songs}
-                                    onQueueClick={onQueueClick}
-                                />
-                            </div>
-                        </div>
-                    </>
-
-                    : <PBCMemo setDisableTyping={setDisableTyping} />}
-            </div>
-        </>
+            :
+            <AISideTab onClick={() => setVisible(true)} />
     );
 }
 
