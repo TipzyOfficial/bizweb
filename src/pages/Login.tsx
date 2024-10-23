@@ -229,7 +229,7 @@ function Login(props: { back?: boolean }) {
                         return r.data;
                     }).then(newUser => {
                         if (!newUser) {
-                            alert("Problem verifying account exists. Try again later.")
+                            alert("Problem verifying account exists. Try again later.");
                             return;
                         }
                         usc.setUser(newUser);
@@ -437,6 +437,29 @@ function Login(props: { back?: boolean }) {
                             <TZButton leftComponent={
                                 <><img src={GoogleLogo} width={18} height={18} alt={"google logo"} /> <div style={{ paddingRight: 5 }} /></>
                             } onClick={googleLogin} backgroundColor="#white" fontSize={20} color="black" title="Continue With Google" />
+                            <div style={{ paddingBottom: padding }}></div>
+                            {
+                                usernameShowing ?
+                                    <div style={{
+                                        backgroundColor: "#8885", width: "100%",
+                                        paddingTop: padding / 2, paddingBottom: padding, paddingLeft: padding, paddingRight: padding,
+                                        borderRadius: radius
+                                    }}>
+                                        <div style={{ width: "100%", display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: padding / 2 }}>
+                                            <span>Sign in with Username is for development purposes only.</span>
+                                            <div style={{ cursor: 'pointer' }} onClick={() => setUsernameShowing(false)}><FontAwesomeIcon icon={faXmark}></FontAwesomeIcon></div>
+                                        </div>
+                                        <div style={{ paddingBottom: 10, width: "100%" }}>
+                                            <input className='input' placeholder='Username' autoCorrect='off' autoCapitalize='off' value={username} onChange={(e) => setUsername(e.target.value)} />
+                                        </div>
+                                        <div style={{ paddingBottom: 10, width: "100%" }}>
+                                            <input className='input' type='password' placeholder='Password' value={password} onChange={(e) => setPassword(e.target.value)} />
+                                        </div>
+                                        <TZButton onClick={onLogin} title={"Sign in"} disabled={loginPressed}></TZButton>
+                                    </div>
+                                    :
+                                    <TZButton onClick={() => setUsernameShowing(true)} backgroundColor="#8885" fontSize={20} color="white" title="Sign in with Username" />
+                            }
                             <div style={{ fontSize: 12, paddingTop: padding, textAlign: 'center', color: "#888" }}>
                                 By using this service you agree to our <a style={{ textDecoration: 'underline', color: "#AAA" }} href="https://www.tipzy.app/privacy" target='_blank' rel="noreferrer">privacy policy.</a>
                                 <br></br>
