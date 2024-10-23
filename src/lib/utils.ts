@@ -7,6 +7,18 @@ export const goodETA = 600000;
 export const okETA = 180000;
 export const etaBuffer = -7000;
 
+export function stringArrayToStringFormatted(a: Array<string>) {
+    if (a.length === 0) return "";
+
+    let o = "";
+
+    for (const v of a) {
+        o += `, ${v}`;
+    }
+
+    return (o.substring(2))
+}
+
 export const onlyAlphanumeric = (str: string): string => {
     return str.replace(/[^0-9A-Z]+/gi, "");
 }

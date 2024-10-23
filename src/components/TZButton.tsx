@@ -4,7 +4,21 @@ import { Spinner } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle as faSuccess, faXmarkCircle as faFailure } from '@fortawesome/free-solid-svg-icons';
 
-function TZButton(props: { onClick?: () => void; title?: string, backgroundColor?: string, width?: number | string, disabled?: boolean, fontSize?: number | string, color?: string, loading?: boolean, completed?: boolean, leftComponent?: JSX.Element }) {
+type TZButtonProps = {
+    onClick?: () => void,
+    title?: string,
+    backgroundColor?: string,
+    width?: number | string,
+    disabled?: boolean,
+    fontSize?: number | string,
+    color?: string,
+    loading?: boolean,
+    completed?: boolean,
+    leftComponent?: JSX.Element,
+    brandingFont?: boolean,
+}
+
+function TZButton(props: TZButtonProps) {
     const [opacity, setOpacity] = useState(1);
 
     return (
@@ -41,7 +55,7 @@ function TZButton(props: { onClick?: () => void; title?: string, backgroundColor
                 :
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     {props.leftComponent ?? <></>}
-                    <span className="App-tertiarytitle" style={{ color: props.color ?? "white", fontWeight: 500, fontSize: props.fontSize }}>{props.title ?? ""}</span>
+                    <span className={`${props.brandingFont ? "App-montserrat-smallertext" : "App-tertiarytitle"}`} style={{ color: props.color ?? "white", fontWeight: props.brandingFont ? "bold" : 500, fontSize: props.fontSize }}>{props.title ?? ""}</span>
                     {props.loading ? <div style={{ paddingLeft: 5 }}><Spinner style={{ color: props.color, paddingTop: 3 }} size='sm' ></Spinner></div> : <></>}
                 </div>
             }

@@ -24,6 +24,5 @@ export const padding = 12;
 export const useFdim = () => {
     const window = useWindowDimensions();
     const fdim = (window.height && window.width ? Math.min(window.height * 0.5, window.width) : 650) * 1.5;
-    console.log(fdim);
     return Math.min(Math.max(fdim, 800), 1000);
 }

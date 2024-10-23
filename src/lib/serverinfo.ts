@@ -99,7 +99,7 @@ export async function fetchWithToken(accessToken: string, urlEnding: string, exp
     // debuglog("fwt at url:", urlEnding, "at and ea", accessToken, expiresAt)
     // expiresAt = 100;
 
-    console.log(expiresAt, Date.now());
+    // console.log(expiresAt, Date.now());
 
     let myAccessToken = accessToken;//c.get("access_token");
 

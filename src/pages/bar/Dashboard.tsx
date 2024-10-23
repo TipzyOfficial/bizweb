@@ -7,7 +7,7 @@ import ProfileButton from "../../components/ProfileButton";
 import Queue from "./Queue";
 import { fetchWithToken, getBusiness } from "../..";
 import { SongRequestType, SongType } from "../../lib/song";
-import { etaBuffer, getCookies, millisToMinutesAndSeconds, parseSongJson, useInterval } from "../../lib/utils";
+import { etaBuffer, getCookies, millisToMinutesAndSeconds, parseSongJson, useInterval, stringArrayToStringFormatted } from "../../lib/utils";
 import _, { eq } from "lodash";
 import BigLogo, { SmallLogo } from "../../components/BigLogo";
 import Song from "../../components/Song";
@@ -37,6 +37,12 @@ const GENRES = [
     "RnB",
     "Singalong",
 ]
+
+export type DJSettingsType = {
+    genres: string[],
+    energy: number,
+    bangersOnly: boolean,
+};
 
 export type AcceptingType = "Manual" | "Auto" | "TipzyAI" | undefined;
 export type ShuffleType = "Playlist" | "TipzyAI" | undefined;
@@ -112,6 +118,7 @@ export default function Dashboard() {
     const [aiTabVisible, setAITabVisible] = useState(true);
 
     //DJ Controls
+    const [djSettings, setDJSettings] = useState<DJSettingsType | undefined>();
     const [djExpanded, setDJExpanded] = useState(false);
     const [djSelectedGenres, setDJSelectedGenres] = useState(new Set<string>());
     const [djEnergy, setDJEnergy] = useState(50);
@@ -395,7 +402,7 @@ export default function Dashboard() {
 
     useInterval(refreshAllData, refreshQueueTime, 500, false);
 
-    console.log("UE REFRESH ALL")
+    // console.log("UE REFRESH ALL")
     ///() => rejectAll()
 
     const Requests = () => {
@@ -583,12 +590,44 @@ export default function Dashboard() {
 
     const queueLoading = reordering || somethingPressed;
 
-    const window = useWindowDimensions();
+    // const window = useWindowDimensions();
 
     const onSearchModalClose = () => {
         setSearchVisible(false);
         setDisableTyping(false);
+    }
 
+    //send DJSettings
+
+    /**
+     * path(“business/dj/shuffle/generate/“, views.dj_shuffle_by_prompt),
+genres = request.data.get(“genres”)
+    energy = int(request.data.get(“energy”))  # scale of 1 to 10
+    bangers_only = bool(request.data.get(“bangers_only”))
+genres is just a string. send em over like this: “pop, rock, rap”
+     */
+
+    const sendDJSettings = async () => {
+        const newDJSettings: DJSettingsType = {
+            genres: Array.from(djSelectedGenres).sort(),
+            energy: djEnergy / 10,
+            bangersOnly: djBangersOnly,
+        };
+
+
+        if (JSON.stringify(newDJSettings) !== JSON.stringify(djSettings)) {
+            const djs = JSON.stringify({
+                genres: stringArrayToStringFormatted(newDJSettings.genres),
+                energy: newDJSettings.energy,
+                bangers_only: newDJSettings.bangersOnly
+            })
+
+            console.log("newDJSettings", djs)
+
+            const json = await fetchWithToken(usc, 'business/dj/shuffle/generate/', 'POST', djs).then(r => r.json());
+
+            console.log("DJ Settings response json", json)
+        }
     }
 
     return (
@@ -654,6 +693,7 @@ export default function Dashboard() {
                                 selectedState={[djSelectedGenres, setDJSelectedGenres]}
                                 energyState={[djEnergy, setDJEnergy]}
                                 bangersState={[djBangersOnly, setDJBangersOnly]}
+                                sendDJSettings={sendDJSettings}
                                 acceptRadioValueState={[acceptRadioValue, setAcceptRadioValue]}
                                 shuffleRadioValueState={[shuffleValue, setShuffleValue]}
                                 onSetShuffle={onSetShuffle}

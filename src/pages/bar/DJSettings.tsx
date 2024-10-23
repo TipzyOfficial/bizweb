@@ -7,7 +7,8 @@ import { useInterval } from "../../lib/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faCheck, faLeaf } from "@fortawesome/free-solid-svg-icons";
 import { AcceptingType, ShuffleType } from "./Dashboard";
-import { Dropdown } from "react-bootstrap";
+import { Dropdown, Spinner } from "react-bootstrap";
+import TZButton from "../../components/TZButton";
 
 type DJSettingsProps = {
     genres: string[],
@@ -15,6 +16,7 @@ type DJSettingsProps = {
     selectedState: [Set<string>, (s: Set<string>) => any],
     energyState: [number, (n: number) => any],
     bangersState: [boolean, (b: boolean) => any],
+    sendDJSettings: () => any,
     onSetAccept: (s: AcceptingType) => any,
     acceptRadioValueState: [AcceptingType, (s: AcceptingType) => any],
     onSetShuffle: (s: ShuffleType) => any,
@@ -65,18 +67,36 @@ export default function DJSettings(props: DJSettingsProps) {
     const [expanded, setExpanded] = props.expandState;
     const [acceptRadioValue,] = props.acceptRadioValueState;
     const [shuffleRadioValue,] = props.shuffleRadioValueState;
+    const [loading, setLoading] = useState(false);
+    const [edited, setEdited] = useState(false);
     const onSetAccept = props.onSetAccept;
     const onSetShuffle = props.onSetShuffle;
+    const sendDJSettings = props.sendDJSettings;
 
+    const onSaveChangesClick = async () => {
+        if (!loading) {
+            setLoading(true);
+            await sendDJSettings().catch((e: Error) => console.error(e));
+            setLoading(false);
+            setEdited(false);
+        }
+    }
 
     const onGenreClicked = (g: string, add: boolean) => {
+        if (!edited) setEdited(true);
         if (add) selected.add(g);
         else selected.delete(g);
         setSelected(_.cloneDeep(selected));
     }
 
     const onBangersClicked = async () => {
+        if (!edited) setEdited(true);
         setBangersOnly(!bangersOnly);
+    }
+
+    const onEnergyClick = async () => {
+        //sendDJSettings();
+        if (!edited) setEdited(true);
     }
 
     const onEnergyChange = (n: number) => {
@@ -136,7 +156,12 @@ export default function DJSettings(props: DJSettingsProps) {
             {
                 expanded ?
                     <>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
+                            {loading ?
+                                <div style={{ width: "100%", height: "100%", position: "absolute", zIndex: 100, backgroundColor: "#0008", display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                    <Spinner />
+                                </div> : <></>
+                            }
                             <div style={{ padding: padding, display: 'flex' }}>
                                 <div style={{ flexShrink: 1, padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1 }}>
                                     <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingBottom: 5 }}>Handle requests</div>
@@ -176,6 +201,7 @@ export default function DJSettings(props: DJSettingsProps) {
                                                         min={0} max={100}
                                                         value={energy}
                                                         onChange={(e) => onEnergyChange(parseInt(e.target.value))}
+                                                        onClick={onEnergyClick}
                                                     />
                                                     <div style={{ flex: 0, display: 'flex' }}>
                                                         <VolumeDisplay val={energy} />
@@ -191,6 +217,8 @@ export default function DJSettings(props: DJSettingsProps) {
                                             <TZToggle title="Bangers Only" value={bangersOnly} onClick={onBangersClicked} />
                                             <div style={{ paddingTop: padding }} />
                                             {props.ExplicitButton}
+                                            <div style={{ paddingTop: padding }} />
+                                            {edited ? <TZButton title="Save Changes" brandingFont onClick={onSaveChangesClick} /> : <></>}
                                         </div>
                                     </> :
                                     <div style={{ paddingLeft: padding, }}>

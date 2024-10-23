@@ -22,7 +22,7 @@ type AlertModalProps = {
 }
 
 export const AlertModal = (props: AlertModalProps) => {
-    console.log(props.content);
+    // console.log(props.content);
 
     const [closing, setClosing] = useState(false);
 
