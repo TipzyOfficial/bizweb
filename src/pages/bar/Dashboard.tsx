@@ -41,13 +41,13 @@ const GENRES = [
 export type DJSettingsType = {
     genres: string[],
     energy: number,
-    bangersOnly: number,
+    popularity: number,
 };
 
 const defaultDJSetting: DJSettingsType = {
     genres: [],
     energy: 60,
-    bangersOnly: 75,
+    popularity: 75,
 }
 
 const defaultDJSettings: DJSettingsType[] = [defaultDJSetting, defaultDJSetting, defaultDJSetting]
@@ -145,7 +145,7 @@ export default function Dashboard() {
         console.log("djsg", djSetting.genres)
         // setDJSelectedGenres(new Set(djSetting.genres));
         setDJEnergy(djSetting.energy);
-        setDJBangersOnly(djSetting.bangersOnly);
+        setDJBangersOnly(djSetting.popularity);
     }
 
     const setDJSettingPlayingNumber = (n: number | undefined) => {
@@ -295,7 +295,7 @@ export default function Dashboard() {
         if (!_.isEqual(cur, currentlyPlaying)) setCurrentlyPlaying(cur);
         if (!_.isEqual(q, queue)) setQueue(q);
 
-        console.log("qqueue", q, queue, queueOrder);
+        console.log("qqueue", cur, q, queue, queueOrder);
 
         return [cur, q];
     }
@@ -647,15 +647,18 @@ genres is just a string. send em over like this: “pop, rock, rap”
         const newDJSettings: DJSettingsType = {
             genres: Array.from(current.genres).sort(),
             energy: current.energy / 10,
-            bangersOnly: current.bangersOnly,
+            popularity: current.popularity / 10,
         };
 
+        const statuses = ["OPENING", "PEAK", "CLOSING"];
 
         if (JSON.stringify(newDJSettings) !== JSON.stringify(djSettings[djCurrentSettingNumber])) {
             const djs = JSON.stringify({
-                genres: stringArrayToStringFormatted(newDJSettings.genres),
-                energy: newDJSettings.energy,
-                bangers_only: newDJSettings.bangersOnly > 5
+                dj_genres: stringArrayToStringFormatted(newDJSettings.genres),
+                dj_energy: newDJSettings.energy,
+                dj_popularity_min: newDJSettings.popularity,
+                dj_location: usc.user.address ?? "No location",
+                dj_status: statuses[djCurrentSettingNumber] ?? "PEAK"
             })
 
             console.log("newDJSettings", djs)

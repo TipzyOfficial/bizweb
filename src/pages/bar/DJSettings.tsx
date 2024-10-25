@@ -90,7 +90,7 @@ export default function DJSettings(props: DJSettingsProps) {
         djs[currentSettingNumber] = {
             genres: [...settings.genres],
             energy: settings.energy,
-            bangersOnly: settings.bangersOnly,
+            popularity: settings.popularity,
         }
         setDJSettings(djs);
         // setEdited(false);
@@ -107,7 +107,7 @@ export default function DJSettings(props: DJSettingsProps) {
     }
 
     const onBangersClicked = async () => {
-        editStuff({ ...currentSetting, bangersOnly: bangersOnly });
+        editStuff({ ...currentSetting, popularity: bangersOnly });
     }
 
     const onEnergyClick = async () => {
@@ -202,11 +202,11 @@ export default function DJSettings(props: DJSettingsProps) {
             <Header />
             {
                 expanded ?
-                    <div style={{ display: 'flex', flexDirection: 'column', paddingTop: padding }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', paddingTop: padding, position: 'relative' }}>
                         <DJSettingsTabs djSettings={djSettings} currentSettingNumber={currentSettingNumber} setCurrentSettingNumber={setCurrentSettingNumber} playingSettingNumber={playingSettingNumber} />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', }}>
                             {loading ?
-                                <div style={{ width: "100%", height: "100%", position: "absolute", zIndex: 100, backgroundColor: "#0008", display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                <div style={{ width: "100%", height: "100%", position: "absolute", top: 0, zIndex: 100, backgroundColor: "#0008", display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                     <Spinner />
                                 </div> : <></>
                             }
