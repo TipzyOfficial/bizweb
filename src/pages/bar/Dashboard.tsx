@@ -41,8 +41,16 @@ const GENRES = [
 export type DJSettingsType = {
     genres: string[],
     energy: number,
-    bangersOnly: boolean,
+    bangersOnly: number,
 };
+
+const defaultDJSetting: DJSettingsType = {
+    genres: [],
+    energy: 60,
+    bangersOnly: 75,
+}
+
+const defaultDJSettings: DJSettingsType[] = [defaultDJSetting, defaultDJSetting, defaultDJSetting]
 
 export type AcceptingType = "Manual" | "Auto" | "TipzyAI" | undefined;
 export type ShuffleType = "Playlist" | "TipzyAI" | undefined;
@@ -118,13 +126,31 @@ export default function Dashboard() {
     const [aiTabVisible, setAITabVisible] = useState(true);
 
     //DJ Controls
-    const [djSettings, setDJSettings] = useState<DJSettingsType | undefined>();
+    const [djSettingPlayingNumber, setDJSettingPlayingNumberIn] = useState<number | undefined>();
+    const [djCurrentSettingNumber, setDJCurrentSettingNumberIn] = useState(0);
+    const [djSettings, setDJSettings] = useState<DJSettingsType[]>(defaultDJSettings);
     const [djExpanded, setDJExpanded] = useState(false);
-    const [djSelectedGenres, setDJSelectedGenres] = useState(new Set<string>());
+    // const [djSelectedGenres, setDJSelectedGenres] = useState(new Set<string>());
     const [djEnergy, setDJEnergy] = useState(50);
-    const [djBangersOnly, setDJBangersOnly] = useState(false);
+    const [djBangersOnly, setDJBangersOnly] = useState(75);
 
     const [shuffleValue, setShuffleValue] = useState<ShuffleType>("TipzyAI");
+
+    //TODO REMOVE THIS LATER
+    const sessionStarted = djSettingPlayingNumber !== undefined;
+
+    const setDJCurrentSettingNumber = (n: number) => {
+        setDJCurrentSettingNumberIn(n);
+        const djSetting = djSettings[n];
+        console.log("djsg", djSetting.genres)
+        // setDJSelectedGenres(new Set(djSetting.genres));
+        setDJEnergy(djSetting.energy);
+        setDJBangersOnly(djSetting.bangersOnly);
+    }
+
+    const setDJSettingPlayingNumber = (n: number | undefined) => {
+        setDJSettingPlayingNumberIn(n);
+    }
 
 
     const setCurrentlyPlaying = (s: CurrentlyPlayingType | undefined) => {
@@ -414,13 +440,21 @@ export default function Dashboard() {
                         <RejectAllButton onClick={rejectAll} />
                     }
                     rightComponent={
-                        <TZToggle title="Take requests" value={toggleAllowRequests} onClick={async () => {
-                            await setAllowingRequests(usc, !toggleAllowRequests);
-                            setToggles(...await getToggles(usc));
-                        }} />
+                        <div style={{ display: "flex" }}>
+                            <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
+                                await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
+                                setToggles(...await getToggles(usc));
+                            }} />
+                            <div style={{ width: padding }} />
+                            <TZToggle title="Take requests" value={toggleAllowRequests} onClick={async () => {
+                                await setAllowingRequests(usc, !toggleAllowRequests);
+                                setToggles(...await getToggles(usc));
+                            }} />
+                        </div>
+
                     }
                 />
-                {currentlyPlaying ?
+                {currentlyPlaying && sessionStarted ?
                     (songRequests.length > 0 ?
                         <div style={{ paddingBottom: padding, paddingLeft: padding, paddingRight: padding, width: "100%" }}>
                             <div style={{ padding: padding, borderStyle: "solid", borderRadius: 5, borderColor: outlineColor, width: "100%" }}>
@@ -608,18 +642,20 @@ genres is just a string. send em over like this: “pop, rock, rap”
      */
 
     const sendDJSettings = async () => {
+        const current = djSettings[djCurrentSettingNumber];
+
         const newDJSettings: DJSettingsType = {
-            genres: Array.from(djSelectedGenres).sort(),
-            energy: djEnergy / 10,
-            bangersOnly: djBangersOnly,
+            genres: Array.from(current.genres).sort(),
+            energy: current.energy / 10,
+            bangersOnly: current.bangersOnly,
         };
 
 
-        if (JSON.stringify(newDJSettings) !== JSON.stringify(djSettings)) {
+        if (JSON.stringify(newDJSettings) !== JSON.stringify(djSettings[djCurrentSettingNumber])) {
             const djs = JSON.stringify({
                 genres: stringArrayToStringFormatted(newDJSettings.genres),
                 energy: newDJSettings.energy,
-                bangers_only: newDJSettings.bangersOnly
+                bangers_only: newDJSettings.bangersOnly > 5
             })
 
             console.log("newDJSettings", djs)
@@ -666,7 +702,7 @@ genres is just a string. send em over like this: “pop, rock, rap”
                         </div> : <></>}
                         <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
                         <div style={{ paddingBottom: padding }} />
-                        {currentlyPlaying ?
+                        {currentlyPlaying && sessionStarted ?
                             <Queue volumeState={[volume, setVolume]} pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
                                 console.log('reordering', reordering)
 
@@ -690,21 +726,19 @@ genres is just a string. send em over like this: “pop, rock, rap”
                             <DJSettings
                                 genres={GENRES}
                                 expandState={[djExpanded, setDJExpanded]}
-                                selectedState={[djSelectedGenres, setDJSelectedGenres]}
+                                // selectedState={[djSelectedGenres, setDJSelectedGenres]}
                                 energyState={[djEnergy, setDJEnergy]}
                                 bangersState={[djBangersOnly, setDJBangersOnly]}
                                 sendDJSettings={sendDJSettings}
+                                djSettingPlayingNumberState={[djSettingPlayingNumber, setDJSettingPlayingNumber]}
+                                djSettingsState={[djSettings, setDJSettings]}
+                                djCurrentSettingNumberState={[djCurrentSettingNumber, setDJCurrentSettingNumber]}
                                 acceptRadioValueState={[acceptRadioValue, setAcceptRadioValue]}
                                 shuffleRadioValueState={[shuffleValue, setShuffleValue]}
                                 onSetShuffle={onSetShuffle}
                                 onSetAccept={onSetAccept}
                                 ExplicitButton={
-                                    <div style={{ display: "flex" }}>
-                                        <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
-                                            await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
-                                            setToggles(...await getToggles(usc));
-                                        }} />
-                                    </div>
+                                    <></>
                                 }
                                 PlaylistScreen={
                                     <>
@@ -954,7 +988,8 @@ const getQueue = async (usc: UserSessionContextType): Promise<[CurrentlyPlayingT
 function NotPlaying() {
     return (
         <div style={{ padding: padding, backgroundColor: "#FFF1", borderRadius: radius, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <span style={{ textAlign: 'center' }}>Start playing music on your streaming app to accept requests and view the queue!</span>
+            {/* <span style={{ textAlign: 'center' }}>Start playing music on your streaming app to accept requests and view the queue!</span> */}
+            <span style={{ textAlign: 'center' }}>Start playing music to accept requests and view the queue!</span>
         </div>
     )
 }

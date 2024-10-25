@@ -1,22 +1,30 @@
-import React, { ReactNode, useState } from "react";
+import React, { memo, ReactNode, useState } from "react";
 import TZHeader from "../../components/TZHeader";
-import { Colors, padding, radius } from "../../lib/Constants";
+import { Colors, padding, radius, useFdim } from "../../lib/Constants";
 import _ from "lodash";
 import TZToggle from "../../components/TZToggle";
 import { useInterval } from "../../lib/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faCheck, faLeaf } from "@fortawesome/free-solid-svg-icons";
-import { AcceptingType, ShuffleType } from "./Dashboard";
+import { AcceptingType, DJSettingsType, ShuffleType } from "./Dashboard";
 import { Dropdown, Spinner } from "react-bootstrap";
 import TZButton from "../../components/TZButton";
+import Lottie from "react-lottie";
+import playingAnimation from '../../assets/stereo.json';
+import useWindowDimensions from "../../lib/useWindowDimensions";
+
+const SettingsNameMapping = ["Opening", "Peak", "Closing"]
 
 type DJSettingsProps = {
     genres: string[],
     expandState: [boolean, (b: boolean) => any]
-    selectedState: [Set<string>, (s: Set<string>) => any],
+    // selectedState: [Set<string>, (s: Set<string>) => any],
     energyState: [number, (n: number) => any],
-    bangersState: [boolean, (b: boolean) => any],
+    bangersState: [number, (n: number) => any],
     sendDJSettings: () => any,
+    djSettingsState: [DJSettingsType[], (a: DJSettingsType[]) => any],
+    djCurrentSettingNumberState: [number, (n: number) => any],
+    djSettingPlayingNumberState: [number | undefined, (n: number | undefined) => any],
     onSetAccept: (s: AcceptingType) => any,
     acceptRadioValueState: [AcceptingType, (s: AcceptingType) => any],
     onSetShuffle: (s: ShuffleType) => any,
@@ -25,82 +33,94 @@ type DJSettingsProps = {
     ExplicitButton: ReactNode,
 }
 
-function GenreButton(props: { genre: string, selected: Set<string>, onClick: (b: boolean) => any }) {
-    const startSelected = props.selected.has(props.genre);
+function GenreButton(props: { genre: string, selected: Set<string>, onClick: () => any }) {
+    const selected = props.selected.has(props.genre);
+    // const [selected, setSelected] = useState(startSelected);
 
-    const [selected, setSelected] = useState(startSelected);
-
-    const onClick = () => {
-        const s = selected;
-        setSelected(!selected);
-        props.onClick(!s);
-    }
+    // const onClick = () => {
+    //     const s = selected;
+    //     setSelected(!selected);
+    //     props.onClick(!s);
+    // }
 
     return (
-        <div style={{ padding: padding, backgroundColor: selected ? Colors.tertiaryDark : "#fff2", borderRadius: radius, cursor: 'pointer' }} onClick={onClick}>
+        <div style={{ padding: padding, backgroundColor: selected ? Colors.tertiaryDark : "#fff2", borderRadius: radius, cursor: 'pointer' }} onClick={() => props.onClick()}>
             <span className="onelinetext-montserrat" style={{ fontWeight: 'bold', fontSize: "calc(10px + 0.5vmin)" }}>{props.genre}</span>
         </div>
     )
 }
 
-const GenreList = (props: DJSettingsProps & { onGenreClicked: (g: string, b: boolean) => any }) => {
-    const genres = props.genres;
-    const genresSqrt = Math.ceil(Math.sqrt(genres.length));
-    const onGenreClicked = props.onGenreClicked;
-
-    return (
-        <div >
-            <div style={{ paddingBottom: padding }}>
-                <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold' }}>Genres to Play</span>
-            </div>
-            <div className="App-grid-container" style={{ gridTemplateColumns: `repeat(${genresSqrt}, 1fr)`, gridGap: padding / 2 }}>
-                {genres.map(g => <GenreButton genre={g} selected={props.selectedState[0]} onClick={(b) => onGenreClicked(g, b)} />)}
-            </div>
-        </div>
-    )
-}
-
 export default function DJSettings(props: DJSettingsProps) {
-    const [selected, setSelected] = props.selectedState;
-    const [energy, setEnergy] = props.energyState;
-    const [bangersOnly, setBangersOnly] = props.bangersState;
+    const genres = props.genres;
+    // const [selectedGenres, setSelectedGenres] = props.selectedState;
+    const [energy, setEnergy] = props.energyState;//useState(50)//props.energyState;
+    const [bangersOnly, setBangersOnly] = props.bangersState;//useState(75)//props.bangersState;
     const [expanded, setExpanded] = props.expandState;
     const [acceptRadioValue,] = props.acceptRadioValueState;
     const [shuffleRadioValue,] = props.shuffleRadioValueState;
+    const [djSettings, setDJSettings] = props.djSettingsState
+    const [currentSettingNumber, setCurrentSettingNumber] = props.djCurrentSettingNumberState;
+    const [playingSettingNumber, setPlayingSettingNumber] = props.djSettingPlayingNumberState;
     const [loading, setLoading] = useState(false);
     const [edited, setEdited] = useState(false);
     const onSetAccept = props.onSetAccept;
     const onSetShuffle = props.onSetShuffle;
     const sendDJSettings = props.sendDJSettings;
 
-    const onSaveChangesClick = async () => {
+    const currentSetting = djSettings[currentSettingNumber];
+    const currentGenres = new Set(currentSetting.genres);
+
+    const onUpdateSession = async () => {
         if (!loading) {
             setLoading(true);
             await sendDJSettings().catch((e: Error) => console.error(e));
+            setPlayingSettingNumber(currentSettingNumber);
             setLoading(false);
             setEdited(false);
         }
     }
 
-    const onGenreClicked = (g: string, add: boolean) => {
+    const editStuff = (settings: DJSettingsType) => {
+        onSaveChanges(settings);
         if (!edited) setEdited(true);
-        if (add) selected.add(g);
-        else selected.delete(g);
-        setSelected(_.cloneDeep(selected));
+    }
+
+    const onSaveChanges = (settings: DJSettingsType) => {
+        const djs = [...djSettings];
+        djs[currentSettingNumber] = {
+            genres: [...settings.genres],
+            energy: settings.energy,
+            bangersOnly: settings.bangersOnly,
+        }
+        setDJSettings(djs);
+        // setEdited(false);
+    }
+
+    const onGenreClicked = (g: string) => {
+        const sg = currentGenres;
+        const add = !sg.has(g);
+        console.log("sg", sg, add)
+        if (add) sg.add(g);
+        else sg.delete(g);
+        // setSelectedGenres(sg);
+        editStuff({ ...currentSetting, genres: [...sg] });
     }
 
     const onBangersClicked = async () => {
-        if (!edited) setEdited(true);
-        setBangersOnly(!bangersOnly);
+        editStuff({ ...currentSetting, bangersOnly: bangersOnly });
     }
 
     const onEnergyClick = async () => {
         //sendDJSettings();
-        if (!edited) setEdited(true);
+        editStuff({ ...currentSetting, energy: energy });
     }
 
     const onEnergyChange = (n: number) => {
         setEnergy(n);
+    }
+
+    const onBangersChange = (n: number) => {
+        setBangersOnly(n);
     }
 
     const Header = () => {
@@ -134,7 +154,11 @@ export default function DJSettings(props: DJSettingsProps) {
         return (
             <div style={{ paddingLeft: padding, paddingRight: padding, paddingTop: padding }}>
                 <div className="App-montserrat-normaltext" onClick={() => setExpanded(!expanded)} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-                    style={{ textAlign: 'left', width: "100%", fontWeight: 'bold', display: 'flex', padding: padding, alignItems: 'center', cursor: 'pointer', opacity: hovered ? 0.7 : 1, borderColor: Colors.tertiaryDark, color: "white", borderStyle: "solid", borderWidth: 1, borderRadius: radius }}>
+                    style={{
+                        textAlign: 'left', width: "100%", fontWeight: 'bold', display: 'flex', padding: padding,
+                        alignItems: 'center', cursor: 'pointer', opacity: hovered ? 0.7 : 1, borderColor: Colors.tertiaryDark,
+                        color: "white", borderStyle: "solid", borderWidth: 1, borderRadius: radius
+                    }}>
                     {/* <FontAwesomeIcon color={Colors.tertiaryDark} icon={faBars} /> */}
 
                     {
@@ -150,12 +174,36 @@ export default function DJSettings(props: DJSettingsProps) {
     const DIR = DropdownItem<AcceptingType>;
     const DIS = DropdownItem<ShuffleType>;
 
+    const GenreList = (props: { onGenreClicked: (g: string) => any }) => {
+        const genresSqrt = Math.ceil(Math.sqrt(genres.length));
+        const onGenreClicked = props.onGenreClicked;
+
+        return (
+            <div >
+                <div style={{ paddingBottom: padding }}>
+                    <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold' }}>Genres to Play</span>
+                </div>
+                <div className="App-grid-container" style={{ gridTemplateColumns: `repeat(${genresSqrt}, 1fr)`, gridGap: padding / 2 }}>
+                    {genres.map(g => <GenreButton genre={g} selected={currentGenres} onClick={() => onGenreClicked(g)} />)}
+                </div>
+            </div>
+        )
+    }
+
+    const playing = currentSettingNumber === playingSettingNumber;
+    const Dividers = () =>
+        <div style={{ paddingLeft: 10, paddingRight: 10, width: "100%" }}>
+            <div style={{ width: "100%", height: 7, borderLeftStyle: 'solid', borderRightStyle: 'solid', borderWidth: 2, borderColor: "#fff8" }} />
+        </div>
+
+
     return (
         <div style={{ width: "100%" }}>
             <Header />
             {
                 expanded ?
-                    <>
+                    <div style={{ display: 'flex', flexDirection: 'column', paddingTop: padding }}>
+                        <DJSettingsTabs djSettings={djSettings} currentSettingNumber={currentSettingNumber} setCurrentSettingNumber={setCurrentSettingNumber} playingSettingNumber={playingSettingNumber} />
                         <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
                             {loading ?
                                 <div style={{ width: "100%", height: "100%", position: "absolute", zIndex: 100, backgroundColor: "#0008", display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -214,11 +262,31 @@ export default function DJSettings(props: DJSettingsProps) {
                                         </div>
                                         <div style={{ display: 'flex', flexDirection: 'column', paddingLeft: padding }}>
                                             {/* <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold' }}>Bangers only</span> */}
-                                            <TZToggle title="Bangers Only" value={bangersOnly} onClick={onBangersClicked} />
+                                            {/* <TZToggle title="Bangers Only" value={currentSetting.bangersOnly} onClick={onBangersClicked} /> */}
+                                            <div style={{ padding: padding, borderRadius: radius, backgroundColor: Colors.tertiaryDark, display: "flex", flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                                <span className="App-montserrat-smallertext" style={{ paddingBottom: padding / 2, fontWeight: "bold" }}>Popularity</span>
+                                                <Dividers />
+                                                <input style={{ zIndex: 2, width: "100%" }} type="range" className="slider-bangers"
+                                                    min={0} max={100}
+                                                    value={bangersOnly}
+                                                    onChange={(e) => onBangersChange(parseInt(e.target.value))}
+                                                    onClick={onBangersClicked}
+                                                />
+                                                <Dividers />
+                                                <div style={{ display: "flex", justifyContent: 'space-between', fontSize: 12, fontWeight: 'bold', width: "100%", minWidth: 170, paddingTop: padding / 2 }}>
+                                                    <div style={{ flexShrink: 1, textAlign: "left" }}>
+                                                        Deep cuts
+                                                    </div>
+                                                    <div style={{ flexShrink: 1, textAlign: "right" }}>
+                                                        Bangers
+                                                    </div>
+                                                </div>
+                                            </div>
                                             <div style={{ paddingTop: padding }} />
-                                            {props.ExplicitButton}
-                                            <div style={{ paddingTop: padding }} />
-                                            {edited ? <TZButton title="Save Changes" brandingFont onClick={onSaveChangesClick} /> : <></>}
+                                            {/* {props.ExplicitButton}
+                                            <div style={{ paddingTop: padding }} /> */}
+                                            {!playing || (edited && playing) ? <TZButton title={playingSettingNumber !== undefined ? "Update session" : "Start session"} brandingFont onClick={onUpdateSession} /> : <></>}
+
                                         </div>
                                     </> :
                                     <div style={{ paddingLeft: padding, }}>
@@ -231,7 +299,7 @@ export default function DJSettings(props: DJSettingsProps) {
                         {/* <div style={{ flex: 1, paddingLeft: padding }}>
                             <span>Virtual DJ is an unfinished feature. For now, enjoy this preview of its interface!</span>
                         </div> */}
-                    </>
+                    </div>
 
                     : <></>
             }
@@ -295,3 +363,51 @@ function DropdownItem<T>(props: { accepting: T, val: T, text: string, desc: stri
         </Dropdown.Item>
     );
 }
+
+const DJSettingsTabs = memo((props: { djSettings: DJSettingsType[], currentSettingNumber: number, setCurrentSettingNumber: (n: number) => any, playingSettingNumber: number | undefined }) => {
+    return (
+        <div style={{ width: "100%", display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            {props.djSettings.map((v, i) => <DJSetting name={SettingsNameMapping[i]} selected={props.currentSettingNumber === i} playing={props.playingSettingNumber === i} onClick={() => props.setCurrentSettingNumber(i)} />)}
+        </div>
+    )
+})
+
+const DJSetting = memo((props: { name: string, selected: boolean, playing: boolean, onClick: () => any }) => {
+    const selected = props.selected;
+    const playing = props.playing;
+    const fdim = useFdim();
+    const dim = 20 + fdim / 200;
+
+    return (
+        <div style={{ paddingLeft: padding / 2, paddingRight: padding / 2 }}>
+            <div style={{
+                padding: 10, backgroundColor: selected ? Colors.secondaryDark : "#FFF2", borderRadius: radius * 2, cursor: "pointer",
+                outlineColor: "white", outlineWidth: selected ? 1 : 0, outlineStyle: "solid",
+                display: 'flex', justifyContent: 'center', alignItems: 'center'
+            }} onClick={props.onClick}>
+                <span className="App-montserrat-smallertext" style={{ fontWeight: "bold", }}>{props.name}</span>
+                {
+                    playing ?
+                        <div style={{ paddingLeft: 5 }}>
+                            <Lottie
+                                style={{}}
+                                options={
+                                    {
+                                        loop: true,
+                                        autoplay: true,
+                                        animationData: playingAnimation,
+                                        rendererSettings: {
+
+                                            preserveAspectRatio: "xMidYMid slice"
+                                        }
+                                    }
+                                }
+                                width={dim}
+                            />
+                        </div> : <></>
+                }
+
+            </div>
+        </div>
+    )
+})
