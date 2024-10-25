@@ -133,6 +133,7 @@ export default function Dashboard() {
     // const [djSelectedGenres, setDJSelectedGenres] = useState(new Set<string>());
     const [djEnergy, setDJEnergy] = useState(50);
     const [djBangersOnly, setDJBangersOnly] = useState(75);
+    const [djLocation, setDJLocation] = useState("2200A Market St, San Francisco, CA 94114");
 
     const [shuffleValue, setShuffleValue] = useState<ShuffleType>("TipzyAI");
 
@@ -657,7 +658,7 @@ genres is just a string. send em over like this: “pop, rock, rap”
                 dj_genres: stringArrayToStringFormatted(newDJSettings.genres),
                 dj_energy: newDJSettings.energy,
                 dj_popularity_min: newDJSettings.popularity,
-                dj_location: usc.user.address ?? "No location",
+                dj_location: djLocation ?? "No location",
                 dj_status: statuses[djCurrentSettingNumber] ?? "PEAK"
             })
 
@@ -725,6 +726,7 @@ genres is just a string. send em over like this: “pop, rock, rap”
                         }
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden', paddingRight: aiTabVisible ? 0 : AITABWIDTH }}>
+                        <input value={djLocation} onChange={(e) => setDJLocation(e.target.value)}></input>
                         <div style={{ display: "flex", justifyContent: 'space-between' }}>
                             <DJSettings
                                 genres={GENRES}
