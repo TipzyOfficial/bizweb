@@ -5,7 +5,7 @@ import _ from "lodash";
 import TZToggle from "../../components/TZToggle";
 import { useInterval } from "../../lib/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faCheck, faLeaf } from "@fortawesome/free-solid-svg-icons";
+import { faBars, faCheck, faLeaf, faLocation, faLocationDot, faMarker } from "@fortawesome/free-solid-svg-icons";
 import { AcceptingType, DJSettingsType, ShuffleType } from "./Dashboard";
 import { Dropdown, Spinner } from "react-bootstrap";
 import TZButton from "../../components/TZButton";
@@ -73,10 +73,17 @@ export default function DJSettings(props: DJSettingsProps) {
     const onUpdateSession = async () => {
         if (!loading) {
             setLoading(true);
-            await sendDJSettings().catch((e: Error) => console.error(e));
-            setPlayingSettingNumber(currentSettingNumber);
-            setLoading(false);
-            setEdited(false);
+            try {
+                await sendDJSettings();
+                setPlayingSettingNumber(currentSettingNumber);
+                setLoading(false);
+                setEdited(false);
+            } catch (e) {
+                console.error("Error sending DJ settings " + e);
+                setLoading(false);
+                alert("There was an error changing your settings. Try again later.")
+            }
+
         }
     }
 
@@ -281,6 +288,11 @@ export default function DJSettings(props: DJSettingsProps) {
                                                         Bangers
                                                     </div>
                                                 </div>
+                                            </div>
+                                            <div style={{ paddingTop: padding }} />
+                                            <div style={{ padding: padding, backgroundColor: Colors.tertiaryDark, borderRadius: radius, display: 'flex', alignItems: 'center' }}>
+                                                <FontAwesomeIcon icon={faLocationDot} />
+                                                <div className="App-montserrat-smallertext" style={{ paddingLeft: padding, fontWeight: 'bold' }}>San Francisco, CA</div>
                                             </div>
                                             <div style={{ paddingTop: padding }} />
                                             {/* {props.ExplicitButton}

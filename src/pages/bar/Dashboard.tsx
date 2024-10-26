@@ -26,6 +26,8 @@ import DJSettings from "./DJSettings";
 import TZToggle from "../../components/TZToggle";
 import { Search } from "./Search";
 
+const BACKEND_STATUS = ["OPENING", "PEAK", "CLOSING"];
+
 const GENRES = [
     "Rock",
     "Alt Rock",
@@ -133,7 +135,7 @@ export default function Dashboard() {
     // const [djSelectedGenres, setDJSelectedGenres] = useState(new Set<string>());
     const [djEnergy, setDJEnergy] = useState(50);
     const [djBangersOnly, setDJBangersOnly] = useState(75);
-    const [djLocation, setDJLocation] = useState("2200A Market St, San Francisco, CA 94114");
+    const [djLocation, setDJLocation] = useState("San Francisco, California");
 
     const [shuffleValue, setShuffleValue] = useState<ShuffleType>("TipzyAI");
 
@@ -422,9 +424,39 @@ export default function Dashboard() {
         };
     }, [songRequests, disableTyping]);
 
+    const initDJ = async () => {
+        const b = await getBusiness(usc).then((json) => json.data);
+        const status = b.dj_status;
+        const genres: string = b.dj_genres ?? "";
+        const energy: number = b.dj_energy ?? 7;
+        const popularity: number = b.dj_popularity_min ?? 7;
+        const index = BACKEND_STATUS.indexOf(status);
+
+        setDJSettingPlayingNumberIn(index);
+        setDJCurrentSettingNumberIn(index);
+
+        setDJEnergy(energy * 10);
+        setDJBangersOnly(energy * 10);
+        const setting: DJSettingsType = {
+            genres: genres.split(", "),
+            energy: energy * 10,
+            popularity: popularity * 10,
+        }
+
+        const settings = [...djSettings];
+        settings[index] = setting;
+
+        setDJSettings(settings);
+    }
+
+    const initAll = async () => {
+        await initDJ();
+        await refreshAllData();
+    }
+
     useEffect(() => {
         refreshPrice(true);
-        refreshAllData().then(() => setReady(true)).catch(() => setReady(true));
+        initAll().then(() => setReady(true)).catch(() => setReady(true));
     }, []);
 
     useInterval(refreshAllData, refreshQueueTime, 500, false);
@@ -651,15 +683,13 @@ genres is just a string. send em over like this: “pop, rock, rap”
             popularity: current.popularity / 10,
         };
 
-        const statuses = ["OPENING", "PEAK", "CLOSING"];
-
         if (JSON.stringify(newDJSettings) !== JSON.stringify(djSettings[djCurrentSettingNumber])) {
             const djs = JSON.stringify({
                 dj_genres: stringArrayToStringFormatted(newDJSettings.genres),
                 dj_energy: newDJSettings.energy,
                 dj_popularity_min: newDJSettings.popularity,
                 dj_location: djLocation ?? "No location",
-                dj_status: statuses[djCurrentSettingNumber] ?? "PEAK"
+                dj_status: BACKEND_STATUS[djCurrentSettingNumber] ?? "PEAK"
             })
 
             console.log("newDJSettings", djs)
@@ -700,7 +730,7 @@ genres is just a string. send em over like this: “pop, rock, rap”
                     </div>
                 </div>
                 <div className="App-dashboard-grid" style={{ overflow: 'hidden', position: 'relative', gridTemplateColumns: aiTabVisible ? "1.5fr 3.5fr 1.5fr" : "1.5fr 5fr" }}>
-                    <div style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll', position: 'relative' }}>
+                    <div className="remove-scrollbar" style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll', position: 'relative' }}>
                         {queueLoading ? <div style={{ position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background + "88", zIndex: 100 }}>
                             <Spinner />
                         </div> : <></>}
@@ -726,7 +756,7 @@ genres is just a string. send em over like this: “pop, rock, rap”
                         }
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden', paddingRight: aiTabVisible ? 0 : AITABWIDTH }}>
-                        <input value={djLocation} onChange={(e) => setDJLocation(e.target.value)}></input>
+                        {/* <input value={djLocation} onChange={(e) => setDJLocation(e.target.value)}></input> */}
                         <div style={{ display: "flex", justifyContent: 'space-between' }}>
                             <DJSettings
                                 genres={GENRES}
@@ -761,7 +791,7 @@ genres is just a string. send em over like this: “pop, rock, rap”
                             />
 
                         </div>
-                        <div style={{ flex: 1, height: "100%", overflowY: 'scroll' }}>
+                        <div className="remove-scrollbar" style={{ flex: 1, height: "100%", overflowY: 'scroll', }}>
                             <Requests />
                         </div>
                         {/* <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
