@@ -188,7 +188,7 @@ export function SearchComponent(props: { onClick: (song: SongType) => any, onClo
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', overflow: "scroll", height: "80vh", backgroundColor: Colors.background }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: "80vh", backgroundColor: Colors.background }}>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: "100%", padding: padding, backgroundColor: "#0001", }}>
                 <form
                     onSubmit={(e) => {
@@ -225,9 +225,9 @@ export function SearchComponent(props: { onClick: (song: SongType) => any, onClo
                     </div>
                 </div> : <></>
             }
-            <div style={{
+            <div className="remove-scrollbar" style={{
                 display: 'flex', flex: 1, flexDirection: 'column', paddingRight: padding, paddingLeft: padding,
-                width: "100%", overflow: 'scroll', maxHeight: "70vh"
+                width: "100%", overflow: 'scroll', maxHeight: "80vh"
             }}>
                 <DisplayOrLoading condition={!searching} loadingScreen={
                     <div style={{ display: 'flex', flexDirection: "column", justifyContent: 'center', alignItems: 'center', flex: 1 }}>

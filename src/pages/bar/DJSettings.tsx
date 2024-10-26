@@ -273,7 +273,7 @@ export default function DJSettings(props: DJSettingsProps) {
                                             <div style={{ padding: padding, borderRadius: radius, backgroundColor: Colors.tertiaryDark, display: "flex", flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                                                 <span className="App-montserrat-smallertext" style={{ paddingBottom: padding / 2, fontWeight: "bold" }}>Popularity</span>
                                                 <Dividers />
-                                                <input style={{ zIndex: 2, width: "100%" }} type="range" className="slider-bangers"
+                                                <input style={{ zIndex: 2, width: "100%", minWidth: 150 }} type="range" className="slider-bangers"
                                                     min={0} max={100}
                                                     value={bangersOnly}
                                                     onChange={(e) => onBangersChange(parseInt(e.target.value))}
@@ -282,10 +282,10 @@ export default function DJSettings(props: DJSettingsProps) {
                                                 <Dividers />
                                                 <div style={{ display: "flex", justifyContent: 'space-between', fontSize: 12, fontWeight: 'bold', width: "100%", minWidth: 170, paddingTop: padding / 2 }}>
                                                     <div style={{ flexShrink: 1, textAlign: "left" }}>
-                                                        Deep cuts
+                                                        Mix it up
                                                     </div>
                                                     <div style={{ flexShrink: 1, textAlign: "right" }}>
-                                                        Bangers
+                                                        Only bangers
                                                     </div>
                                                 </div>
                                             </div>
