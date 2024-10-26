@@ -355,7 +355,7 @@ function PlaylistGeneratorModal(props: {
         //         <span className="onelinetextplain" style={{ fontSize: "calc(15px + 0.5vmin)", height: "100%", textOverflow: 'ellipsis' }}>Results for "{props.prompt}"</span>
         //     </Modal.Header>
         props.show ?
-            <div style={{ width: "100%", overflowY: "scroll", flex: 1, display: 'flex', flexDirection: 'column', }}>
+            <div style={{ width: "100%", flex: 1, display: 'flex', flexDirection: 'column', }}>
                 {
                     songs ?
                         songs.length === 0 ?
@@ -369,13 +369,11 @@ function PlaylistGeneratorModal(props: {
                             </div>
                             :
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', }}>
-                                <div style={{
+                                <div className="remove-scrollbar" style={{
                                     display: 'flex', flex: "1 0 0", flexDirection: 'column', overflowY: "scroll", width: "100%",
                                 }}>
-                                    <div style={{ overflowY: "scroll", }}>
-                                        <div style={{ height: padding }} />
-                                        {songs.map((song) => <PGMRenderItem song={song} setSelected={(b) => setSelected(b, song)} selectedSongs={selectedSongs} onQueueClick={props.onQueueClick} />)}
-                                    </div>
+                                    <div style={{ height: padding }} />
+                                    {songs.map((song) => <PGMRenderItem song={song} setSelected={(b) => setSelected(b, song)} selectedSongs={selectedSongs} onQueueClick={props.onQueueClick} />)}
                                 </div>
                                 <div style={{
                                     width: "100%", flex: 0, padding: padding,
