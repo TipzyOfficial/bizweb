@@ -190,7 +190,7 @@ export default function DJSettings(props: DJSettingsProps) {
                 <div style={{ paddingBottom: padding }}>
                     <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold' }}>Genres to Play</span>
                 </div>
-                <div className="App-grid-container" style={{ gridTemplateColumns: `repeat(${genresSqrt}, 1fr)`, gridGap: padding / 2 }}>
+                <div className="App-grid-container" style={{ gridTemplateColumns: `repeat(${genresSqrt}, 1fr)`, gridGap: padding / 2, minWidth: 350 }}>
                     {genres.map(g => <GenreButton genre={g} selected={currentGenres} onClick={() => onGenreClicked(g)} />)}
                 </div>
             </div>
