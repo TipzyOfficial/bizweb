@@ -5,7 +5,7 @@ import _ from "lodash";
 import TZToggle from "../../components/TZToggle";
 import { useInterval } from "../../lib/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faCheck, faLeaf, faLocation, faLocationDot, faMarker } from "@fortawesome/free-solid-svg-icons";
+import { faBars, faCheck, faGamepad, faLeaf, faLocation, faLocationDot, faLocationPin, faMarker, faPlus, faPlusCircle, faXmarkCircle, IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { AcceptingType, DJSettingsType, ShuffleType } from "./Dashboard";
 import { Dropdown, Spinner } from "react-bootstrap";
 import TZButton from "../../components/TZButton";
@@ -217,7 +217,7 @@ export default function DJSettings(props: DJSettingsProps) {
                                     <Spinner />
                                 </div> : <></>
                             }
-                            <div style={{ padding: padding, display: 'flex' }}>
+                            <div style={{ padding: padding, display: 'flex', flex: 1 }}>
                                 <div style={{ flexShrink: 1, padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1 }}>
                                     <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingBottom: 5 }}>Handle requests</div>
                                     <Dropdown>
@@ -244,9 +244,9 @@ export default function DJSettings(props: DJSettingsProps) {
                                     </Dropdown>
                                 </div>
                                 {shuffleRadioValue === "TipzyAI" ?
-                                    <>
+                                    <div style={{ display: 'flex', width: "100", flexGrow: 1 }}>
                                         <div style={{ paddingLeft: padding }} />
-                                        <div style={{ flexShrink: 1, padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1 }}>
+                                        <div style={{ padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1 }}>
                                             <GenreList {...props} onGenreClicked={onGenreClicked} />
                                         </div>
                                         <div style={{ display: 'flex', flexDirection: 'row', paddingLeft: padding, flexGrow: 1 }}>
@@ -267,7 +267,7 @@ export default function DJSettings(props: DJSettingsProps) {
                                                 <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingTop: padding }}>Energy</span>
                                             </div>
                                         </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', paddingLeft: padding }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', paddingLeft: padding, }}>
                                             {/* <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold' }}>Bangers only</span> */}
                                             {/* <TZToggle title="Bangers Only" value={currentSetting.bangersOnly} onClick={onBangersClicked} /> */}
                                             <div style={{ padding: padding, borderRadius: radius, backgroundColor: Colors.tertiaryDark, display: "flex", flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
@@ -290,17 +290,38 @@ export default function DJSettings(props: DJSettingsProps) {
                                                 </div>
                                             </div>
                                             <div style={{ paddingTop: padding }} />
-                                            <div style={{ padding: padding, backgroundColor: Colors.tertiaryDark, borderRadius: radius, display: 'flex', alignItems: 'center' }}>
-                                                <FontAwesomeIcon icon={faLocationDot} />
-                                                <div className="App-montserrat-smallertext" style={{ paddingLeft: padding, fontWeight: 'bold' }}>San Francisco, CA</div>
-                                            </div>
+                                        </div>
+                                        <div style={{ width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingLeft: padding }}>
                                             <div style={{ paddingTop: padding }} />
                                             {/* {props.ExplicitButton}
                                             <div style={{ paddingTop: padding }} /> */}
-                                            {!playing || (edited && playing) ? <TZButton title={playingSettingNumber !== undefined ? "Update session" : "Start session"} brandingFont onClick={onUpdateSession} /> : <></>}
+                                            <div style={{ cursor: "pointer", display: 'inline-block', verticalAlign: 'top', flex: 1 }}>
+                                                {/* {props.allArtists.slice(0, 6).map((data) => {
+                                                    return (
+                                                        <div style={{ display: 'inline-flex', width: "auto", paddingBottom: padding / 2 }}>
+                                                            <span onClick={() => setQuery(data)} style={{ backgroundColor: "#fff", padding: 7, borderRadius: 20, color: "black", fontWeight: 'bold' }}>{data}</span>
+                                                            <div style={{ width: padding }}></div>
+                                                        </div>
+                                                    );
+                                                })} */}
+                                                <TagComponent icon={faLocationDot} text={"San Francisco, CA"} />
+                                                <TagComponent icon={faGamepad} text={"Arcade Bar"} />
+                                                <TagComponent text={"80s music"} />
+                                                <TagPlusComponent />
 
+
+                                            </div>
+                                            <div style={{ display: "flex" }}>
+
+
+                                                {/* <div style={{ padding: 4, backgroundColor: Colors.tertiaryDark, borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}> */}
+                                                {/* </div> */}
+                                            </div>
+                                            <div>
+                                                {!playing || (edited && playing) ? <TZButton title={playingSettingNumber !== undefined ? "Update session" : "Start session"} brandingFont onClick={onUpdateSession} /> : <></>}
+                                            </div>
                                         </div>
-                                    </> :
+                                    </div> :
                                     <div style={{ paddingLeft: padding, }}>
                                         {props.PlaylistScreen}
                                     </div>
@@ -318,6 +339,31 @@ export default function DJSettings(props: DJSettingsProps) {
 
         </div>
     );
+}
+
+const TagComponent = (props: { icon?: IconDefinition, text: string }) => {
+    const paddingTag = 4;
+
+    return (
+        <div style={{ display: 'inline-flex', width: "auto", paddingBottom: paddingTag, backgroundColor: "#0000", justifyContent: 'center', alignItems: 'center', verticalAlign: 'top' }}>
+            <div style={{ padding: paddingTag, backgroundColor: Colors.secondaryDark, borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                {props.icon ? <div style={{ paddingRight: 8, backgroundColor: "#0000" }}><FontAwesomeIcon icon={props.icon} /></div> : <div></div>}
+                <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', fontSize: 12 }}>{props.text}</div>
+                <div style={{ paddingLeft: 8, backgroundColor: "#0000" }}><FontAwesomeIcon icon={faXmarkCircle} color={"#fff8"} /></div>
+            </div>
+            <div style={{ width: 5 }}></div>
+        </div>)
+}
+
+const TagPlusComponent = (props: {}) => {
+    const paddingTag = 4;
+
+    return (
+        <div style={{ display: 'inline-flex', width: "auto", paddingBottom: paddingTag }}>
+            <div style={{ padding: paddingTag, backgroundColor: "#0000", borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div><FontAwesomeIcon icon={faPlusCircle} color={"#fff"} /></div>
+            </div>
+        </div>)
 }
 
 const calcRange = () => {

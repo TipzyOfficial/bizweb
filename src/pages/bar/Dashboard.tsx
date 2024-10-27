@@ -7,7 +7,7 @@ import ProfileButton from "../../components/ProfileButton";
 import Queue from "./Queue";
 import { fetchWithToken, getBusiness } from "../..";
 import { SongRequestType, SongType } from "../../lib/song";
-import { etaBuffer, getCookies, millisToMinutesAndSeconds, parseSongJson, useInterval, stringArrayToStringFormatted } from "../../lib/utils";
+import { etaBuffer, getCookies, millisToMinutesAndSeconds, parseSongJson, useInterval, stringArrayToStringFormatted, numberToPrice } from "../../lib/utils";
 import _, { eq } from "lodash";
 import BigLogo, { SmallLogo } from "../../components/BigLogo";
 import Song from "../../components/Song";
@@ -111,7 +111,6 @@ export default function Dashboard() {
     const [volume, setVolume] = useState(70);
     // const [alertVisible, setAlertVisible] = useState(false);
     const [alertContent, setAlertContent] = useState<AlertContentType>(undefined);
-
     const qO = useState(queue ?? []);
     const [queueOrder, setQueueOrder] = qO; //queue AFTER we mess w it. what we actually display.
     const [editingQueue, setEditingQueueIn] = useState(false); //is "editing" on?
@@ -136,6 +135,7 @@ export default function Dashboard() {
     const [djEnergy, setDJEnergy] = useState(50);
     const [djBangersOnly, setDJBangersOnly] = useState(75);
     const [djLocation, setDJLocation] = useState("San Francisco, California");
+    const [djSongs, setDJSongs] = useState<SongType[] | undefined>(DEFAULT_DJ_SONGS);
 
     const [shuffleValue, setShuffleValue] = useState<ShuffleType>("TipzyAI");
 
@@ -145,7 +145,6 @@ export default function Dashboard() {
     const setDJCurrentSettingNumber = (n: number) => {
         setDJCurrentSettingNumberIn(n);
         const djSetting = djSettings[n];
-        console.log("djsg", djSetting.genres)
         // setDJSelectedGenres(new Set(djSetting.genres));
         setDJEnergy(djSetting.energy);
         setDJBangersOnly(djSetting.popularity);
@@ -193,9 +192,6 @@ export default function Dashboard() {
     }, [queue, setQueueOrder, editingQueue])
 
     const setQueue = (q: SongType[] | undefined, reset?: boolean) => {
-
-        console.log("setQueue", q, queueOrder, reset)
-
         setQueueIn(q);
     }
 
@@ -241,22 +237,18 @@ export default function Dashboard() {
 
         const bottom = lastEditedIndex;//Math.max(bottomEdited, lastEditedIndex);
 
-        console.log("bottom", lastEditedIndex)
-
         const shortmap = map.slice(0, bottom + 1);
 
         const message = JSON.stringify({
             tracks: JSON.stringify(qOrderIds),
             song_jsons: JSON.stringify(shortmap),
         })
-        console.log("about to send");
 
         console.log(shortmap);
 
         const json = await fetchWithToken(usc, `business/queue/reorder/`, 'POST', message).then((r) => r.json());
         console.log("reorder response", json);
         if (json.status !== 200) throw new Error(`${json.detail ?? json.toString()}`);
-        console.log("done reordering")
         const [cur, q, lock] = await getQueueUpdatePause();
 
         setQueue(q, true);
@@ -551,7 +543,7 @@ export default function Dashboard() {
             <div style={{ width: "100%" }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <div>
-                        <span className="App-smalltext" style={{ fontWeight: 'bold', color: Colors.primaryRegular }}> {request.price === 0 ? "FREE REQUEST" : `$${request.price.toFixed(2)}`}</span>
+                        <span className="App-smalltext" style={{ fontWeight: 'bold', color: Colors.primaryRegular }}> {request.price === 0 ? "FREE REQUEST" : `$${numberToPrice(request.price)}`}</span>
                     </div>
                     <span className="App-smalltext">{request.user.first_name} {request.user.last_name}</span>
                 </div>
@@ -696,7 +688,21 @@ genres is just a string. send em over like this: “pop, rock, rap”
 
             const json = await fetchWithToken(usc, 'business/dj/shuffle/generate/', 'POST', djs).then(r => r.json());
 
-            console.log("DJ Settings response json", json)
+            let tracks: SongType[] | undefined = [];
+
+            try {
+                for (const t of json.tracks) {
+                    tracks.push(parseSongJson(t));
+                }
+            } catch (e) {
+                console.error(e);
+                tracks = undefined;
+            }
+
+            setDJSongs(tracks);
+
+            console.log("DJ Settings response json", json);
+            console.log("DJ TRACKS", tracks)
         }
     }
 
@@ -806,7 +812,7 @@ genres is just a string. send em over like this: “pop, rock, rap”
                             <div style={{ paddingLeft: padding }} />
                         </div> */}
                     </div>
-                    <PlaylistScreen visibleState={[aiTabVisible, setAITabVisible]} setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} />
+                    <PlaylistScreen djSongList={djSongs} visibleState={[aiTabVisible, setAITabVisible]} setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} />
                     {/* 
                     {aiTabVisible ?
                         <div style={{ height: "100%", overflowY: 'scroll', position: 'relative', display: 'flex', }}>
@@ -1043,3 +1049,551 @@ function SearchBar(props: { onClick: () => any }) {
 // const DJSettingsMemo = memo(DJSettings, (prev, next) => {
 //     return true;
 // });
+
+
+const DEFAULT_DJ_SONGS =
+    [
+        {
+            "id": "soundtrack:track:6Kgd6rC9ocyHuTuZx1p7zo",
+            "title": "Summer Of '69",
+            "artists": [
+                "Bryan Adams"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvf7qtYSHHp1SQgESBgxPDwdoSzcpJqEeQkN",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvf7qtYSHHp1SQgESBgxPDwdoSzcpJqEeQkN",
+            "explicit": false,
+            "duration": 215000
+        },
+        {
+            "id": "soundtrack:track:4Ul6sw0Vgowloa5J1f8Woi",
+            "title": "Maneater",
+            "artists": [
+                "Daryl Hall & John Oates"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvh8ML7L9NUME4xwRNyAzWBUPRjgyiihQxte",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvh8ML7L9NUME4xwRNyAzWBUPRjgyiihQxte",
+            "explicit": false,
+            "duration": 272000
+        },
+        {
+            "id": "soundtrack:track:4l82igyVfQnkN02Nwowyk9",
+            "title": "Don't Dream It's Over",
+            "artists": [
+                "Crowded House"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfvRopvCuFYUYiRBqVNxGkyyQu5mQvjJQ5U",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfvRopvCuFYUYiRBqVNxGkyyQu5mQvjJQ5U",
+            "explicit": false,
+            "duration": 237000
+        },
+        {
+            "id": "soundtrack:track:2lfpHvDZO0kTuXsfbQL8B2",
+            "title": "I'm On Fire",
+            "artists": [
+                "Bruce Springsteen"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduTvtczVrbWTgurMY5mMWRzerWAcvz7yMY",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduTvtczVrbWTgurMY5mMWRzerWAcvz7yMY",
+            "explicit": false,
+            "duration": 156000
+        },
+        {
+            "id": "soundtrack:track:3vP7HqHGl2PkrHBLUA1SaS",
+            "title": "Rock with You - Single Version",
+            "artists": [
+                "Michael Jackson"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduNeEnCvpnMCohYw1vcJTe35vKpbTk2wWe",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduNeEnCvpnMCohYw1vcJTe35vKpbTk2wWe",
+            "explicit": false,
+            "duration": 203000
+        },
+        {
+            "id": "soundtrack:track:1KVf9VtmJDtEh2bxZAYzjW",
+            "title": "Beat It - Single Version",
+            "artists": [
+                "Michael Jackson"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tPtkkRQ7uRSBfyMWCZ5UzTKbGnCAfY",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tPtkkRQ7uRSBfyMWCZ5UzTKbGnCAfY",
+            "explicit": false,
+            "duration": 258000
+        },
+        {
+            "id": "soundtrack:track:3WkwPKhyFNCSWYubRCUBu6",
+            "title": "I Love Rock 'N Roll",
+            "artists": [
+                "Joan Jett & The Blackhearts"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvh7zBQqG6Hp9pjzkZQTvjXdi84YnSFAjxgv",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvh7zBQqG6Hp9pjzkZQTvjXdi84YnSFAjxgv",
+            "explicit": false,
+            "duration": 175000
+        },
+        {
+            "id": "soundtrack:track:56mUgXSlPUKf71vnOJEgDK",
+            "title": "Another Day in Paradise - 2016 Remaster",
+            "artists": [
+                "Phil Collins"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfv4f8xs6wGCVwx63tD4urYZt23NbfdyJFQ",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfv4f8xs6wGCVwx63tD4urYZt23NbfdyJFQ",
+            "explicit": false,
+            "duration": 322000
+        },
+        {
+            "id": "soundtrack:track:2jxkAdiGrR4WonqVClAOfZ",
+            "title": "Chicago",
+            "artists": [
+                "Michael Jackson"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvf7PTC7M7ckWJGRDYRQE2qShZBCH3pWqTxS",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvf7PTC7M7ckWJGRDYRQE2qShZBCH3pWqTxS",
+            "explicit": false,
+            "duration": 245000
+        },
+        {
+            "id": "soundtrack:track:3HEnsoH97euxbCN6B3LDKO",
+            "title": "Faith - Remastered",
+            "artists": [
+                "George Michael"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJSPA98VsrVXpbKBDRwgTT3ACt1JeiZPFt",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJSPA98VsrVXpbKBDRwgTT3ACt1JeiZPFt",
+            "explicit": false,
+            "duration": 193000
+        },
+        {
+            "id": "soundtrack:track:5r8j6iNxx9AFkBRfM8E8x1",
+            "title": "Streets of Philadelphia - Single Edit",
+            "artists": [
+                "Bruce Springsteen"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvh7zBSBudYHHNQExv5gCYkZKqc6ACJhLNr2",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvh7zBSBudYHHNQExv5gCYkZKqc6ACJhLNr2",
+            "explicit": false,
+            "duration": 196000
+        },
+        {
+            "id": "soundtrack:track:6VWyR7fWV9UlGhFksRDaNE",
+            "title": "Against All Odds (Take a Look at Me Now) - 2016 Remaster",
+            "artists": [
+                "Phil Collins"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfvRopvKzYRfjNw6NnK2Q3C8SFyG4fCwZ8r",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfvRopvKzYRfjNw6NnK2Q3C8SFyG4fCwZ8r",
+            "explicit": false,
+            "duration": 206000
+        },
+        {
+            "id": "soundtrack:track:1vQ2uODooCEsYjEQiOGZLs",
+            "title": "Come On Eileen",
+            "artists": [
+                "Dexys Midnight Runners"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxQvGCyAxec5qACsCYAcvB7TDEfs4LZigKJW",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxQvGCyAxec5qACsCYAcvB7TDEfs4LZigKJW",
+            "explicit": false,
+            "duration": 287000
+        },
+        {
+            "id": "soundtrack:track:2ibqiCsx1It06iGE22KcAm",
+            "title": "Beat It - Single Version",
+            "artists": [
+                "Michael Jackson"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tPmdqojKJdTZhYhQVDL4pFD5raYyJe",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tPmdqojKJdTZhYhQVDL4pFD5raYyJe",
+            "explicit": false,
+            "duration": 258000
+        },
+        {
+            "id": "soundtrack:track:3CLVXmZMy5AV7wMWp34pcm",
+            "title": "Superstition - Single Version",
+            "artists": [
+                "Stevie Wonder"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvhXKnRqp6FFe3As2MQ4qaoD9iiqASHg4MqG",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvhXKnRqp6FFe3As2MQ4qaoD9iiqASHg4MqG",
+            "explicit": false,
+            "duration": 245000
+        },
+        {
+            "id": "soundtrack:track:4R7UcLCFFUa11Ksts1HNCH",
+            "title": "Hung Up",
+            "artists": [
+                "Madonna"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VWP4tAXJP6mdsEgJwZZ9vNtegfLTADk",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VWP4tAXJP6mdsEgJwZZ9vNtegfLTADk",
+            "explicit": false,
+            "duration": 338000
+        },
+        {
+            "id": "soundtrack:track:2LWEvTgOhUmmQkz6ryWjFx",
+            "title": "Pour Some Sugar On Me - Remastered 2017",
+            "artists": [
+                "Def Leppard"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXo9rJNXtSR9aNmmM6mBXiMuxTcJa",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXo9rJNXtSR9aNmmM6mBXiMuxTcJa",
+            "explicit": true,
+            "duration": 267000
+        },
+        {
+            "id": "soundtrack:track:30fdaAOwlaAMGcQ93uOSZT",
+            "title": "Holding Out for a Hero (From \"Footloose\" Soundtrack)",
+            "artists": [
+                "Bonnie Tyler"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxRKEfFWkfeZMEv81FZx2vXy521EbCyYySLe",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxRKEfFWkfeZMEv81FZx2vXy521EbCyYySLe",
+            "explicit": false,
+            "duration": 349000
+        },
+        {
+            "id": "soundtrack:track:7AyP4MWhW94papy5L6UuoG",
+            "title": "Glory Days",
+            "artists": [
+                "Bruce Springsteen"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduTvtczVrbWTgurMY5mMWRzerWAcvz7yMY",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduTvtczVrbWTgurMY5mMWRzerWAcvz7yMY",
+            "explicit": false,
+            "duration": 255000
+        },
+        {
+            "id": "soundtrack:track:2JzXkvJfexe5tBF0YBAa44",
+            "title": "Smooth Criminal - 2012 Remaster",
+            "artists": [
+                "Michael Jackson"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveK5PvfNu9yiXQF9fAxLCoKQAnBG8drFxHC",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveK5PvfNu9yiXQF9fAxLCoKQAnBG8drFxHC",
+            "explicit": false,
+            "duration": 251000
+        },
+        {
+            "id": "soundtrack:track:6rI6Q4c465SNfvWRwf8GNP",
+            "title": "This Night Has Opened My Eyes - 2011 Remaster",
+            "artists": [
+                "The Smiths"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJiFBiddGTpfsaChrP54t9HJPBcr55ewxJ",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJiFBiddGTpfsaChrP54t9HJPBcr55ewxJ",
+            "explicit": false,
+            "duration": 222000
+        },
+        {
+            "id": "soundtrack:track:5rzGHkn6QeDyaPzsKjwYUR",
+            "title": "Like a Prayer",
+            "artists": [
+                "Madonna"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VW7SuVDfeBfyjQQwEy6rGNxJcw9Hi3p",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VW7SuVDfeBfyjQQwEy6rGNxJcw9Hi3p",
+            "explicit": false,
+            "duration": 341000
+        },
+        {
+            "id": "soundtrack:track:7dPuchUzR5wR347iao7sgE",
+            "title": "You Spin Me Round (Like a Record)",
+            "artists": [
+                "Dead Or Alive"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxSXccvRkLTUhE5YRBLC2ny79HJRWtk8ti5t",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxSXccvRkLTUhE5YRBLC2ny79HJRWtk8ti5t",
+            "explicit": false,
+            "duration": 195000
+        },
+        {
+            "id": "soundtrack:track:0Eqn9Bb6oLaErGwZ8ynUoT",
+            "title": "Centerfold",
+            "artists": [
+                "The J. Geils Band"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu6nBqwE8HeaJWgfmpJvQ8HekEpacA4Ukv",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu6nBqwE8HeaJWgfmpJvQ8HekEpacA4Ukv",
+            "explicit": false,
+            "duration": 217000
+        },
+        {
+            "id": "soundtrack:track:6WIW67sPZ22saEBpv5QNDT",
+            "title": "How Will I Know",
+            "artists": [
+                "Whitney Houston"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tfpTFVtuzjqeZhG2NXDHPQv5DBSgFx",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tfpTFVtuzjqeZhG2NXDHPQv5DBSgFx",
+            "explicit": false,
+            "duration": 275000
+        },
+        {
+            "id": "soundtrack:track:5MercyaTf1c2eCvgeLvPdf",
+            "title": "Hysteria",
+            "artists": [
+                "Def Leppard"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXqaT1oSJYYApFjQvzU9CsHGobPfc",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXqaT1oSJYYApFjQvzU9CsHGobPfc",
+            "explicit": false,
+            "duration": 354000
+        },
+        {
+            "id": "soundtrack:track:1cX4npJb5Ydyk5oD3hs3E2",
+            "title": "Material Girl (2024 Remaster)",
+            "artists": [
+                "Madonna"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBi21MFNMbNcU1uhJnWcsHRQoKRLsXyU42wwS6",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBi21MFNMbNcU1uhJnWcsHRQoKRLsXyU42wwS6",
+            "explicit": false,
+            "duration": 242000
+        },
+        {
+            "id": "soundtrack:track:4Gv7QEEh80TzQVOUYq2LZf",
+            "title": "Just Like Heaven",
+            "artists": [
+                "The Cure"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu6nBqzgX6hQLsQgCvwa8cUums9GrMFtZk",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu6nBqzgX6hQLsQgCvwa8cUums9GrMFtZk",
+            "explicit": false,
+            "duration": 212000
+        },
+        {
+            "id": "soundtrack:track:1087eyA9fUswU1s39uYjk4",
+            "title": "Maniac",
+            "artists": [
+                "Michael Sembello"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvhXR54amh8gC5DTb91vYWaFMeMNoMWr6JmL",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvhXR54amh8gC5DTb91vYWaFMeMNoMWr6JmL",
+            "explicit": false,
+            "duration": 245000
+        },
+        {
+            "id": "soundtrack:track:2Pgvu38M3izr9Y3D5WOlyt",
+            "title": "Saving All My Love for You",
+            "artists": [
+                "Whitney Houston"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tfpTFVtuzjqeZhG2NXDHPQv5DBSgFx",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tfpTFVtuzjqeZhG2NXDHPQv5DBSgFx",
+            "explicit": false,
+            "duration": 237000
+        },
+        {
+            "id": "soundtrack:track:2zxd3P10ratqfZOFWkCqdp",
+            "title": "Come Undone",
+            "artists": [
+                "Duran Duran"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VVqeK5tbqj1Wr9NPqHBJNdxwaL7n24E",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VVqeK5tbqj1Wr9NPqHBJNdxwaL7n24E",
+            "explicit": false,
+            "duration": 257000
+        },
+        {
+            "id": "soundtrack:track:2Pgvu38M3izr9Y3D5WOlyt",
+            "title": "Saving All My Love for You",
+            "artists": [
+                "Whitney Houston"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tfpTFVtuzjqeZhG2NXDHPQv5DBSgFx",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tfpTFVtuzjqeZhG2NXDHPQv5DBSgFx",
+            "explicit": false,
+            "duration": 237000
+        },
+        {
+            "id": "soundtrack:track:3KwSJ1VCLo4WsLIwLZbQ3x",
+            "title": "One More Night - 2016 Remaster",
+            "artists": [
+                "Phil Collins"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfut5pDFKwfFzJSfs6rXWLwfVceHCrkXPjC",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfut5pDFKwfFzJSfs6rXWLwfVceHCrkXPjC",
+            "explicit": false,
+            "duration": 289000
+        },
+        {
+            "id": "soundtrack:track:3F4rdwhF9vNlxicqvh9qVk",
+            "title": "Don't Leave Me This Way (with Sarah Jane Morris)",
+            "artists": [
+                "The Communards",
+                "Sarah Jane Morris"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaSG5V96fiWSY4DJwykZUfwBoYDaiH2v",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaSG5V96fiWSY4DJwykZUfwBoYDaiH2v",
+            "explicit": false,
+            "duration": 271000
+        },
+        {
+            "id": "soundtrack:track:2tMmdmNLrxubPjtA3SDUEW",
+            "title": "Heart Of Glass - Special Mix",
+            "artists": [
+                "Blondie"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VWPK4kHgkRoSwpYTC7Bxg2EvaygG2yC",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VWPK4kHgkRoSwpYTC7Bxg2EvaygG2yC",
+            "explicit": true,
+            "duration": 276000
+        },
+        {
+            "id": "soundtrack:track:2OstfMXxyuXz4X0neDjT9H",
+            "title": "Lessons In Love",
+            "artists": [
+                "Level 42"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveKAgam7BpDYXe9yW7wZ1wFKpxo5Aw4CDkJ",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveKAgam7BpDYXe9yW7wZ1wFKpxo5Aw4CDkJ",
+            "explicit": false,
+            "duration": 246000
+        },
+        {
+            "id": "soundtrack:track:3cAkC9IyiTXcHjtqzc6PHJ",
+            "title": "I Hate Myself for Loving You",
+            "artists": [
+                "Joan Jett & The Blackhearts"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tPtj8gvVy9N6zUmXmNE6RqfdWy4Ex6",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tPtj8gvVy9N6zUmXmNE6RqfdWy4Ex6",
+            "explicit": false,
+            "duration": 246000
+        },
+        {
+            "id": "soundtrack:track:5DVAqWPt1SYQLfUTP4z0fK",
+            "title": "Animal",
+            "artists": [
+                "Def Leppard"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXqaT1oSJYYApFjQvzU9CsHGobPfc",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXqaT1oSJYYApFjQvzU9CsHGobPfc",
+            "explicit": false,
+            "duration": 244000
+        },
+        {
+            "id": "soundtrack:track:5DVAqWPt1SYQLfUTP4z0fK",
+            "title": "Animal",
+            "artists": [
+                "Def Leppard"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXqaT1oSJYYApFjQvzU9CsHGobPfc",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXqaT1oSJYYApFjQvzU9CsHGobPfc",
+            "explicit": false,
+            "duration": 244000
+        },
+        {
+            "id": "soundtrack:track:7uydTWaLdwg3PP0WgVbZUJ",
+            "title": "Straight From The Heart",
+            "artists": [
+                "Bryan Adams"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduNeDA12zDVTtNpw2X7Gy2LZURcf1kw8FY",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduNeDA12zDVTtNpw2X7Gy2LZURcf1kw8FY",
+            "explicit": false,
+            "duration": 210000
+        },
+        {
+            "id": "soundtrack:track:0KzldYyRDF0VP4RtxaBgfm",
+            "title": "Somebody's Watching Me",
+            "artists": [
+                "Rockwell",
+                "Rockwell"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxTjSrYBVPQ9u3EAnSoxppCGWg86Gfi8bPkr",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxTjSrYBVPQ9u3EAnSoxppCGWg86Gfi8bPkr",
+            "explicit": false,
+            "duration": 299000
+        },
+        {
+            "id": "soundtrack:track:4Q3thb8WanfpQ1SrA7WYX9",
+            "title": "Girls on Film - 2010 Remaster",
+            "artists": [
+                "Duran Duran"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdueWGMmfVjM5YZYuqCbBzUdavJVeiTZmpJ",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdueWGMmfVjM5YZYuqCbBzUdavJVeiTZmpJ",
+            "explicit": false,
+            "duration": 213000
+        },
+        {
+            "id": "soundtrack:track:3ildtVLbDqZxvs391fjLRf",
+            "title": "Rock Me Amadeus - The Gold Mix",
+            "artists": [
+                "Falco"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgK37Sw7LUjLnawnFGGkoV8UpULbTkJY1hG",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgK37Sw7LUjLnawnFGGkoV8UpULbTkJY1hG",
+            "explicit": false,
+            "duration": 203000
+        },
+        {
+            "id": "soundtrack:track:3WeUZYBDlr4vxBnxRENvBD",
+            "title": "Private Eyes - Remastered",
+            "artists": [
+                "Daryl Hall & John Oates"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tft7mJWtZB6G71HUM3L7RvHKoHW7kA",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tft7mJWtZB6G71HUM3L7RvHKoHW7kA",
+            "explicit": false,
+            "duration": 217000
+        },
+        {
+            "id": "soundtrack:track:5Fqrdc3y2NDpC8eXQf3Yqg",
+            "title": "That's The Way Love Goes",
+            "artists": [
+                "Janet Jackson"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VWvjbQKfru9TqtcVLkGHBdZf7Ycq9HQ",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VWvjbQKfru9TqtcVLkGHBdZf7Ycq9HQ",
+            "explicit": true,
+            "duration": 265000
+        },
+        {
+            "id": "soundtrack:track:0hL6MKzMn6BHNEXG85Xafj",
+            "title": "Don't Let the Sun Go Down on Me",
+            "artists": [
+                "george michael & elton john",
+                "George Michael",
+                "Elton John"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJXfqLgpip7ojp3rmT5YxUEayAgpjvEGBp",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJXfqLgpip7ojp3rmT5YxUEayAgpjvEGBp",
+            "explicit": false,
+            "duration": 347000
+        },
+        {
+            "id": "soundtrack:track:01LatXfQtYB7ioQbLuxOub",
+            "title": "Half a Person - 2011 Remaster",
+            "artists": [
+                "The Smiths"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJiFBiddGTpfsaChrP54t9Fpk9Dimq7cyU",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJiFBiddGTpfsaChrP54t9Fpk9Dimq7cyU",
+            "explicit": false,
+            "duration": 218000
+        },
+        {
+            "id": "soundtrack:track:0H61Wu9whmPgruUlduFpfh",
+            "title": "I Wish It Would Rain Down - 2016 Remaster",
+            "artists": [
+                "Phil Collins"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfv4f8xs6wGCVwx63tD4urYZt23NbfdyJFQ",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfv4f8xs6wGCVwx63tD4urYZt23NbfdyJFQ",
+            "explicit": false,
+            "duration": 328000
+        },
+        {
+            "id": "soundtrack:track:5ksizPv3eSTshpLNl6Q5c9",
+            "title": "Rhythm Of The Night",
+            "artists": [
+                "DeBarge"
+            ],
+            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvf7JAVHTio9QExXe5YZm6GCwq5HEkPS3Ujx",
+            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvf7JAVHTio9QExXe5YZm6GCwq5HEkPS3Ujx",
+            "explicit": false,
+            "duration": 228000
+        },
+    ]
