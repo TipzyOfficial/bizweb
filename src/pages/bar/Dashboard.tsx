@@ -699,7 +699,7 @@ genres is just a string. send em over like this: “pop, rock, rap”
                 tracks = undefined;
             }
 
-            setDJSongs(tracks);
+            setDJSongs(_.shuffle(tracks));
 
             console.log("DJ Settings response json", json);
             console.log("DJ TRACKS", tracks)
