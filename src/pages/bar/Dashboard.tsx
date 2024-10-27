@@ -701,6 +701,8 @@ genres is just a string. send em over like this: “pop, rock, rap”
 
             setDJSongs(_.shuffle(tracks));
 
+            getQueue(usc);
+
             console.log("DJ Settings response json", json);
             console.log("DJ TRACKS", tracks)
         }
