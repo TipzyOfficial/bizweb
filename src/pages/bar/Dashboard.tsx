@@ -31,12 +31,12 @@ const BACKEND_STATUS = ["OPENING", "PEAK", "CLOSING"];
 const GENRES = [
     "Rock",
     "Alt Rock",
-    "2000s hits",
+    "Blues",
     "Rap",
     "Pop",
     "Dance",
-    "Country",
     "RnB",
+    "Country",
     "Singalong",
 ]
 
