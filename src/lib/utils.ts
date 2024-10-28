@@ -14,7 +14,7 @@ export function stringArrayToStringFormatted(a: Array<string>) {
     let o = "";
 
     for (const v of a) {
-        o += `, 80s ${v}`;
+        o += `, ${v}`;
     }
 
     return (o.substring(2))
