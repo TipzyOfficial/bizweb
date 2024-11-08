@@ -5,15 +5,46 @@ import _ from "lodash";
 import TZToggle from "../../components/TZToggle";
 import { useInterval } from "../../lib/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faCheck, faGamepad, faLeaf, faLocation, faLocationDot, faLocationPin, faMarker, faPlus, faPlusCircle, faXmarkCircle, IconDefinition } from "@fortawesome/free-solid-svg-icons";
-import { AcceptingType, DJSettingsType, ShuffleType } from "./Dashboard";
-import { Dropdown, Spinner } from "react-bootstrap";
+import { faBars, faCheck, faChevronRight, faGamepad, faLeaf, faLocation, faLocationDot, faLocationPin, faMarker, faPlus, faPlusCircle, faXmarkCircle, IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { AcceptingType, CategoryType, DJSettingsType, ShuffleType, TagType } from "./Dashboard";
+import { Dropdown, DropdownItemProps, Spinner } from "react-bootstrap";
 import TZButton from "../../components/TZButton";
 import Lottie from "react-lottie";
 import playingAnimation from '../../assets/stereo.json';
 import useWindowDimensions from "../../lib/useWindowDimensions";
+import NestedList from "../../components/NestedList";
+import { Dropdown as NestedDropdown, DropdownProps } from 'react-nested-dropdown';
+// import 'react-nested-dropdown/dist/styles.css';
 
-const SettingsNameMapping = ["Opening", "Peak", "Closing"]
+const SettingsNameMapping = ["Opening", "Peak", "Closing"];
+// type TagValue = { label: string, category: string }
+const TagItemsGenerator = (onSelect: (s: TagType) => any) => {
+    const label = (label: string, category: CategoryType) => {
+        return { label: label, value: category, onSelect: () => onSelect({ label, category }) }
+    }
+    return [
+        {
+            label: "Era",
+            items: [
+                label("Latest", "era"),
+                label("2020s", "era"),
+                label("2010s", "era"),
+                label("2000s", "era"),
+                label("90s", "era"),
+                label("80s", "era"),
+                label("70s", "era"),
+                label("60s", "era"),
+            ]
+        },
+        {
+            label: "Instrumental",
+            items: [
+                label("Instrumental songs only", "instrumental"),
+                label("No instrumental songs", "instrumental"),
+            ]
+        }
+    ]
+}
 
 type DJSettingsProps = {
     genres: string[],
@@ -21,6 +52,7 @@ type DJSettingsProps = {
     // selectedState: [Set<string>, (s: Set<string>) => any],
     energyState: [number, (n: number) => any],
     bangersState: [number, (n: number) => any],
+    tagsState: [TagType[], (s: TagType[]) => any]
     sendDJSettings: () => any,
     djSettingsState: [DJSettingsType[], (a: DJSettingsType[]) => any],
     djCurrentSettingNumberState: [number, (n: number) => any],
@@ -58,6 +90,7 @@ export default function DJSettings(props: DJSettingsProps) {
     const [expanded, setExpanded] = props.expandState;
     const [acceptRadioValue,] = props.acceptRadioValueState;
     const [shuffleRadioValue,] = props.shuffleRadioValueState;
+    const [tags, setTags] = props.tagsState;
     const [djSettings, setDJSettings] = props.djSettingsState
     const [currentSettingNumber, setCurrentSettingNumber] = props.djCurrentSettingNumberState;
     const [playingSettingNumber, setPlayingSettingNumber] = props.djSettingPlayingNumberState;
@@ -128,6 +161,20 @@ export default function DJSettings(props: DJSettingsProps) {
 
     const onBangersChange = (n: number) => {
         setBangersOnly(n);
+    }
+
+    const onSelectTag = (selected: TagType) => {
+        setTags([...tags, selected]);
+        if (!edited) setEdited(true);
+    }
+
+    const onXClick = (s: TagType) => {
+        const i = tags.indexOf(s);
+        if (i === -1) return;
+
+        const nt = [...tags.slice(0, i), ...tags.slice(i + 1)];
+        setTags(nt);
+        if (!edited) setEdited(true);
     }
 
     const Header = () => {
@@ -203,6 +250,8 @@ export default function DJSettings(props: DJSettingsProps) {
             <div style={{ width: "100%", height: 7, borderLeftStyle: 'solid', borderRightStyle: 'solid', borderWidth: 2, borderColor: "#fff8" }} />
         </div>
 
+
+    const TagItems = TagItemsGenerator(onSelectTag);
 
     return (
         <div style={{ width: "100%" }}>
@@ -295,7 +344,7 @@ export default function DJSettings(props: DJSettingsProps) {
                                             <div style={{ paddingTop: padding }} />
                                             {/* {props.ExplicitButton}
                                             <div style={{ paddingTop: padding }} /> */}
-                                            <div style={{ cursor: "pointer", display: 'inline-block', verticalAlign: 'top', flex: 1 }}>
+                                            <div style={{ display: 'inline-block', verticalAlign: 'top', flex: 1, width: "100%" }}>
                                                 {/* {props.allArtists.slice(0, 6).map((data) => {
                                                     return (
                                                         <div style={{ display: 'inline-flex', width: "auto", paddingBottom: padding / 2 }}>
@@ -304,10 +353,35 @@ export default function DJSettings(props: DJSettingsProps) {
                                                         </div>
                                                     );
                                                 })} */}
-                                                <TagComponent icon={faLocationDot} text={"San Francisco, CA"} />
-                                                <TagComponent icon={faGamepad} text={"Arcade Bar"} />
-                                                <TagComponent text={"80s music"} />
-                                                <TagPlusComponent />
+                                                <TagComponent icon={faLocationDot} tag={{ label: "San Francisco, CA", category: "location" }} removeX />
+                                                {
+                                                    tags.map((v, i) =>
+                                                        <TagComponent tag={v} onXClick={onXClick} />
+                                                    )
+                                                }
+
+                                                <div style={{ display: 'inline-flex', width: "auto", backgroundColor: "#0000", justifyContent: 'center', alignItems: 'center', verticalAlign: 'top', zIndex: 100 }}>
+                                                    <NestedDropdown
+                                                        renderOption={(option) =>
+                                                            <div onClick={() => {
+                                                                if (option.onSelect) option.onSelect();
+                                                            }} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                                                                <div style={{ flex: 1 }}>
+                                                                    {option.label}
+                                                                </div>
+                                                                {option.items && option.items.length > 0 ?
+                                                                    <FontAwesomeIcon icon={faChevronRight} /> : <></>}
+                                                            </div>
+                                                        }
+                                                        onSelect={(value, option) => {
+                                                            console.log("selected", value, option)
+                                                        }}
+                                                        items={TagItems}>
+                                                        {({ isOpen, onClick }) => (
+                                                            <TagPlusComponent onClick={onClick} isOpen={isOpen} />
+                                                        )}
+                                                    </NestedDropdown>
+                                                </div>
 
 
                                             </div>
@@ -341,25 +415,31 @@ export default function DJSettings(props: DJSettingsProps) {
     );
 }
 
-const TagComponent = (props: { icon?: IconDefinition, text: string }) => {
+const TagComponent = (props: { icon?: IconDefinition, tag: TagType, removeX?: boolean, onXClick?: (s: TagType) => any }) => {
     const paddingTag = 4;
+    const [hover, setHover] = useState(0);
 
     return (
         <div style={{ display: 'inline-flex', width: "auto", paddingBottom: paddingTag, backgroundColor: "#0000", justifyContent: 'center', alignItems: 'center', verticalAlign: 'top' }}>
             <div style={{ padding: paddingTag, backgroundColor: Colors.secondaryDark, borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
                 {props.icon ? <div style={{ paddingRight: 8, backgroundColor: "#0000" }}><FontAwesomeIcon icon={props.icon} /></div> : <div></div>}
-                <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', fontSize: 12 }}>{props.text}</div>
-                <div style={{ paddingLeft: 8, backgroundColor: "#0000" }}><FontAwesomeIcon icon={faXmarkCircle} color={"#fff8"} /></div>
+                <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', fontSize: 12 }}>{props.tag.label}</div>
+                {props.removeX ? <></> : <div
+                    onMouseEnter={() => setHover(1)} onMouseLeave={() => setHover(0)} onClick={() => { if (props.onXClick) props.onXClick(props.tag) }}
+                    style={{ paddingLeft: 8, backgroundColor: "#0000", cursor: 'pointer', opacity: 1 - hover * 0.5 }}><FontAwesomeIcon icon={faXmarkCircle} color={"#fff8"} />
+                </div>}
             </div>
             <div style={{ width: 5 }}></div>
         </div>)
 }
 
-const TagPlusComponent = (props: {}) => {
+const TagPlusComponent = (props: { onClick: () => any, isOpen: boolean }) => {
     const paddingTag = 4;
+    const [hover, setHover] = useState(0);
 
     return (
-        <div style={{ display: 'inline-flex', width: "auto", paddingBottom: paddingTag }}>
+        <div onMouseEnter={() => setHover(1)} onMouseLeave={() => setHover(0)}
+            style={{ cursor: 'pointer', display: 'inline-flex', width: "auto", paddingBottom: paddingTag, opacity: props.isOpen ? 0.5 : 1 - hover * 0.5 }} onClick={props.onClick}>
             <div style={{ padding: paddingTag, backgroundColor: "#0000", borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div><FontAwesomeIcon icon={faPlusCircle} color={"#fff"} /></div>
             </div>

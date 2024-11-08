@@ -1,7 +1,7 @@
 import { Colors, padding } from "../lib/Constants";
 
 
-export default function TZHeader(props: { title?: string, leftComponent?: JSX.Element, rightComponent?: JSX.Element, backgroundColor?: string }) {
+export default function TZHeader(props: { title?: string, leftComponent?: JSX.Element, rightComponent?: JSX.Element, backgroundColor?: string, zIndex?: number }) {
     return (
         <div className="App-headertop"
             style={{
@@ -15,7 +15,7 @@ export default function TZHeader(props: { title?: string, leftComponent?: JSX.El
                 flexDirection: 'row',
                 width: '100%',
                 backgroundColor: props.backgroundColor ?? Colors.background + "cc",
-                zIndex: 10,
+                zIndex: props.zIndex ?? 10,
             }}>
             <div style={{ flex: 1, paddingTop: padding }}>
                 {props.leftComponent ?? <div></div>}

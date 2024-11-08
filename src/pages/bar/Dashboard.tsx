@@ -52,6 +52,14 @@ const defaultDJSetting: DJSettingsType = {
     popularity: 75,
 }
 
+export type CategoryType = "location" | "era" | "instrumental";
+
+export type TagType = {
+    label: string,
+    category: CategoryType
+}
+
+
 const defaultDJSettings: DJSettingsType[] = [defaultDJSetting, defaultDJSetting, defaultDJSetting]
 
 export type AcceptingType = "Manual" | "Auto" | "TipzyAI" | undefined;
@@ -136,11 +144,12 @@ export default function Dashboard() {
     const [djBangersOnly, setDJBangersOnly] = useState(75);
     const [djLocation, setDJLocation] = useState("San Francisco, California");
     const [djSongs, setDJSongs] = useState<SongType[] | undefined>(DEFAULT_DJ_SONGS);
+    const [djTags, setDJTags] = useState<TagType[]>([]);
 
     const [shuffleValue, setShuffleValue] = useState<ShuffleType>("TipzyAI");
 
     //TODO REMOVE THIS LATER
-    const sessionStarted = djSettingPlayingNumber !== undefined;
+    const sessionStarted = true//djSettingPlayingNumber !== undefined;
 
     const setDJCurrentSettingNumber = (n: number) => {
         setDJCurrentSettingNumberIn(n);
@@ -422,11 +431,19 @@ export default function Dashboard() {
         const genres: string = b.dj_genres ?? "";
         const energy: number = b.dj_energy ?? 7;
         const popularity: number = b.dj_popularity_min ?? 7;
+
+        const decadesStrings: string[] = b.dj_decades;
+        const decades: TagType[] = decadesStrings.map(v => { return { label: v, category: "era" } })
+
+        //TODO: Aggregate all tags here!
+        const tags: TagType[] = [...decades]
+
         const index = BACKEND_STATUS.indexOf(status);
 
         setDJSettingPlayingNumberIn(index);
         setDJCurrentSettingNumberIn(index);
 
+        setDJTags(tags);
         setDJEnergy(energy * 10);
         setDJBangersOnly(energy * 10);
         const setting: DJSettingsType = {
@@ -460,7 +477,7 @@ export default function Dashboard() {
         const outlineColor = Colors.tertiaryDark;
         return (
             <div style={{ width: "100%", height: "100%", paddingRight: padding }}>
-                <TZHeader title="" backgroundColor={Colors.darkBackground}
+                <TZHeader zIndex={1} title="" backgroundColor={Colors.darkBackground}
                     leftComponent={
                         <RejectAllButton onClick={rejectAll} />
                     }
@@ -669,11 +686,15 @@ genres is just a string. send em over like this: “pop, rock, rap”
     const sendDJSettings = async () => {
         const current = djSettings[djCurrentSettingNumber];
 
+        console.log("current", djSettings)
+
+
         const newDJSettings: DJSettingsType = {
             genres: Array.from(current.genres).sort(),
             energy: current.energy / 10,
             popularity: current.popularity / 10,
         };
+
 
         if (JSON.stringify(newDJSettings) !== JSON.stringify(djSettings[djCurrentSettingNumber])) {
             const djs = JSON.stringify({
@@ -681,7 +702,8 @@ genres is just a string. send em over like this: “pop, rock, rap”
                 dj_energy: newDJSettings.energy,
                 dj_popularity_min: newDJSettings.popularity,
                 dj_location: djLocation ?? "No location",
-                dj_status: BACKEND_STATUS[djCurrentSettingNumber] ?? "PEAK"
+                dj_status: BACKEND_STATUS[djCurrentSettingNumber] ?? "PEAK",
+                dj_decade: stringArrayToStringFormatted(djTags.filter(v => v.category === "era").map(v => v.label))
             })
 
             console.log("newDJSettings", djs)
@@ -772,6 +794,7 @@ genres is just a string. send em over like this: “pop, rock, rap”
                                 // selectedState={[djSelectedGenres, setDJSelectedGenres]}
                                 energyState={[djEnergy, setDJEnergy]}
                                 bangersState={[djBangersOnly, setDJBangersOnly]}
+                                tagsState={[djTags, setDJTags]}
                                 sendDJSettings={sendDJSettings}
                                 djSettingPlayingNumberState={[djSettingPlayingNumber, setDJSettingPlayingNumber]}
                                 djSettingsState={[djSettings, setDJSettings]}
@@ -780,6 +803,7 @@ genres is just a string. send em over like this: “pop, rock, rap”
                                 shuffleRadioValueState={[shuffleValue, setShuffleValue]}
                                 onSetShuffle={onSetShuffle}
                                 onSetAccept={onSetAccept}
+
                                 ExplicitButton={
                                     <></>
                                 }

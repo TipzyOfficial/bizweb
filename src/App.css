@@ -240,6 +240,10 @@
   align-items: center;
 }
 
+.App-nesteddropdown {
+  padding: 0
+}
+
 .App-modal {
   min-width: 80vw;
 }
@@ -530,4 +534,135 @@ a:hover {
 a:active {
   color: #df8605;
   text-decoration: none;
+}
+
+
+
+
+/* DROPDOWNSTYLES */
+.rnd {
+  position: relative;
+  width: fit-content;
+}
+
+.rnd * {
+  box-sizing: border-box;
+}
+
+.rnd__root-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin: 7px 0;
+  z-index: 10;
+}
+
+.rnd__root-menu.rnd__menu--top {
+  top: auto;
+  bottom: 100%;
+}
+
+.rnd__root-menu.rnd__menu--bottom {
+  top: 100%;
+  bottom: auto;
+}
+
+.rnd__root-menu.rnd__menu--right {
+  left: 0;
+  right: auto;
+}
+
+.rnd__root-menu.rnd__menu--left {
+  right: 0;
+  left: auto;
+}
+
+.rnd__menu {
+  /* overflow: hidden; */
+  background-color: #343a40;
+  /* border: 1px solid hsl(0, 0%, 90%); */
+  box-shadow: 0 4px 17px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 0px 0;
+  list-style: none;
+  font-family: "Montserrat", sans-serif;
+}
+
+.rnd__submenu {
+  position: absolute;
+  display: none;
+  opacity: 0;
+  left: 100%;
+  top: 0;
+}
+
+.rnd__submenu--opened {
+  opacity: 1;
+}
+
+.rnd__submenu.rnd__menu--top {
+  top: auto;
+  bottom: 0;
+}
+
+.rnd__submenu.rnd__menu--bottom {
+  top: 0;
+  bottom: auto;
+}
+
+.rnd__submenu.rnd__menu--right {
+  left: 100%;
+  right: auto;
+}
+
+.rnd__submenu.rnd__menu--left {
+  right: 100%;
+  left: auto;
+}
+
+.rnd__option {
+  padding: 12px 15px;
+  cursor: pointer;
+  word-break: break-word;
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  /* overflow: hidden; */
+}
+
+.rnd__option--with-menu:hover>.rnd__submenu {
+  display: block;
+}
+
+.rnd__option:not(.rnd__option--disabled):hover {
+  border-radius: 12px;
+  background-color: hsla(0, 0%, 0%, 0.1);
+}
+
+.rnd__option--disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.rnd__option-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.rnd__option-icon--left {
+  margin-right: 7px;
+}
+
+.rnd__option-icon--right {
+  margin-left: auto;
+}
+
+.rnd__option-label {
+  font-weight: 600;
+  font-size: 11px;
+  margin: 0;
 }

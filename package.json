@@ -50,6 +50,7 @@
     "react-google-button": "^0.7.2",
     "react-horizontal-scrolling-menu": "^7.0.0",
     "react-lottie": "^1.2.4",
+    "react-nested-dropdown": "^0.0.12",
     "react-router-dom": "^6.23.0",
     "react-scripts": "^5.0.1",
     "sass": "^1.79.5",
