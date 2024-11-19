@@ -143,7 +143,7 @@ export default function Dashboard() {
     const [djEnergy, setDJEnergy] = useState(50);
     const [djBangersOnly, setDJBangersOnly] = useState(75);
     const [djLocation, setDJLocation] = useState("San Francisco, California");
-    const [djSongs, setDJSongs] = useState<SongType[] | undefined>(DEFAULT_DJ_SONGS);
+    const [djSongs, setDJSongs] = useState<SongType[] | undefined>();
     const [djTags, setDJTags] = useState<TagType[]>([]);
 
     const [shuffleValue, setShuffleValue] = useState<ShuffleType>("TipzyAI");

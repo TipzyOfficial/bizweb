@@ -219,7 +219,7 @@ export async function getUser(userType: "tipper" | "business", accessToken: stri
  * @param refresh_token the refresh token
  * @returns access_token, refresh_token, and expires_at.
  */
-export async function getAccessToken(refresh_token: string, auth?: boolean): Promise<TokenReturnType | null> {
+export async function getAccessToken(refresh_token: string): Promise<TokenReturnType | null> {
     // debuglog("id", process.env.REACT_APP_CLIENT_ID, "Secret", process.env.REACT_APP_CLIENT_SECRET);
     return fetch(`${ServerInfo.baseurl}auth/token`, {
         method: 'POST',
@@ -246,8 +246,7 @@ export async function getAccessToken(refresh_token: string, auth?: boolean): Pro
             debuglog("get access token", json)
             return null;
         }
-        return convertToTokenReturnType(json.access_token, json.refresh_token, json.expires_in
-        );
+        return convertToTokenReturnType(json.access_token, json.refresh_token, json.expires_in);
     }).catch((error: Error) => { throw error })
 }
 

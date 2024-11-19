@@ -129,14 +129,14 @@ export function PlaylistScreen(props: PlaylistScreenProps) {
         setSongs(undefined);
         setShow(true);
         setLoading(true);
-        // const s = await generatePlaylist().catch(e => { console.log("Error generating", e); return null });
-        // setSongs(s);
-        // setLoading(false);
+        const s = await generatePlaylist().catch(e => { console.log("Error generating", e); return null });
+        setSongs(s);
+        setLoading(false);
 
-        setTimeout(() => {
-            setSongs(DEFAULT_RESULT);
-            setLoading(false);
-        }, 1578)
+        // setTimeout(() => {
+        //     setSongs(DEFAULT_RESULT);
+        //     setLoading(false);
+        // }, 1578)
     }
 
     const onHide = () => {
