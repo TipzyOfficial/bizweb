@@ -12,6 +12,7 @@ import TZButton from "../../components/TZButton";
 import { CurrentlyPlayingType } from "./Dashboard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faForwardStep, faPause, faPlay, faVolumeDown, faVolumeLow, faVolumeMute, faVolumeUp, IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { useInterval } from "../../lib/utils";
 
 
 type SongDraggableType = SongType// { id: string, song: SongType }
@@ -40,6 +41,7 @@ type QueueProps = {
     disable?: boolean,
     onPauseClick: () => any,
     onSkipClick: () => any,
+    lastPullTime: number,
 }
 
 function PlaybackButton(props: { icon: IconDefinition, onClick: () => any, disable?: boolean }) {
@@ -66,6 +68,7 @@ export default function Queue(props: QueueProps) {
     const queueOrder = props.queueOrder[0];
     const [editingQueue, setEditingQueue] = props.editingQueue;
     const [volume, setVolume] = props.volumeState;
+    const [pos, setPos] = useState(0);
 
     // console.log("QO", props.queueOrder);
 
@@ -80,6 +83,12 @@ export default function Queue(props: QueueProps) {
     }
 
     const playbackHeight = 3;
+
+    // console.log("tslp", Date.now() - props.lastPullTime);
+
+    useInterval(() => {
+        setPos(Date.now() - props.lastPullTime)
+    }, 1000)
 
     return (
         <div style={{ width: "100%" }}>
@@ -106,7 +115,7 @@ export default function Queue(props: QueueProps) {
                             {/* <div style={{ paddingBottom: padding }} /> */}
                             <div style={{ display: 'flex', alignItems: 'center' }}>
                                 <div style={{ width: "100%", height: playbackHeight, backgroundColor: "#fff2" }}>
-                                    <div className="App-animated-gradient-fast-light" style={{ width: `${(progress.progressMs / progress.durationMs) * 100}%`, height: "100%", backgroundColor: 'white' }}></div>
+                                    <div className="App-animated-gradient-fast-light" style={{ width: `${((progress.progressMs + Date.now() - props.lastPullTime) / progress.durationMs) * 100}%`, height: "100%", backgroundColor: 'white' }}></div>
                                 </div>
                                 <div style={{ flex: 1, display: 'flex', flexDirection: 'row', position: "relative", justifyContent: 'flex-end', alignItems: 'center' }}>
                                     <div style={{ position: "absolute", left: padding }}>

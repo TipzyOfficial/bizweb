@@ -127,6 +127,7 @@ export default function Dashboard() {
     }
     const eQ: [boolean, Dispatch<SetStateAction<boolean>>] = [editingQueue, setEditingQueue]; //is "editing" on?
     const [reordering, setReordering] = useState(false); //is actively reordering queue?
+    const [lastPullTime, setLastPullTime] = useState(-1);
 
     //show search
     const [searchVisible, setSearchVisible] = useState(false);
@@ -209,8 +210,10 @@ export default function Dashboard() {
         setReordering(true);
 
         const minimumTimeLeft = 30000;
+        const timeSinceLastPull = lastPullTime > 0 ? Date.now() - lastPullTime : 0;
+        console.log("tslpNEW", timeSinceLastPull, "left:", currentlyPlaying ? currentlyPlaying[1].durationMs - currentlyPlaying[1].progressMs - timeSinceLastPull : "NaN");
 
-        if (!currentlyPlaying || currentlyPlaying[1].durationMs - currentlyPlaying[1].progressMs < minimumTimeLeft) {
+        if (!currentlyPlaying || currentlyPlaying[1].durationMs - currentlyPlaying[1].progressMs - timeSinceLastPull < minimumTimeLeft) {
             setReordering(false);
             alert("The current song is too close to finishing–please wait for it to finish before saving your changes!");
             return;
@@ -312,6 +315,7 @@ export default function Dashboard() {
 
         //queue
         await refreshQueue();
+        setLastPullTime(Date.now());
 
         //stats
         const stats = await getStats(usc);
@@ -767,12 +771,14 @@ genres is just a string. send em over like this: “pop, rock, rap”
                         <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
                         <div style={{ paddingBottom: padding }} />
                         {currentlyPlaying && sessionStarted ?
-                            <Queue volumeState={[volume, setVolume]} pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
+                            <Queue volumeState={[volume, setVolume]} lastPullTime={lastPullTime} pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
                                 console.log('reordering', reordering)
 
                                 if (!reordering) {
                                     try {
-                                        await reorderQueue();
+                                        await reorderQueue().catch((e: Error) => {
+                                            alert(e.message);
+                                        });
                                         setReordering(false);
                                     }
                                     catch (e) {
