@@ -1,4 +1,4 @@
-import { Modal, Spinner } from "react-bootstrap";
+import { Accordion, Modal, Spinner } from "react-bootstrap";
 import { DisplayOrLoading } from "../../components/DisplayOrLoading";
 import { Colors, padding, radius, smallPadding, useFdim } from "../../lib/Constants";
 import { Dispatch, memo, SetStateAction, useContext, useEffect, useState } from "react";
@@ -27,8 +27,14 @@ import TZToggle from "../../components/TZToggle";
 import { Search } from "./Search";
 import Border from "../../components/Border";
 import { faCheckCircle } from "@fortawesome/free-regular-svg-icons";
+import { useLocation } from "react-router-dom";
+import { NotFoundPage } from "./NotFoundPage";
+import TZButton from "../../components/TZButton";
+import Account from "../profile/Account";
 
 const BACKEND_STATUS = ["OPENING", "PEAK", "CLOSING"];
+
+type PageType = "Queue" | "Settings" | "Loading" | "Unknown";
 
 type FitAnalysisType = "GOOD" | "BAD" | "OK" | "PENDING" | "UNKNOWN";
 
@@ -99,6 +105,25 @@ const AITABWIDTH = 17;
 export default function Dashboard() {
     const usc = useContext(UserSessionContext);
     const bar = usc.user;
+    const location = useLocation();
+
+    const pathname = location.pathname.split("/")[1];
+    let PAGE: PageType = "Loading"
+
+    // alert(pathname);
+
+    switch (pathname) {
+        case "dashboard":
+            PAGE = "Queue";
+            break;
+        case "settings":
+            PAGE = "Settings";
+            break;
+        default:
+            PAGE = "Unknown";
+            break;
+    }
+
     const [ready, setReady] = useState(false);
     const [currentlyPlaying, setCurrentlyPlayingIn] = useState<CurrentlyPlayingType | undefined>(undefined);
     const [queue, setQueueIn] = useState<SongType[] | undefined>([]);
@@ -755,16 +780,6 @@ export default function Dashboard() {
         setDisableTyping(false);
     }
 
-    //send DJSettings
-
-    /**
-     * path(“business/dj/shuffle/generate/“, views.dj_shuffle_by_prompt),
-genres = request.data.get(“genres”)
-    energy = int(request.data.get(“energy”))  # scale of 1 to 10
-    bangers_only = bool(request.data.get(“bangers_only”))
-genres is just a string. send em over like this: “pop, rock, rap”
-     */
-
     const sendDJSettings = async () => {
         const current = djSettings[djCurrentSettingNumber];
 
@@ -812,6 +827,131 @@ genres is just a string. send em over like this: “pop, rock, rap”
         }
     }
 
+    function QueueRequestsDJ() {
+        return (
+            <div className="App-dashboard-grid" style={{
+                overflow: 'hidden', position: 'relative',
+                // gridTemplateColumns: aiTabVisible ? "1.5fr 3.5fr 1.5fr" : "1.5fr 5fr"
+            }}>
+                <div style={{ paddingLeft: padding, paddingRight: padding, paddingBottom: padding }}>
+                    <div className="remove-scrollbar" style={{
+                        padding: padding, borderRadius: radius,
+                        height: "100%", overflowY: 'scroll', position: 'relative', backgroundColor: Colors.lightBackground
+                    }}>
+                        {queueLoading ? <div style={{
+                            position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center',
+                            zIndex: 100,
+                        }}>
+                            <Spinner />
+                        </div> : <></>}
+                        {/* <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} /> */}
+                        {/* <div style={{ paddingBottom: padding }} /> */}
+                        <span className="App-tertiarytitle">Up next</span>
+                        {currentlyPlaying && sessionStarted ?
+                            <Queue volumeState={[volume, setVolume]} lastPullTime={lastPullTime} pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
+                                console.log('reordering', reordering)
+                                if (!reordering) {
+                                    try {
+                                        await reorderQueue().catch((e: Error) => {
+                                            alert(e.message);
+                                        });
+                                        setReordering(false);
+                                    }
+                                    catch (e) {
+                                        setReordering(false);
+                                        throw e;
+                                    }
+                                }
+                            }} />
+                            :
+                            <NotPlaying />
+                        }
+                    </div>
+
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden', paddingRight: aiTabVisible ? 0 : AITABWIDTH }}>
+                    {/* <input value={djLocation} onChange={(e) => setDJLocation(e.target.value)}></input> */}
+                    <div style={{ display: "flex", justifyContent: 'space-between' }}>
+                        <DJSettings
+                            genres={GENRES}
+                            expandState={[djExpanded, setDJExpanded]}
+                            // selectedState={[djSelectedGenres, setDJSelectedGenres]}
+                            energyState={[djEnergy, setDJEnergy]}
+                            bangersState={[djBangersOnly, setDJBangersOnly]}
+                            tagsState={[djTags, setDJTags]}
+                            sendDJSettings={sendDJSettings}
+                            djSettingPlayingNumberState={[djSettingPlayingNumber, setDJSettingPlayingNumber]}
+                            djSettingsState={[djSettings, setDJSettings]}
+                            djCurrentSettingNumberState={[djCurrentSettingNumber, setDJCurrentSettingNumber]}
+                            acceptRadioValueState={[acceptRadioValue, setAcceptRadioValue]}
+                            shuffleRadioValueState={[shuffleValue, setShuffleValue]}
+                            onSetShuffle={onSetShuffle}
+                            onSetAccept={onSetAccept}
+
+                            ExplicitButton={
+                                <></>
+                            }
+                            PlaylistScreen={
+                                <>
+                                    <PlaybackComponent setDisableTyping={setDisableTyping} />
+                                    <div style={{ display: "flex" }}>
+                                        <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
+                                            await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
+                                            setToggles(...await getToggles(usc));
+                                        }} />
+                                    </div>
+
+                                </>
+
+                            }
+                        />
+
+                    </div>
+                    <div className="remove-scrollbar" style={{ flex: 1, height: "100%", overflowY: 'scroll', paddingBottom: padding, paddingRight: padding }}>
+                        <Requests />
+                    </div>
+                    {/* <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
+                        <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
+                            await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
+                            setToggles(...await getToggles(usc));
+                        }} />
+                        <div style={{ paddingLeft: padding }} />
+                        <div style={{ display: "flex" }}>
+                            <TZToggle title="DJ Mode" disabled value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></TZToggle>
+                        </div>
+                        <div style={{ paddingLeft: padding }} />
+                    </div> */}
+                </div>
+                {/* <PlaylistScreen djSongList={djSongs} visibleState={[aiTabVisible, setAITabVisible]} setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} /> */}
+                {/* 
+                {aiTabVisible ?
+                    <div style={{ height: "100%", overflowY: 'scroll', position: 'relative', display: 'flex', }}>
+                        <AISideTab close onClick={() => setAITabVisible(!aiTabVisible)} />
+                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                            <PlaylistScreen visibleState={[aiTabVisible, setAITabVisible]} setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} />
+                        </div>
+                        <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} />
+                        <div style={{ paddingBottom: padding }} />
+                    </div>
+                    : <AISideTab onClick={() => setAITabVisible(!aiTabVisible)} />
+                } */}
+            </div>
+        )
+    }
+
+    function PageSwitcher(props: { page: PageType }) {
+        switch (props.page) {
+            case "Queue":
+                return <QueueRequestsDJ />
+            case "Settings":
+                return <Account />
+            case "Loading":
+                return <LoadingScreen />
+            default:
+                return <NotFoundPage title="404" body="We can't seem to find that page. Make sure you have the correct address!" backPath={-1} />
+        }
+    }
+
     return (
         <DisplayOrLoading condition={ready} loadingScreen={<LoadingScreen />}>
             <div className="App-body-top">
@@ -841,113 +981,7 @@ genres is just a string. send em over like this: “pop, rock, rap”
                         <ProfileButton position="relative" name={bar.business_name}></ProfileButton>
                     </div>
                 </div>
-                <div className="App-dashboard-grid" style={{
-                    overflow: 'hidden', position: 'relative',
-                    // gridTemplateColumns: aiTabVisible ? "1.5fr 3.5fr 1.5fr" : "1.5fr 5fr"
-                }}>
-                    <div style={{ paddingLeft: padding, paddingRight: padding, paddingBottom: padding }}>
-                        <div className="remove-scrollbar" style={{
-                            padding: padding, borderRadius: radius,
-                            height: "100%", overflowY: 'scroll', position: 'relative', backgroundColor: Colors.lightBackground
-                        }}>
-                            {queueLoading ? <div style={{
-                                position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center',
-                                zIndex: 100,
-                            }}>
-                                <Spinner />
-                            </div> : <></>}
-                            {/* <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} /> */}
-                            {/* <div style={{ paddingBottom: padding }} /> */}
-                            <span className="App-tertiarytitle">Up next</span>
-                            {currentlyPlaying && sessionStarted ?
-                                <Queue volumeState={[volume, setVolume]} lastPullTime={lastPullTime} pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
-                                    console.log('reordering', reordering)
-                                    if (!reordering) {
-                                        try {
-                                            await reorderQueue().catch((e: Error) => {
-                                                alert(e.message);
-                                            });
-                                            setReordering(false);
-                                        }
-                                        catch (e) {
-                                            setReordering(false);
-                                            throw e;
-                                        }
-                                    }
-                                }} />
-                                :
-                                <NotPlaying />
-                            }
-                        </div>
-
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden', paddingRight: aiTabVisible ? 0 : AITABWIDTH }}>
-                        {/* <input value={djLocation} onChange={(e) => setDJLocation(e.target.value)}></input> */}
-                        <div style={{ display: "flex", justifyContent: 'space-between' }}>
-                            <DJSettings
-                                genres={GENRES}
-                                expandState={[djExpanded, setDJExpanded]}
-                                // selectedState={[djSelectedGenres, setDJSelectedGenres]}
-                                energyState={[djEnergy, setDJEnergy]}
-                                bangersState={[djBangersOnly, setDJBangersOnly]}
-                                tagsState={[djTags, setDJTags]}
-                                sendDJSettings={sendDJSettings}
-                                djSettingPlayingNumberState={[djSettingPlayingNumber, setDJSettingPlayingNumber]}
-                                djSettingsState={[djSettings, setDJSettings]}
-                                djCurrentSettingNumberState={[djCurrentSettingNumber, setDJCurrentSettingNumber]}
-                                acceptRadioValueState={[acceptRadioValue, setAcceptRadioValue]}
-                                shuffleRadioValueState={[shuffleValue, setShuffleValue]}
-                                onSetShuffle={onSetShuffle}
-                                onSetAccept={onSetAccept}
-
-                                ExplicitButton={
-                                    <></>
-                                }
-                                PlaylistScreen={
-                                    <>
-                                        <PlaybackComponent setDisableTyping={setDisableTyping} />
-                                        <div style={{ display: "flex" }}>
-                                            <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
-                                                await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
-                                                setToggles(...await getToggles(usc));
-                                            }} />
-                                        </div>
-
-                                    </>
-
-                                }
-                            />
-
-                        </div>
-                        <div className="remove-scrollbar" style={{ flex: 1, height: "100%", overflowY: 'scroll', paddingBottom: padding, paddingRight: padding }}>
-                            <Requests />
-                        </div>
-                        {/* <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
-                            <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
-                                await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
-                                setToggles(...await getToggles(usc));
-                            }} />
-                            <div style={{ paddingLeft: padding }} />
-                            <div style={{ display: "flex" }}>
-                                <TZToggle title="DJ Mode" disabled value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></TZToggle>
-                            </div>
-                            <div style={{ paddingLeft: padding }} />
-                        </div> */}
-                    </div>
-                    {/* <PlaylistScreen djSongList={djSongs} visibleState={[aiTabVisible, setAITabVisible]} setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} /> */}
-                    {/* 
-                    {aiTabVisible ?
-                        <div style={{ height: "100%", overflowY: 'scroll', position: 'relative', display: 'flex', }}>
-                            <AISideTab close onClick={() => setAITabVisible(!aiTabVisible)} />
-                            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                                <PlaylistScreen visibleState={[aiTabVisible, setAITabVisible]} setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} />
-                            </div>
-                            <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} />
-                            <div style={{ paddingBottom: padding }} />
-                        </div>
-                        : <AISideTab onClick={() => setAITabVisible(!aiTabVisible)} />
-                    } */}
-                </div>
+                <PageSwitcher page={PAGE} />
                 <AlertModal onHide={() => setAlertContent(undefined)} content={alertContent} />
             </div>
         </DisplayOrLoading>
@@ -1173,551 +1207,3 @@ function SearchBar(props: { onClick: () => any }) {
 // const DJSettingsMemo = memo(DJSettings, (prev, next) => {
 //     return true;
 // });
-
-
-const DEFAULT_DJ_SONGS =
-    [
-        {
-            "id": "soundtrack:track:6Kgd6rC9ocyHuTuZx1p7zo",
-            "title": "Summer Of '69",
-            "artists": [
-                "Bryan Adams"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvf7qtYSHHp1SQgESBgxPDwdoSzcpJqEeQkN",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvf7qtYSHHp1SQgESBgxPDwdoSzcpJqEeQkN",
-            "explicit": false,
-            "duration": 215000
-        },
-        {
-            "id": "soundtrack:track:4Ul6sw0Vgowloa5J1f8Woi",
-            "title": "Maneater",
-            "artists": [
-                "Daryl Hall & John Oates"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvh8ML7L9NUME4xwRNyAzWBUPRjgyiihQxte",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvh8ML7L9NUME4xwRNyAzWBUPRjgyiihQxte",
-            "explicit": false,
-            "duration": 272000
-        },
-        {
-            "id": "soundtrack:track:4l82igyVfQnkN02Nwowyk9",
-            "title": "Don't Dream It's Over",
-            "artists": [
-                "Crowded House"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfvRopvCuFYUYiRBqVNxGkyyQu5mQvjJQ5U",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfvRopvCuFYUYiRBqVNxGkyyQu5mQvjJQ5U",
-            "explicit": false,
-            "duration": 237000
-        },
-        {
-            "id": "soundtrack:track:2lfpHvDZO0kTuXsfbQL8B2",
-            "title": "I'm On Fire",
-            "artists": [
-                "Bruce Springsteen"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduTvtczVrbWTgurMY5mMWRzerWAcvz7yMY",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduTvtczVrbWTgurMY5mMWRzerWAcvz7yMY",
-            "explicit": false,
-            "duration": 156000
-        },
-        {
-            "id": "soundtrack:track:3vP7HqHGl2PkrHBLUA1SaS",
-            "title": "Rock with You - Single Version",
-            "artists": [
-                "Michael Jackson"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduNeEnCvpnMCohYw1vcJTe35vKpbTk2wWe",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduNeEnCvpnMCohYw1vcJTe35vKpbTk2wWe",
-            "explicit": false,
-            "duration": 203000
-        },
-        {
-            "id": "soundtrack:track:1KVf9VtmJDtEh2bxZAYzjW",
-            "title": "Beat It - Single Version",
-            "artists": [
-                "Michael Jackson"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tPtkkRQ7uRSBfyMWCZ5UzTKbGnCAfY",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tPtkkRQ7uRSBfyMWCZ5UzTKbGnCAfY",
-            "explicit": false,
-            "duration": 258000
-        },
-        {
-            "id": "soundtrack:track:3WkwPKhyFNCSWYubRCUBu6",
-            "title": "I Love Rock 'N Roll",
-            "artists": [
-                "Joan Jett & The Blackhearts"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvh7zBQqG6Hp9pjzkZQTvjXdi84YnSFAjxgv",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvh7zBQqG6Hp9pjzkZQTvjXdi84YnSFAjxgv",
-            "explicit": false,
-            "duration": 175000
-        },
-        {
-            "id": "soundtrack:track:56mUgXSlPUKf71vnOJEgDK",
-            "title": "Another Day in Paradise - 2016 Remaster",
-            "artists": [
-                "Phil Collins"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfv4f8xs6wGCVwx63tD4urYZt23NbfdyJFQ",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfv4f8xs6wGCVwx63tD4urYZt23NbfdyJFQ",
-            "explicit": false,
-            "duration": 322000
-        },
-        {
-            "id": "soundtrack:track:2jxkAdiGrR4WonqVClAOfZ",
-            "title": "Chicago",
-            "artists": [
-                "Michael Jackson"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvf7PTC7M7ckWJGRDYRQE2qShZBCH3pWqTxS",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvf7PTC7M7ckWJGRDYRQE2qShZBCH3pWqTxS",
-            "explicit": false,
-            "duration": 245000
-        },
-        {
-            "id": "soundtrack:track:3HEnsoH97euxbCN6B3LDKO",
-            "title": "Faith - Remastered",
-            "artists": [
-                "George Michael"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJSPA98VsrVXpbKBDRwgTT3ACt1JeiZPFt",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJSPA98VsrVXpbKBDRwgTT3ACt1JeiZPFt",
-            "explicit": false,
-            "duration": 193000
-        },
-        {
-            "id": "soundtrack:track:5r8j6iNxx9AFkBRfM8E8x1",
-            "title": "Streets of Philadelphia - Single Edit",
-            "artists": [
-                "Bruce Springsteen"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvh7zBSBudYHHNQExv5gCYkZKqc6ACJhLNr2",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvh7zBSBudYHHNQExv5gCYkZKqc6ACJhLNr2",
-            "explicit": false,
-            "duration": 196000
-        },
-        {
-            "id": "soundtrack:track:6VWyR7fWV9UlGhFksRDaNE",
-            "title": "Against All Odds (Take a Look at Me Now) - 2016 Remaster",
-            "artists": [
-                "Phil Collins"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfvRopvKzYRfjNw6NnK2Q3C8SFyG4fCwZ8r",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfvRopvKzYRfjNw6NnK2Q3C8SFyG4fCwZ8r",
-            "explicit": false,
-            "duration": 206000
-        },
-        {
-            "id": "soundtrack:track:1vQ2uODooCEsYjEQiOGZLs",
-            "title": "Come On Eileen",
-            "artists": [
-                "Dexys Midnight Runners"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxQvGCyAxec5qACsCYAcvB7TDEfs4LZigKJW",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxQvGCyAxec5qACsCYAcvB7TDEfs4LZigKJW",
-            "explicit": false,
-            "duration": 287000
-        },
-        {
-            "id": "soundtrack:track:2ibqiCsx1It06iGE22KcAm",
-            "title": "Beat It - Single Version",
-            "artists": [
-                "Michael Jackson"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tPmdqojKJdTZhYhQVDL4pFD5raYyJe",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tPmdqojKJdTZhYhQVDL4pFD5raYyJe",
-            "explicit": false,
-            "duration": 258000
-        },
-        {
-            "id": "soundtrack:track:3CLVXmZMy5AV7wMWp34pcm",
-            "title": "Superstition - Single Version",
-            "artists": [
-                "Stevie Wonder"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvhXKnRqp6FFe3As2MQ4qaoD9iiqASHg4MqG",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvhXKnRqp6FFe3As2MQ4qaoD9iiqASHg4MqG",
-            "explicit": false,
-            "duration": 245000
-        },
-        {
-            "id": "soundtrack:track:4R7UcLCFFUa11Ksts1HNCH",
-            "title": "Hung Up",
-            "artists": [
-                "Madonna"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VWP4tAXJP6mdsEgJwZZ9vNtegfLTADk",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VWP4tAXJP6mdsEgJwZZ9vNtegfLTADk",
-            "explicit": false,
-            "duration": 338000
-        },
-        {
-            "id": "soundtrack:track:2LWEvTgOhUmmQkz6ryWjFx",
-            "title": "Pour Some Sugar On Me - Remastered 2017",
-            "artists": [
-                "Def Leppard"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXo9rJNXtSR9aNmmM6mBXiMuxTcJa",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXo9rJNXtSR9aNmmM6mBXiMuxTcJa",
-            "explicit": true,
-            "duration": 267000
-        },
-        {
-            "id": "soundtrack:track:30fdaAOwlaAMGcQ93uOSZT",
-            "title": "Holding Out for a Hero (From \"Footloose\" Soundtrack)",
-            "artists": [
-                "Bonnie Tyler"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxRKEfFWkfeZMEv81FZx2vXy521EbCyYySLe",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxRKEfFWkfeZMEv81FZx2vXy521EbCyYySLe",
-            "explicit": false,
-            "duration": 349000
-        },
-        {
-            "id": "soundtrack:track:7AyP4MWhW94papy5L6UuoG",
-            "title": "Glory Days",
-            "artists": [
-                "Bruce Springsteen"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduTvtczVrbWTgurMY5mMWRzerWAcvz7yMY",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduTvtczVrbWTgurMY5mMWRzerWAcvz7yMY",
-            "explicit": false,
-            "duration": 255000
-        },
-        {
-            "id": "soundtrack:track:2JzXkvJfexe5tBF0YBAa44",
-            "title": "Smooth Criminal - 2012 Remaster",
-            "artists": [
-                "Michael Jackson"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveK5PvfNu9yiXQF9fAxLCoKQAnBG8drFxHC",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveK5PvfNu9yiXQF9fAxLCoKQAnBG8drFxHC",
-            "explicit": false,
-            "duration": 251000
-        },
-        {
-            "id": "soundtrack:track:6rI6Q4c465SNfvWRwf8GNP",
-            "title": "This Night Has Opened My Eyes - 2011 Remaster",
-            "artists": [
-                "The Smiths"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJiFBiddGTpfsaChrP54t9HJPBcr55ewxJ",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJiFBiddGTpfsaChrP54t9HJPBcr55ewxJ",
-            "explicit": false,
-            "duration": 222000
-        },
-        {
-            "id": "soundtrack:track:5rzGHkn6QeDyaPzsKjwYUR",
-            "title": "Like a Prayer",
-            "artists": [
-                "Madonna"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VW7SuVDfeBfyjQQwEy6rGNxJcw9Hi3p",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VW7SuVDfeBfyjQQwEy6rGNxJcw9Hi3p",
-            "explicit": false,
-            "duration": 341000
-        },
-        {
-            "id": "soundtrack:track:7dPuchUzR5wR347iao7sgE",
-            "title": "You Spin Me Round (Like a Record)",
-            "artists": [
-                "Dead Or Alive"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxSXccvRkLTUhE5YRBLC2ny79HJRWtk8ti5t",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxSXccvRkLTUhE5YRBLC2ny79HJRWtk8ti5t",
-            "explicit": false,
-            "duration": 195000
-        },
-        {
-            "id": "soundtrack:track:0Eqn9Bb6oLaErGwZ8ynUoT",
-            "title": "Centerfold",
-            "artists": [
-                "The J. Geils Band"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu6nBqwE8HeaJWgfmpJvQ8HekEpacA4Ukv",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu6nBqwE8HeaJWgfmpJvQ8HekEpacA4Ukv",
-            "explicit": false,
-            "duration": 217000
-        },
-        {
-            "id": "soundtrack:track:6WIW67sPZ22saEBpv5QNDT",
-            "title": "How Will I Know",
-            "artists": [
-                "Whitney Houston"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tfpTFVtuzjqeZhG2NXDHPQv5DBSgFx",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tfpTFVtuzjqeZhG2NXDHPQv5DBSgFx",
-            "explicit": false,
-            "duration": 275000
-        },
-        {
-            "id": "soundtrack:track:5MercyaTf1c2eCvgeLvPdf",
-            "title": "Hysteria",
-            "artists": [
-                "Def Leppard"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXqaT1oSJYYApFjQvzU9CsHGobPfc",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXqaT1oSJYYApFjQvzU9CsHGobPfc",
-            "explicit": false,
-            "duration": 354000
-        },
-        {
-            "id": "soundtrack:track:1cX4npJb5Ydyk5oD3hs3E2",
-            "title": "Material Girl (2024 Remaster)",
-            "artists": [
-                "Madonna"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBi21MFNMbNcU1uhJnWcsHRQoKRLsXyU42wwS6",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBi21MFNMbNcU1uhJnWcsHRQoKRLsXyU42wwS6",
-            "explicit": false,
-            "duration": 242000
-        },
-        {
-            "id": "soundtrack:track:4Gv7QEEh80TzQVOUYq2LZf",
-            "title": "Just Like Heaven",
-            "artists": [
-                "The Cure"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu6nBqzgX6hQLsQgCvwa8cUums9GrMFtZk",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu6nBqzgX6hQLsQgCvwa8cUums9GrMFtZk",
-            "explicit": false,
-            "duration": 212000
-        },
-        {
-            "id": "soundtrack:track:1087eyA9fUswU1s39uYjk4",
-            "title": "Maniac",
-            "artists": [
-                "Michael Sembello"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvhXR54amh8gC5DTb91vYWaFMeMNoMWr6JmL",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvhXR54amh8gC5DTb91vYWaFMeMNoMWr6JmL",
-            "explicit": false,
-            "duration": 245000
-        },
-        {
-            "id": "soundtrack:track:2Pgvu38M3izr9Y3D5WOlyt",
-            "title": "Saving All My Love for You",
-            "artists": [
-                "Whitney Houston"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tfpTFVtuzjqeZhG2NXDHPQv5DBSgFx",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tfpTFVtuzjqeZhG2NXDHPQv5DBSgFx",
-            "explicit": false,
-            "duration": 237000
-        },
-        {
-            "id": "soundtrack:track:2zxd3P10ratqfZOFWkCqdp",
-            "title": "Come Undone",
-            "artists": [
-                "Duran Duran"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VVqeK5tbqj1Wr9NPqHBJNdxwaL7n24E",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VVqeK5tbqj1Wr9NPqHBJNdxwaL7n24E",
-            "explicit": false,
-            "duration": 257000
-        },
-        {
-            "id": "soundtrack:track:2Pgvu38M3izr9Y3D5WOlyt",
-            "title": "Saving All My Love for You",
-            "artists": [
-                "Whitney Houston"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tfpTFVtuzjqeZhG2NXDHPQv5DBSgFx",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tfpTFVtuzjqeZhG2NXDHPQv5DBSgFx",
-            "explicit": false,
-            "duration": 237000
-        },
-        {
-            "id": "soundtrack:track:3KwSJ1VCLo4WsLIwLZbQ3x",
-            "title": "One More Night - 2016 Remaster",
-            "artists": [
-                "Phil Collins"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfut5pDFKwfFzJSfs6rXWLwfVceHCrkXPjC",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfut5pDFKwfFzJSfs6rXWLwfVceHCrkXPjC",
-            "explicit": false,
-            "duration": 289000
-        },
-        {
-            "id": "soundtrack:track:3F4rdwhF9vNlxicqvh9qVk",
-            "title": "Don't Leave Me This Way (with Sarah Jane Morris)",
-            "artists": [
-                "The Communards",
-                "Sarah Jane Morris"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaSG5V96fiWSY4DJwykZUfwBoYDaiH2v",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaSG5V96fiWSY4DJwykZUfwBoYDaiH2v",
-            "explicit": false,
-            "duration": 271000
-        },
-        {
-            "id": "soundtrack:track:2tMmdmNLrxubPjtA3SDUEW",
-            "title": "Heart Of Glass - Special Mix",
-            "artists": [
-                "Blondie"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VWPK4kHgkRoSwpYTC7Bxg2EvaygG2yC",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VWPK4kHgkRoSwpYTC7Bxg2EvaygG2yC",
-            "explicit": true,
-            "duration": 276000
-        },
-        {
-            "id": "soundtrack:track:2OstfMXxyuXz4X0neDjT9H",
-            "title": "Lessons In Love",
-            "artists": [
-                "Level 42"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveKAgam7BpDYXe9yW7wZ1wFKpxo5Aw4CDkJ",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveKAgam7BpDYXe9yW7wZ1wFKpxo5Aw4CDkJ",
-            "explicit": false,
-            "duration": 246000
-        },
-        {
-            "id": "soundtrack:track:3cAkC9IyiTXcHjtqzc6PHJ",
-            "title": "I Hate Myself for Loving You",
-            "artists": [
-                "Joan Jett & The Blackhearts"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tPtj8gvVy9N6zUmXmNE6RqfdWy4Ex6",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tPtj8gvVy9N6zUmXmNE6RqfdWy4Ex6",
-            "explicit": false,
-            "duration": 246000
-        },
-        {
-            "id": "soundtrack:track:5DVAqWPt1SYQLfUTP4z0fK",
-            "title": "Animal",
-            "artists": [
-                "Def Leppard"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXqaT1oSJYYApFjQvzU9CsHGobPfc",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXqaT1oSJYYApFjQvzU9CsHGobPfc",
-            "explicit": false,
-            "duration": 244000
-        },
-        {
-            "id": "soundtrack:track:5DVAqWPt1SYQLfUTP4z0fK",
-            "title": "Animal",
-            "artists": [
-                "Def Leppard"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXqaT1oSJYYApFjQvzU9CsHGobPfc",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgieaRiXqaT1oSJYYApFjQvzU9CsHGobPfc",
-            "explicit": false,
-            "duration": 244000
-        },
-        {
-            "id": "soundtrack:track:7uydTWaLdwg3PP0WgVbZUJ",
-            "title": "Straight From The Heart",
-            "artists": [
-                "Bryan Adams"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduNeDA12zDVTtNpw2X7Gy2LZURcf1kw8FY",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduNeDA12zDVTtNpw2X7Gy2LZURcf1kw8FY",
-            "explicit": false,
-            "duration": 210000
-        },
-        {
-            "id": "soundtrack:track:0KzldYyRDF0VP4RtxaBgfm",
-            "title": "Somebody's Watching Me",
-            "artists": [
-                "Rockwell",
-                "Rockwell"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxTjSrYBVPQ9u3EAnSoxppCGWg86Gfi8bPkr",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhxTjSrYBVPQ9u3EAnSoxppCGWg86Gfi8bPkr",
-            "explicit": false,
-            "duration": 299000
-        },
-        {
-            "id": "soundtrack:track:4Q3thb8WanfpQ1SrA7WYX9",
-            "title": "Girls on Film - 2010 Remaster",
-            "artists": [
-                "Duran Duran"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdueWGMmfVjM5YZYuqCbBzUdavJVeiTZmpJ",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdueWGMmfVjM5YZYuqCbBzUdavJVeiTZmpJ",
-            "explicit": false,
-            "duration": 213000
-        },
-        {
-            "id": "soundtrack:track:3ildtVLbDqZxvs391fjLRf",
-            "title": "Rock Me Amadeus - The Gold Mix",
-            "artists": [
-                "Falco"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgK37Sw7LUjLnawnFGGkoV8UpULbTkJY1hG",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvgK37Sw7LUjLnawnFGGkoV8UpULbTkJY1hG",
-            "explicit": false,
-            "duration": 203000
-        },
-        {
-            "id": "soundtrack:track:3WeUZYBDlr4vxBnxRENvBD",
-            "title": "Private Eyes - Remastered",
-            "artists": [
-                "Daryl Hall & John Oates"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tft7mJWtZB6G71HUM3L7RvHKoHW7kA",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvduC4tft7mJWtZB6G71HUM3L7RvHKoHW7kA",
-            "explicit": false,
-            "duration": 217000
-        },
-        {
-            "id": "soundtrack:track:5Fqrdc3y2NDpC8eXQf3Yqg",
-            "title": "That's The Way Love Goes",
-            "artists": [
-                "Janet Jackson"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VWvjbQKfru9TqtcVLkGHBdZf7Ycq9HQ",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvdu1VWvjbQKfru9TqtcVLkGHBdZf7Ycq9HQ",
-            "explicit": true,
-            "duration": 265000
-        },
-        {
-            "id": "soundtrack:track:0hL6MKzMn6BHNEXG85Xafj",
-            "title": "Don't Let the Sun Go Down on Me",
-            "artists": [
-                "george michael & elton john",
-                "George Michael",
-                "Elton John"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJXfqLgpip7ojp3rmT5YxUEayAgpjvEGBp",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJXfqLgpip7ojp3rmT5YxUEayAgpjvEGBp",
-            "explicit": false,
-            "duration": 347000
-        },
-        {
-            "id": "soundtrack:track:01LatXfQtYB7ioQbLuxOub",
-            "title": "Half a Person - 2011 Remaster",
-            "artists": [
-                "The Smiths"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJiFBiddGTpfsaChrP54t9Fpk9Dimq7cyU",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhveJiFBiddGTpfsaChrP54t9Fpk9Dimq7cyU",
-            "explicit": false,
-            "duration": 218000
-        },
-        {
-            "id": "soundtrack:track:0H61Wu9whmPgruUlduFpfh",
-            "title": "I Wish It Would Rain Down - 2016 Remaster",
-            "artists": [
-                "Phil Collins"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfv4f8xs6wGCVwx63tD4urYZt23NbfdyJFQ",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvfv4f8xs6wGCVwx63tD4urYZt23NbfdyJFQ",
-            "explicit": false,
-            "duration": 328000
-        },
-        {
-            "id": "soundtrack:track:5ksizPv3eSTshpLNl6Q5c9",
-            "title": "Rhythm Of The Night",
-            "artists": [
-                "DeBarge"
-            ],
-            "albumart": "https://i.soundcdn.com/default/150/150/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvf7JAVHTio9QExXe5YZm6GCwq5HEkPS3Ujx",
-            "albumartbig": "https://i.soundcdn.com/default/500/500/PB8ro82ZpZNznW2rHMNFbvBJkp9tkV3iHjzFhCHurQYHddwdNYz2PVKWicKNok7JCXc3ypoZJvNBhvf7JAVHTio9QExXe5YZm6GCwq5HEkPS3Ujx",
-            "explicit": false,
-            "duration": 228000
-        },
-    ]
