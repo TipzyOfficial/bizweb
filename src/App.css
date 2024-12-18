@@ -27,7 +27,7 @@
 }
 
 .App-body-top {
-  background-color: #17171E;
+  background-color: #15151C;
   height: 100svh;
   max-height: 100svh;
   display: flex;
@@ -40,11 +40,11 @@
 }
 
 .App-dashboard-grid {
-  background-color: #17171E;
+  background-color: #15151C;
   flex: 1;
   width: 100%;
   display: grid;
-  grid-template-columns: 1.5fr 3fr 2fr;
+  grid-template-columns: 1fr 2fr;
   color: white;
 }
 
@@ -84,14 +84,9 @@
 }
 
 .onelinetextplain {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  line-clamp: 1;
-  -webkit-line-clamp: 1;
-  overflow: hidden;
   text-overflow: ellipsis;
-  text-align: left;
-  justify-content: flex-start;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .onelinetext {

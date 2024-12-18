@@ -2,6 +2,7 @@ import useWindowDimensions from "./useWindowDimensions";
 
 export const Colors = {
     background: '#17171E',
+    lightBackground: '#1A1A22',
     darkBackground: '#121217',
     text: '#FFF',
     primaryLight: '#FCC679',
@@ -20,6 +21,7 @@ export const Colors = {
 
 export const radius = 10;
 export const padding = 12;
+export const smallPadding = 7;
 
 export const useFdim = () => {
     const window = useWindowDimensions();

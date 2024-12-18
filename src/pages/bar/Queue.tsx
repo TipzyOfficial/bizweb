@@ -11,8 +11,8 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import TZButton from "../../components/TZButton";
 import { CurrentlyPlayingType } from "./Dashboard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faForwardStep, faPause, faPlay, faVolumeDown, faVolumeLow, faVolumeMute, faVolumeUp, IconDefinition } from "@fortawesome/free-solid-svg-icons";
-import { useInterval } from "../../lib/utils";
+import { faArrowRightArrowLeft, faArrowsUpDown, faForwardStep, faPause, faPlay, faRightLeft, faVolumeDown, faVolumeLow, faVolumeMute, faVolumeUp, IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { millisToHoursMinutes, millisToMinutesAndSeconds, useInterval } from "../../lib/utils";
 
 
 type SongDraggableType = SongType// { id: string, song: SongType }
@@ -88,11 +88,23 @@ export default function Queue(props: QueueProps) {
 
     useInterval(() => {
         setPos(Date.now() - props.lastPullTime)
-    }, 1000)
+    }, 1000);
+
+    const totalMs = (): number => {
+        if (!queueOrder || queueOrder.length === 0) return 0;
+        return queueOrder.reduce((prev, curr) => { return { ...curr, duration: (prev.duration ?? 0) + (curr.duration ?? 0) } }).duration ?? 0;
+    }
 
     return (
-        <div style={{ width: "100%" }}>
-            <div style={{ display: 'flex' }}>
+        <div style={{ width: "100%", display: 'flex', flexDirection: 'column' }}>
+            <span className="App-smalltext">{queueOrder.length} tracks · {millisToHoursMinutes(totalMs())}</span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={{ paddingRight: 7 }}>
+                    <FontAwesomeIcon style={{ transform: "rotate(90deg) scaleX(-1)" }} icon={faArrowRightArrowLeft}></FontAwesomeIcon>
+                </div>
+                <span className="App-smalltext">Drag to reorder the queue</span>
+            </div>
+            {/* <div style={{ display: 'flex' }}>
                 <div style={{ padding: padding, backgroundColor: "#fff1", borderRadius: radius, flex: 1 }}>
                     <div style={{ display: 'flex' }}>
                         <div style={{ flexGrow: 1, width: '100%' }}>
@@ -104,15 +116,8 @@ export default function Queue(props: QueueProps) {
                             <PlaybackButton icon={faForwardStep} disable={props.disable} onClick={props.onSkipClick} />
                         </div>
                     </div>
-                    {/* 
-                    <div style={{ paddingTop: padding, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-
-
-                    </div> */}
-
                     {progress ?
                         <>
-                            {/* <div style={{ paddingBottom: padding }} /> */}
                             <div style={{ display: 'flex', alignItems: 'center' }}>
                                 <div style={{ width: "100%", height: playbackHeight, backgroundColor: "#fff2" }}>
                                     <div className="App-animated-gradient-fast-light" style={{ width: `${((progress.progressMs + Date.now() - props.lastPullTime) / progress.durationMs) * 100}%`, height: "100%", backgroundColor: 'white' }}></div>
@@ -126,17 +131,6 @@ export default function Queue(props: QueueProps) {
                                     <div style={{ display: 'flex', height: "100%" }}>
                                         <input type="range" className="slider-volume"
                                             style={{ width: 100 }}
-                                            // style={{
-                                            //     // position: 'absolute',
-                                            //     // height: "100%",
-                                            //     flex: 0,
-                                            //     borderRadius: 25,
-                                            //     width: 5,
-                                            //     backgroundColor: "#17171E",
-                                            //     writingMode: "vertical-lr",
-                                            //     direction: "rtl",
-                                            //     verticalAlign: "bottom",
-                                            // }}
                                             min={0} max={100}
                                             step={10}
                                             value={volume}
@@ -147,18 +141,16 @@ export default function Queue(props: QueueProps) {
                             </div>
                         </> : <></>}
                 </div>
-            </div>
+            </div> */}
             <div style={{ paddingBottom: padding }} />
             {
                 editingQueue ?
-                    <div style={{ display: 'flex' }}>
+                    <div style={{ display: 'flex', paddingBottom: padding }}>
                         <TZButton title="Save changes" onClick={onSave} backgroundColor={Colors.green}></TZButton>
                         <div style={{ width: padding }} />
                         <TZButton title="Cancel" onClick={onCancel} backgroundColor={Colors.red}></TZButton>
                     </div> : <></>
             }
-            <span className="App-montserrat-normaltext" style={{ paddingBottom: 7 }}>Next up: (drag to reorder)</span>
-            <div style={{ paddingBottom: padding }} />
             {
                 queueOrder ?
                     <Container disable={props.disable} data={props.queueOrder} dims={props.songDims} editingQueue={props.editingQueue} />

@@ -34,6 +34,15 @@ export function millisToMinutesAndSeconds(millis: number) {
     return (seconds === 60 ? (minutes + 1) + ":00" : minutes + ":" + (seconds < 10 ? "0" : "") + seconds);
 }
 
+export function millisToHoursMinutes(millis: number) {
+    let hours = Math.floor(millis / 3600000);
+    let minutes = Math.floor((millis % 3600000) / 60000);
+    return (
+        (hours > 0 ? `${hours} hours ` : "") +
+        (minutes > 0 || hours === 0 ? `${minutes} minute${minutes !== 1 ? "s" : ""}` : ""));
+}
+
+
 export function parseSongJson(json: any): SongType {
     return {
         id: json.track_id ?? json.id,

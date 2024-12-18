@@ -1,4 +1,4 @@
-import { Colors, padding, radius, useFdim } from "../lib/Constants";
+import { Colors, padding, radius, smallPadding, useFdim } from "../lib/Constants";
 import { PlayableType, SongType } from "../lib/song";
 import './Song.css'
 import { router } from "../App";
@@ -8,17 +8,27 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCirclePlus, faMusic } from "@fortawesome/free-solid-svg-icons";
 import { millisToMinutesAndSeconds, numberToPrice, useInterval } from "../lib/utils";
 import LogoLetter from "../assets/LogoLetter.svg";
+import { compact } from "lodash";
 
 export function artistsStringListToString(artists: string[]) {
     if (!artists) return "";
     let out = "";
-    artists.forEach(a => {
-        out += ", " + a
-    })
+
+    for (const a of artists) {
+        out += ", " + a;
+    }
     return out.substring(2);
 }
 
-export default function Song(props: { song: SongType, dims?: number, noImage?: boolean, number?: number, roundedEdges?: boolean, requestDate?: Date }) {
+export const compactSongStyle = (logoDim: number): React.CSSProperties => {
+    return ({
+        display: "grid",
+        gridTemplateColumns: `${logoDim + padding}px 1fr`,
+        // backgroundColor: "blue"
+    })
+}
+
+export default function Song(props: { song: SongType, compact?: boolean, dims?: number, noImage?: boolean, number?: number, roundedEdges?: boolean, requestDate?: Date }) {
     const etaval = props.requestDate ?? (props.song?.expectedPlaytime ? new Date(props.song?.expectedPlaytime) : undefined);
 
     const calcEtaVal = () => {
@@ -63,12 +73,28 @@ export default function Song(props: { song: SongType, dims?: number, noImage?: b
     const radius = 5;
     const bigDims = 128;
     const dims = props.dims ?? 50;
-    const logoDim = dims / 3 //fdim / 30;
+    const logoDim = (dims / 3) //fdim / 30;
 
     const Img = () => props.song.albumart === "" || !props.song.albumart ? <div style={{ borderRadius: props.roundedEdges ? radius : 0, overflow: "hidden", height: dims, width: dims, backgroundColor: "#888", display: 'flex', justifyContent: 'center', alignItems: 'center' }}><FontAwesomeIcon color={"#fff8"} fontSize={dims / 3} icon={faMusic}></FontAwesomeIcon></div>
         : <img src={props.song.albumart} alt={props.song.title} style={{ height: dims, width: dims, borderRadius: props.roundedEdges ? radius : 0, overflow: "hidden", }} />
 
     const duration = props.song.duration;
+
+    const colEl: React.CSSProperties = { display: "inline-flex", flexDirection: 'column', justifyContent: 'center', overflow: "hidden", minWidth: 0, paddingRight: smallPadding }
+
+    if (props.compact) {
+        return (
+            <div style={isLate ? { borderRadius: radius, borderStyle: 'dashed', borderColor: 'red', borderWidth: 1, flex: 1 } : { flex: 1 }}>
+                <div style={compactSongStyle(dims)}>
+                    <Img />
+                    <div style={colEl}>
+                        <span className="onelinetextplain" style={{ fontSize: 14 }}>{props.song.explicit ? "🅴 " : ""}{props.song.title}</span>
+                        <span className="onelinetextplain" style={{ fontSize: 12 }}>{artistsStringListToString(props.song.artists)}</span>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div style={isLate ? { padding: padding, borderRadius: radius, borderStyle: 'dashed', borderColor: 'red', borderWidth: 1, flex: 1 } : { flex: 1 }}>

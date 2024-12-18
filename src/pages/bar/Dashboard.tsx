@@ -1,6 +1,6 @@
 import { Modal, Spinner } from "react-bootstrap";
 import { DisplayOrLoading } from "../../components/DisplayOrLoading";
-import { Colors, padding, radius, useFdim } from "../../lib/Constants";
+import { Colors, padding, radius, smallPadding, useFdim } from "../../lib/Constants";
 import { Dispatch, memo, SetStateAction, useContext, useEffect, useState } from "react";
 import { UserSessionContext, UserSessionContextType } from "../../lib/UserSessionContext";
 import ProfileButton from "../../components/ProfileButton";
@@ -10,9 +10,9 @@ import { SongRequestType, SongType } from "../../lib/song";
 import { etaBuffer, getCookies, millisToMinutesAndSeconds, parseSongJson, useInterval, stringArrayToStringFormatted, numberToPrice } from "../../lib/utils";
 import _, { eq } from "lodash";
 import BigLogo, { SmallLogo } from "../../components/BigLogo";
-import Song from "../../components/Song";
+import Song, { compactSongStyle } from "../../components/Song";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faChevronLeft, faChevronRight, faMagnifyingGlass, faXmark, IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faChevronLeft, faChevronRight, faMagnifyingGlass, faQuestionCircle, faWarning, faXmark, IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import Dropdown from 'react-bootstrap/Dropdown';
 import TZHeader from "../../components/TZHeader";
 import Stats from "./Stats";
@@ -25,8 +25,12 @@ import { PlaylistScreen } from "./PlaylistScreen";
 import DJSettings from "./DJSettings";
 import TZToggle from "../../components/TZToggle";
 import { Search } from "./Search";
+import Border from "../../components/Border";
+import { faCheckCircle } from "@fortawesome/free-regular-svg-icons";
 
 const BACKEND_STATUS = ["OPENING", "PEAK", "CLOSING"];
+
+type FitAnalysisType = "GOOD" | "BAD" | "OK" | "PENDING" | "UNKNOWN";
 
 const GENRES = [
     "Rock",
@@ -148,6 +152,10 @@ export default function Dashboard() {
     const [djTags, setDJTags] = useState<TagType[]>([]);
 
     const [shuffleValue, setShuffleValue] = useState<ShuffleType>("TipzyAI");
+
+    const songRequestSongRatio = 40;
+    const compactSongDim = 40;
+    const compactRequestSecondHalfCols = `1fr 1.5fr 2fr 0.5fr`;
 
     //TODO REMOVE THIS LATER
     const sessionStarted = true//djSettingPlayingNumber !== undefined;
@@ -314,7 +322,7 @@ export default function Dashboard() {
         if (!_.isEqual(requests, songRequests)) setSongRequests(requests);
 
         //queue
-        await refreshQueue();
+        const cq = await refreshQueue();
         setLastPullTime(Date.now());
 
         //stats
@@ -436,7 +444,7 @@ export default function Dashboard() {
         const energy: number = b.dj_energy ?? 7;
         const popularity: number = b.dj_popularity_min ?? 7;
 
-        const decadesStrings: string[] = b.dj_decades;
+        const decadesStrings: string[] = b.dj_decades ?? [];
         const decades: TagType[] = decadesStrings.map(v => { return { label: v, category: "era" } })
 
         //TODO: Aggregate all tags here!
@@ -469,7 +477,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         refreshPrice(true);
-        initAll().then(() => setReady(true)).catch(() => setReady(true));
+        initAll().then(() => setReady(true)).catch((e) => { console.error(e); setReady(true) });
     }, []);
 
     useInterval(refreshAllData, refreshQueueTime, 500, false);
@@ -480,13 +488,12 @@ export default function Dashboard() {
     const Requests = () => {
         const outlineColor = Colors.tertiaryDark;
         return (
-            <div style={{ width: "100%", height: "100%", paddingRight: padding }}>
-                <TZHeader zIndex={1} title="" backgroundColor={Colors.darkBackground}
-                    leftComponent={
+            <div style={{ paddingTop: padding, paddingBottom: padding, width: "100%", height: "100%", borderRadius: radius, backgroundColor: Colors.lightBackground }}>
+                <div style={{ paddingLeft: padding, paddingRight: padding }}>
+                    <span className="App-tertiarytitle">Pending Requests</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: padding / 2 }}>
                         <RejectAllButton onClick={rejectAll} />
-                    }
-                    rightComponent={
-                        <div style={{ display: "flex" }}>
+                        <div style={{ display: 'flex' }}>
                             <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
                                 await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
                                 setToggles(...await getToggles(usc));
@@ -497,23 +504,39 @@ export default function Dashboard() {
                                 setToggles(...await getToggles(usc));
                             }} />
                         </div>
+                    </div>
+                    <Border />
 
-                    }
-                />
+                    <div className="App-smalltext" style={{ width: "100%", display: 'flex', paddingBottom: smallPadding, fontWeight: 'bold', color: "#fff8" }}>
+                        <div style={{ flex: songRequestSongRatio, }}>
+                            <div style={compactSongStyle(compactSongDim)}>
+                                <div>SONG</div>
+                            </div>
+                        </div>
+                        <div style={{
+                            display: "grid",
+                            gridTemplateColumns: compactRequestSecondHalfCols,
+                            flex: 100 - songRequestSongRatio,
+                        }}>
+                            <div>PRICE</div>
+                            <div>USER</div>
+                            <div>ADD TO QUEUE</div>
+                            <span style={{ textAlign: 'right' }}>MATCH</span>
+                        </div>
+                    </div>
+                </div>
                 {currentlyPlaying && sessionStarted ?
                     (songRequests.length > 0 ?
-                        <div style={{ paddingBottom: padding, paddingLeft: padding, paddingRight: padding, width: "100%" }}>
-                            <div style={{ padding: padding, borderStyle: "solid", borderRadius: 5, borderColor: outlineColor, width: "100%" }}>
-                                <SongRequestRenderItem request={songRequests[0]} index={0} />
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: "flex-end" }}>
-                                <div style={{ position: 'relative', right: 10, backgroundColor: outlineColor, padding: 5, borderEndStartRadius: radius, borderEndEndRadius: radius }}>
-                                    <span style={{ fontWeight: 'bold' }}> [ 1 ] to Accept</span>
+                        <div style={{ width: "100%" }}>
+                            {/* <div style={{ display: 'flex', justifyContent: "flex-end" }}>
+                                <div style={{ position: 'relative', right: 10, backgroundColor: outlineColor, paddingBottom: 5, paddingLeft: 5, paddingRight: 5, borderStartStartRadius: radius, borderStartEndRadius: radius }}>
+                                    <span className="App-smalltext" style={{ fontWeight: 'bold' }}> [ 1 ] to Accept</span>
                                 </div>
-                                <div style={{ position: 'relative', right: 10, backgroundColor: outlineColor, padding: 5, borderEndStartRadius: radius, borderEndEndRadius: radius }}>
-                                    <span style={{ fontWeight: 'bold' }}> [ 2 ] to Reject</span>
+                                <div style={{ position: 'relative', right: 10, backgroundColor: outlineColor, paddingBottom: 5, paddingLeft: 5, paddingRight: 5, borderStartStartRadius: radius, borderStartEndRadius: radius }}>
+                                    <span className="App-smalltext" style={{ fontWeight: 'bold' }}> [ 2 ] to Reject</span>
                                 </div>
-                            </div>
+                            </div> */}
+                            <SongRequestRenderItem request={songRequests[0]} index={0} first />
                         </div>
                         : <div style={{ padding: padding, width: "100%", display: 'flex', justifyContent: 'center', opacity: 0.7, textAlign: 'center' }}>
                             {acceptRadioValue === "Auto" ? <span>Since you're auto-accepting new requests, you won't see requests show up here for review.</span> :
@@ -524,7 +547,7 @@ export default function Dashboard() {
                 }
                 {songRequests.length > 1 ?
                     songRequests.slice(1).map((r, i) =>
-                        <div style={{ paddingBottom: padding, paddingLeft: padding, paddingRight: padding }}>
+                        <div style={{ paddingTop: smallPadding }}>
                             <SongRequestRenderItem request={r} key={i + "key"} index={i + 1} />
                         </div>
                     )
@@ -534,10 +557,10 @@ export default function Dashboard() {
         )
     }
 
-    const SongRequestRenderItem = (props: { request: SongRequestType, index: number }) => {
+    const SongRequestRenderItem = (props: { request: SongRequestType, index: number, first?: boolean }) => {
         const request = props.request;
 
-        const dim = fdim / 20;
+        const dim = compactSongDim;
 
         const Button = (props: { icon: IconDefinition, color: string, onClick: () => void }) => {
             const [mouseHover, setMouseHover] = useState(false);
@@ -550,34 +573,89 @@ export default function Dashboard() {
 
                     style={{
                         display: 'flex', justifyContent: 'center', alignItems: 'center',
-                        width: dim, height: dim, transform: `scale(${(mouseHover ? 1.2 : 1)})`,
+                        width: dim - smallPadding, height: dim - smallPadding, transform: `scale(${(mouseHover ? 1.2 : 1)})`,
                         borderRadius: "100%", borderStyle: "solid", borderColor: props.color,
                         transition: "transform .1s ease", WebkitTransition: ".1s ease",
                         cursor: "pointer"
                     }}>
-                    <FontAwesomeIcon icon={props.icon} fontSize={dim * 0.6} color={props.color}></FontAwesomeIcon>
+                    <FontAwesomeIcon icon={props.icon} fontSize={dim * 0.5} color={props.color}></FontAwesomeIcon>
                 </div>
             )
         }
 
+        const colEl: React.CSSProperties = { height: "100%", display: "inline-flex", flexDirection: 'column', justifyContent: 'center', overflow: "hidden", minWidth: 0, paddingRight: padding }
+        const first = props.first;
+
+        const parseFitAnalysis = (str: string): FitAnalysisType => {
+            const first = str.substring(0, 1);
+
+            switch (first) {
+                case "G":
+                    return "GOOD";
+                case "O":
+                    return "OK";
+                case "B":
+                    return "BAD";
+                case "P":
+                    return "PENDING";
+                default:
+                    return "UNKNOWN";
+            }
+        }
+
+        const FitAnalysis = (): JSX.Element => {
+            const fitAnalysis = parseFitAnalysis(request.fitAnalysis.toUpperCase())
+
+            switch (fitAnalysis) {
+                case "GOOD":
+                    return <FontAwesomeIcon fontSize={dim * 0.5} icon={faCheckCircle} color={Colors.green} />;
+                case "OK":
+                    return <FontAwesomeIcon fontSize={dim * 0.5} icon={faQuestionCircle} color={Colors.primaryRegular} />;
+                case "BAD":
+                    return <FontAwesomeIcon fontSize={dim * 0.5} icon={faCheckCircle} color={Colors.red} />;
+                case "PENDING":
+                    return <Spinner size={"sm"} />;
+                default:
+                    return <FontAwesomeIcon fontSize={dim * 0.5} icon={faWarning} color={"white"} />;
+            }
+        }
+
         return (
-            <div style={{ width: "100%" }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{
+                width: "100%",
+                paddingTop: first ? smallPadding : 0, paddingBottom: first ? smallPadding : 0, paddingLeft: padding, paddingRight: padding
+            }}>
+                {/* <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <div>
                         <span className="App-smalltext" style={{ fontWeight: 'bold', color: Colors.primaryRegular }}> {request.price === 0 ? "FREE REQUEST" : `$${numberToPrice(request.price)}`}</span>
                     </div>
                     <span className="App-smalltext">{request.user.first_name} {request.user.last_name}</span>
-                </div>
-                <div style={{ width: "100%", display: "flex", alignItems: 'center', paddingTop: padding, paddingBottom: padding }}>
-                    <Song song={request.song} dims={songDims} requestDate={request.date} />
-                    <div style={{ display: "flex", alignItems: 'center' }}>
+                </div> */}
+                <div style={{ display: "flex", alignItems: 'center', }}>
+                    <div style={{ flex: songRequestSongRatio }}>
+                        <Song song={request.song} dims={dim} requestDate={request.date} compact />
+                    </div>
+                    <div style={{ flex: 100 - songRequestSongRatio, display: 'grid', gridTemplateColumns: compactRequestSecondHalfCols, }}>
+                        <span style={{ lineHeight: 2 }} className="onelinetextplain">{request.price === 0 ? "FREE" : `$${numberToPrice(request.price)}`}</span>
+                        <span style={{ lineHeight: 2 }} className="onelinetextplain">{request.user.first_name} {request.user.last_name}</span>
+                        <div style={{ display: "flex", alignItems: 'center' }}>
+                            <Button icon={faXmark} color={"white"} onClick={() => rejectOnPress(request.id, props.index)}></Button>
+                            <div style={{ paddingLeft: padding }}></div>
+                            <Button icon={faCheck} color={Colors.primaryRegular} onClick={() => acceptOnPress(request, props.index).catch((e: Error) => alert(`Error accepting request. ${e.message}`))}></Button>
+                        </div>
+                        <div style={{ display: "flex", alignItems: 'center', justifyContent: 'flex-end', }}>
+                            <FitAnalysis></FitAnalysis>
+                        </div>
+                    </div>
+
+                    {/* <div style={{ flex: 1, display: "flex", alignItems: 'center' }}>
                         <Button icon={faXmark} color={"white"} onClick={() => rejectOnPress(request.id, props.index)}></Button>
                         <div style={{ paddingLeft: padding }}></div>
                         <Button icon={faCheck} color={Colors.primaryRegular} onClick={() => acceptOnPress(request, props.index).catch((e: Error) => alert(`Error accepting request. ${e.message}`))}></Button>
-                    </div>
+                    </div> */}
                 </div>
-                <span className="App-smalltext" style={{ fontWeight: "bold" }}>Vibe check: {request.fitAnalysis}. </span>
-                <span className="App-smalltext">{request.fitReasoning}</span>
+                {/* <span className="App-smalltext" style={{ fontWeight: "bold" }}>Vibe check: {request.fitAnalysis}. </span>
+                <span className="App-smalltext">{request.fitReasoning}</span> */}
             </div>
         )
     }
@@ -750,7 +828,7 @@ genres is just a string. send em over like this: “pop, rock, rap”
                     <Search onClose={onSearchModalClose} />
                     {/* </Modal.Body> */}
                 </Modal>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: "100%", padding: padding, backgroundColor: "#0001" }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: "100%", padding: padding }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <SmallLogo />
                         <span className="App-montserrat-normaltext" style={{ paddingLeft: padding, fontWeight: 'bold', color: "#fff8" }}>Biz Dashboard</span>
@@ -763,33 +841,45 @@ genres is just a string. send em over like this: “pop, rock, rap”
                         <ProfileButton position="relative" name={bar.business_name}></ProfileButton>
                     </div>
                 </div>
-                <div className="App-dashboard-grid" style={{ overflow: 'hidden', position: 'relative', gridTemplateColumns: aiTabVisible ? "1.5fr 3.5fr 1.5fr" : "1.5fr 5fr" }}>
-                    <div className="remove-scrollbar" style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll', position: 'relative' }}>
-                        {queueLoading ? <div style={{ position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background + "88", zIndex: 100 }}>
-                            <Spinner />
-                        </div> : <></>}
-                        <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
-                        <div style={{ paddingBottom: padding }} />
-                        {currentlyPlaying && sessionStarted ?
-                            <Queue volumeState={[volume, setVolume]} lastPullTime={lastPullTime} pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
-                                console.log('reordering', reordering)
+                <div className="App-dashboard-grid" style={{
+                    overflow: 'hidden', position: 'relative',
+                    // gridTemplateColumns: aiTabVisible ? "1.5fr 3.5fr 1.5fr" : "1.5fr 5fr"
+                }}>
+                    <div style={{ paddingLeft: padding, paddingRight: padding, paddingBottom: padding }}>
+                        <div className="remove-scrollbar" style={{
+                            padding: padding, borderRadius: radius,
+                            height: "100%", overflowY: 'scroll', position: 'relative', backgroundColor: Colors.lightBackground
+                        }}>
+                            {queueLoading ? <div style={{
+                                position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                zIndex: 100,
+                            }}>
+                                <Spinner />
+                            </div> : <></>}
+                            {/* <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} /> */}
+                            {/* <div style={{ paddingBottom: padding }} /> */}
+                            <span className="App-tertiarytitle">Up next</span>
+                            {currentlyPlaying && sessionStarted ?
+                                <Queue volumeState={[volume, setVolume]} lastPullTime={lastPullTime} pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
+                                    console.log('reordering', reordering)
+                                    if (!reordering) {
+                                        try {
+                                            await reorderQueue().catch((e: Error) => {
+                                                alert(e.message);
+                                            });
+                                            setReordering(false);
+                                        }
+                                        catch (e) {
+                                            setReordering(false);
+                                            throw e;
+                                        }
+                                    }
+                                }} />
+                                :
+                                <NotPlaying />
+                            }
+                        </div>
 
-                                if (!reordering) {
-                                    try {
-                                        await reorderQueue().catch((e: Error) => {
-                                            alert(e.message);
-                                        });
-                                        setReordering(false);
-                                    }
-                                    catch (e) {
-                                        setReordering(false);
-                                        throw e;
-                                    }
-                                }
-                            }} />
-                            :
-                            <NotPlaying />
-                        }
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden', paddingRight: aiTabVisible ? 0 : AITABWIDTH }}>
                         {/* <input value={djLocation} onChange={(e) => setDJLocation(e.target.value)}></input> */}
@@ -829,7 +919,7 @@ genres is just a string. send em over like this: “pop, rock, rap”
                             />
 
                         </div>
-                        <div className="remove-scrollbar" style={{ flex: 1, height: "100%", overflowY: 'scroll', }}>
+                        <div className="remove-scrollbar" style={{ flex: 1, height: "100%", overflowY: 'scroll', paddingBottom: padding, paddingRight: padding }}>
                             <Requests />
                         </div>
                         {/* <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
@@ -844,7 +934,7 @@ genres is just a string. send em over like this: “pop, rock, rap”
                             <div style={{ paddingLeft: padding }} />
                         </div> */}
                     </div>
-                    <PlaylistScreen djSongList={djSongs} visibleState={[aiTabVisible, setAITabVisible]} setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} />
+                    {/* <PlaylistScreen djSongList={djSongs} visibleState={[aiTabVisible, setAITabVisible]} setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} /> */}
                     {/* 
                     {aiTabVisible ?
                         <div style={{ height: "100%", overflowY: 'scroll', position: 'relative', display: 'flex', }}>
@@ -903,7 +993,7 @@ const getRequests = async (usc: UserSessionContextType, deletedIds: Map<number, 
                         email: item.tipper_info.tipper_info.email
                     },
                     id: item.id,
-                    song: { title: songJSON.name, artists: [songJSON.artist], albumart: songJSON.image_url, id: songJSON.id, explicit: songJSON.explicit ?? false },
+                    song: { title: songJSON.name, artists: songJSON.artist, albumart: songJSON.image_url, id: songJSON.id, explicit: songJSON.explicit ?? false },
                     price: item.price,
                     fitAnalysis: item.fit_analysis,
                     fitReasoning: item.fit_reasoning,
@@ -991,7 +1081,7 @@ function RejectAllButton(props: { onClick: () => void }) {
     return (
         <div
             style={{
-                paddingLeft: padding, display: 'flex', alignItems: 'flex-start', cursor: 'pointer'
+                display: 'flex', alignItems: 'flex-start', cursor: 'pointer'
             }} onClick={props.onClick}>
             <div style={{ display: 'inline-flex' }}>
                 <div
@@ -999,11 +1089,13 @@ function RejectAllButton(props: { onClick: () => void }) {
                     onMouseLeave={() => setOpacity(1)}
                     onMouseDown={() => setOpacity(0.5)}
                     style={{
-                        display: 'inline-block', padding: 5, borderRadius: 5, fontSize: fdim / 50, fontWeight: 'bold',
+                        display: 'inline-block', paddingBottom: 1, paddingLeft: 3, paddingRight: 3, borderRadius: 5, fontSize: fdim / 50, fontWeight: 'bold',
                         opacity: opacity, backgroundColor: Colors.red,
                         transition: "all 0.2s"
                     }}>
-                    Reject All
+                    <span className="App-montserrat-smallertext">
+                        Reject All
+                    </span>
                 </div>
             </div>
         </div >
