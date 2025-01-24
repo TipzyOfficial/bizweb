@@ -31,6 +31,7 @@ import { useLocation } from "react-router-dom";
 import { NotFoundPage } from "./NotFoundPage";
 import TZButton from "../../components/TZButton";
 import Account from "../profile/Account";
+import CurrentlyPlayingBar from "../../components/CurrentlyPlayingBar";
 
 const BACKEND_STATUS = ["OPENING", "PEAK", "CLOSING"];
 
@@ -869,7 +870,7 @@ export default function Dashboard() {
                     </div>
 
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden', paddingRight: aiTabVisible ? 0 : AITABWIDTH }}>
+                <div style={{ display: 'flex', flexDirection: 'column', height: "100%", overflowY: 'hidden', paddingRight: aiTabVisible ? 0 : AITABWIDTH }}>
                     {/* <input value={djLocation} onChange={(e) => setDJLocation(e.target.value)}></input> */}
                     <div style={{ display: "flex", justifyContent: 'space-between' }}>
                         <DJSettings
@@ -982,6 +983,7 @@ export default function Dashboard() {
                     </div>
                 </div>
                 <PageSwitcher page={PAGE} />
+                <CurrentlyPlayingBar queueLoading={queueLoading} pauseOverride={pausedUI} current={currentlyPlaying} onPause={onPause} onSkip={onSkip} lastPullTime={lastPullTime} />
                 <AlertModal onHide={() => setAlertContent(undefined)} content={alertContent} />
             </div>
         </DisplayOrLoading>
