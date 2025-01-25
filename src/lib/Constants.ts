@@ -17,14 +17,19 @@ export const Colors = {
     green: "#28a850",
     darkerGreen: "#20a85a",
     red: "#e64640",
+    black: "#0d0d11"
 }
 
 export const radius = 10;
 export const padding = 12;
 export const smallPadding = 7;
 
+export const topBarZ = 9999;
+export const modalZ = 10000000;
+
 export const useFdim = () => {
     const window = useWindowDimensions();
     const fdim = (window.height && window.width ? Math.min(window.height * 0.5, window.width) : 650) * 1.5;
     return Math.min(Math.max(fdim, 800), 1000);
 }
+

@@ -126,9 +126,9 @@ export default function Account() {
 
     return (
         <div className={"App-body-top"}>
-            <TZHeader title="" leftComponent={
+            {/* <TZHeader title="" leftComponent={
                 <BackButton onClick={handleBackClick}></BackButton>
-            } />
+            } /> */}
             <div style={styles}>
                 <div>
                     <div style={{ paddingBottom: padding / 2 }}>

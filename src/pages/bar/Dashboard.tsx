@@ -1,6 +1,6 @@
-import { Accordion, Modal, Spinner } from "react-bootstrap";
+import { Accordion, Col, Modal, Spinner } from "react-bootstrap";
 import { DisplayOrLoading } from "../../components/DisplayOrLoading";
-import { Colors, padding, radius, smallPadding, useFdim } from "../../lib/Constants";
+import { Colors, modalZ, padding, radius, smallPadding, topBarZ, useFdim } from "../../lib/Constants";
 import { Dispatch, memo, SetStateAction, useContext, useEffect, useState } from "react";
 import { UserSessionContext, UserSessionContextType } from "../../lib/UserSessionContext";
 import ProfileButton from "../../components/ProfileButton";
@@ -32,24 +32,17 @@ import { NotFoundPage } from "./NotFoundPage";
 import TZButton from "../../components/TZButton";
 import Account from "../profile/Account";
 import CurrentlyPlayingBar from "../../components/CurrentlyPlayingBar";
+import SearchBar from "../../components/SearchBar";
+import { MenuSelection } from "../../components/MenuSelection";
+import QueueRequestsDJ from "./QueueDJ";
+import NotPlaying from "../../components/NotPlaying";
 
 const BACKEND_STATUS = ["OPENING", "PEAK", "CLOSING"];
 
-type PageType = "Queue" | "Settings" | "Loading" | "Unknown";
+export type PageType = "Queue" | "Requests" | "Account" | "Settings" | "Loading" | "Unknown";
+const PAGES: PageType[] = ["Queue", "Requests", "Account"];
 
 type FitAnalysisType = "GOOD" | "BAD" | "OK" | "PENDING" | "UNKNOWN";
-
-const GENRES = [
-    "Rock",
-    "Alt Rock",
-    "Blues",
-    "Rap",
-    "Pop",
-    "Dance",
-    "RnB",
-    "Country",
-    "Singalong",
-]
 
 export type DJSettingsType = {
     genres: string[],
@@ -103,13 +96,29 @@ const refreshQueueTime = 5000;
 
 const AITABWIDTH = 17;
 
+export type QueueOrderType = {
+    song: SongType,
+    id: string,
+}
+
+const songToQOID = (v: SongType, i: number) => {
+    return { song: v, id: v.id + "_" + i };
+}
+
+const queueToQueueID = (q: SongType[]) => {
+    return q.map(songToQOID);
+}
+
 export default function Dashboard() {
     const usc = useContext(UserSessionContext);
     const bar = usc.user;
     const location = useLocation();
 
     const pathname = location.pathname.split("/")[1];
-    let PAGE: PageType = "Loading"
+    // const [PAGE, setPage] = useState<PageType>("Loading");
+
+    let PAGE: PageType = "Loading";
+    const setPage = (page: PageType) => router.navigate("/" + page.toLowerCase());
 
     // alert(pathname);
 
@@ -117,8 +126,14 @@ export default function Dashboard() {
         case "dashboard":
             PAGE = "Queue";
             break;
-        case "settings":
-            PAGE = "Settings";
+        case "account":
+            PAGE = "Account";
+            break;
+        case "requests":
+            PAGE = "Requests";
+            break;
+        case "queue":
+            PAGE = "Queue";
             break;
         default:
             PAGE = "Unknown";
@@ -138,7 +153,6 @@ export default function Dashboard() {
     const [toggleAllowRequests, setToggleAllowRequests] = useState(usc.user.allowing_requests);
     const [acceptRadioValue, setAcceptRadioValue] = useState<AcceptingType>(checkAutoAccept(usc.user.auto_accept_requests, usc.user.gpt_accept_requests));
     const fdim = useFdim();
-    const songDims = fdim / 15;
     const [financeStats, setFinanceStats] = useState<FinanceStatsType | undefined>();
     const [miniumumPrice, setMinimumPrice] = useState<number | undefined>();
     const [currentPrice, setCurrentPrice] = useState<number | undefined>();
@@ -149,7 +163,10 @@ export default function Dashboard() {
     const [volume, setVolume] = useState(70);
     // const [alertVisible, setAlertVisible] = useState(false);
     const [alertContent, setAlertContent] = useState<AlertContentType>(undefined);
-    const qO = useState(queue ?? []);
+
+    const initialQO: QueueOrderType[] = queue ? queueToQueueID(queue) : []
+    const qO = useState<QueueOrderType[]>(initialQO);
+
     const [queueOrder, setQueueOrder] = qO; //queue AFTER we mess w it. what we actually display.
     const [editingQueue, setEditingQueueIn] = useState(false); //is "editing" on?
     const setEditingQueue: Dispatch<SetStateAction<boolean>> = (b: boolean | ((prevState: boolean) => boolean)) => {
@@ -221,17 +238,17 @@ export default function Dashboard() {
                 for (let i = 0; i < queueOrder.length; i++) {
                     if (qids.indexOf(queueOrder[i].id) !== -1) {
                         console.log("pushing", newQ)
-                        newQ.push(queueOrder[i]);
+                        newQ.push(queueOrder[i].song);
                     }
                 }
                 for (let i = newQ.length; i < qDef.length; i++) {
                     newQ.push(q[i]);
                 }
                 console.log("setting Qo", newQ);
-                setQueueOrder(newQ);
+                setQueueOrder(queueToQueueID(newQ));
             }
         } else {
-            setQueueOrder(queue ?? []);
+            setQueueOrder(queueToQueueID(queue ?? []));
         }
     }, [queue, setQueueOrder, editingQueue])
 
@@ -265,7 +282,8 @@ export default function Dashboard() {
 
         const qOrderIds = queueOrder?.map(v => v.id);
 
-        const map = queueOrder.map((v) => {
+        const map = queueOrder.map((q) => {
+            const v = q.song
             return {
                 artist: v.artists, explicit: v.explicit, duration_ms: v.duration ?? 0,
                 id: v.id, images: { thumbnail: v.albumart }, manually_queued: v.manuallyQueued, name: v.title,
@@ -275,7 +293,7 @@ export default function Dashboard() {
         let lastEditedIndex = 0;
 
         for (let i = queueOrder.length - 1; i > 0; i--) {
-            if (queueOrder[i].manuallyQueued || JSON.stringify(queueOrder[i]) !== JSON.stringify(queue[i])) {
+            if (queueOrder[i].song.manuallyQueued || JSON.stringify(queueOrder[i]) !== JSON.stringify(queue[i])) {
                 lastEditedIndex = i;
                 break;
             }
@@ -290,7 +308,7 @@ export default function Dashboard() {
             song_jsons: JSON.stringify(shortmap),
         })
 
-        console.log(shortmap);
+        console.log("reorder OUT", message);
 
         const json = await fetchWithToken(usc, `business/queue/reorder/`, 'POST', message).then((r) => r.json());
         console.log("reorder response", json);
@@ -514,7 +532,7 @@ export default function Dashboard() {
     const Requests = () => {
         const outlineColor = Colors.tertiaryDark;
         return (
-            <div style={{ paddingTop: padding, paddingBottom: padding, width: "100%", height: "100%", borderRadius: radius, backgroundColor: Colors.lightBackground }}>
+            <div style={{ paddingTop: padding, paddingBottom: padding, width: "100%", height: "100%", borderRadius: radius, }}>
                 <div style={{ paddingLeft: padding, paddingRight: padding }}>
                     <span className="App-tertiarytitle">Pending Requests</span>
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: padding / 2 }}>
@@ -649,7 +667,10 @@ export default function Dashboard() {
         return (
             <div style={{
                 width: "100%",
-                paddingTop: first ? smallPadding : 0, paddingBottom: first ? smallPadding : 0, paddingLeft: padding, paddingRight: padding
+                //paddingTop: first ? smallPadding : 0, paddingBottom: first ? smallPadding : 0, 
+                paddingLeft: padding, paddingRight: padding,
+                paddingTop: smallPadding, paddingBottom: smallPadding,
+                backgroundColor: props.index % 2 === 1 ? "#0002" : undefined
             }}>
                 {/* <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <div>
@@ -828,123 +849,52 @@ export default function Dashboard() {
         }
     }
 
-    function QueueRequestsDJ() {
-        return (
-            <div className="App-dashboard-grid" style={{
-                overflow: 'hidden', position: 'relative',
-                // gridTemplateColumns: aiTabVisible ? "1.5fr 3.5fr 1.5fr" : "1.5fr 5fr"
-            }}>
-                <div style={{ paddingLeft: padding, paddingRight: padding, paddingBottom: padding }}>
-                    <div className="remove-scrollbar" style={{
-                        padding: padding, borderRadius: radius,
-                        height: "100%", overflowY: 'scroll', position: 'relative', backgroundColor: Colors.lightBackground
-                    }}>
-                        {queueLoading ? <div style={{
-                            position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center',
-                            zIndex: 100,
-                        }}>
-                            <Spinner />
-                        </div> : <></>}
-                        {/* <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} /> */}
-                        {/* <div style={{ paddingBottom: padding }} /> */}
-                        <span className="App-tertiarytitle">Up next</span>
-                        {currentlyPlaying && sessionStarted ?
-                            <Queue volumeState={[volume, setVolume]} lastPullTime={lastPullTime} pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
-                                console.log('reordering', reordering)
-                                if (!reordering) {
-                                    try {
-                                        await reorderQueue().catch((e: Error) => {
-                                            alert(e.message);
-                                        });
-                                        setReordering(false);
-                                    }
-                                    catch (e) {
-                                        setReordering(false);
-                                        throw e;
-                                    }
-                                }
-                            }} />
-                            :
-                            <NotPlaying />
-                        }
-                    </div>
-
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', height: "100%", overflowY: 'hidden', paddingRight: aiTabVisible ? 0 : AITABWIDTH }}>
-                    {/* <input value={djLocation} onChange={(e) => setDJLocation(e.target.value)}></input> */}
-                    <div style={{ display: "flex", justifyContent: 'space-between' }}>
-                        <DJSettings
-                            genres={GENRES}
-                            expandState={[djExpanded, setDJExpanded]}
-                            // selectedState={[djSelectedGenres, setDJSelectedGenres]}
-                            energyState={[djEnergy, setDJEnergy]}
-                            bangersState={[djBangersOnly, setDJBangersOnly]}
-                            tagsState={[djTags, setDJTags]}
-                            sendDJSettings={sendDJSettings}
-                            djSettingPlayingNumberState={[djSettingPlayingNumber, setDJSettingPlayingNumber]}
-                            djSettingsState={[djSettings, setDJSettings]}
-                            djCurrentSettingNumberState={[djCurrentSettingNumber, setDJCurrentSettingNumber]}
-                            acceptRadioValueState={[acceptRadioValue, setAcceptRadioValue]}
-                            shuffleRadioValueState={[shuffleValue, setShuffleValue]}
-                            onSetShuffle={onSetShuffle}
-                            onSetAccept={onSetAccept}
-
-                            ExplicitButton={
-                                <></>
-                            }
-                            PlaylistScreen={
-                                <>
-                                    <PlaybackComponent setDisableTyping={setDisableTyping} />
-                                    <div style={{ display: "flex" }}>
-                                        <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
-                                            await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
-                                            setToggles(...await getToggles(usc));
-                                        }} />
-                                    </div>
-
-                                </>
-
-                            }
-                        />
-
-                    </div>
-                    <div className="remove-scrollbar" style={{ flex: 1, height: "100%", overflowY: 'scroll', paddingBottom: padding, paddingRight: padding }}>
-                        <Requests />
-                    </div>
-                    {/* <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
-                        <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
-                            await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
-                            setToggles(...await getToggles(usc));
-                        }} />
-                        <div style={{ paddingLeft: padding }} />
-                        <div style={{ display: "flex" }}>
-                            <TZToggle title="DJ Mode" disabled value={toggleDJMode ?? false} onClick={async () => await onSetDJMode(!toggleDJMode)}></TZToggle>
-                        </div>
-                        <div style={{ paddingLeft: padding }} />
-                    </div> */}
-                </div>
-                {/* <PlaylistScreen djSongList={djSongs} visibleState={[aiTabVisible, setAITabVisible]} setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} /> */}
-                {/* 
-                {aiTabVisible ?
-                    <div style={{ height: "100%", overflowY: 'scroll', position: 'relative', display: 'flex', }}>
-                        <AISideTab close onClick={() => setAITabVisible(!aiTabVisible)} />
-                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                            <PlaylistScreen visibleState={[aiTabVisible, setAITabVisible]} setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} />
-                        </div>
-                        <Stats stats={financeStats} seeMore={seeMoreStats} setSeeMore={setSeeMoreStats} />
-                        <div style={{ paddingBottom: padding }} />
-                    </div>
-                    : <AISideTab onClick={() => setAITabVisible(!aiTabVisible)} />
-                } */}
-            </div>
-        )
-    }
-
     function PageSwitcher(props: { page: PageType }) {
         switch (props.page) {
             case "Queue":
-                return <QueueRequestsDJ />
-            case "Settings":
+                return <QueueRequestsDJMemo
+                    energyState={[djEnergy, setDJEnergy]}
+                    bangersState={[djBangersOnly, setDJBangersOnly]}
+                    tagsState={[djTags, setDJTags]}
+                    sendDJSettings={sendDJSettings}
+                    djSettingPlayingNumberState={[djSettingPlayingNumber, setDJSettingPlayingNumber]}
+                    djSettingsState={[djSettings, setDJSettings]}
+                    djCurrentSettingNumberState={[djCurrentSettingNumber, setDJCurrentSettingNumber]}
+                    acceptRadioValueState={[acceptRadioValue, setAcceptRadioValue]}
+                    shuffleRadioValueState={[shuffleValue, setShuffleValue]}
+                    onSetShuffle={onSetShuffle}
+                    onSetAccept={onSetAccept}
+                    disableTypingState={[disableTyping, setDisableTyping]}
+                    setToggles={setToggles}
+                    toggleBlockExplicitRequestsState={[toggleBlockExplicitRequests, setToggleBlockExplcitRequests]}
+                    onPause={onPause}
+                    onSkip={onSkip}
+                    queueLoading={queueLoading}
+                    queueOrder={qO}
+                    editingQueue={eQ}
+                    currentlyPlaying={currentlyPlaying}
+                    reorderingState={[reordering, setReordering]}
+                    sessionStarted={sessionStarted}
+                    reorderQueue={async () => {
+                        console.log('reordering', reordering)
+                        if (!reordering) {
+                            try {
+                                await reorderQueue().catch((e: Error) => {
+                                    //alert(e.message);
+                                    throw e;
+                                });
+                                setReordering(false);
+                            }
+                            catch (e) {
+                                setReordering(false);
+                                throw e;
+                            }
+                        }
+                    }}
+                />
+            case "Requests":
+                return <Requests />
+            case "Account":
                 return <Account />
             case "Loading":
                 return <LoadingScreen />
@@ -955,11 +905,11 @@ export default function Dashboard() {
 
     return (
         <DisplayOrLoading condition={ready} loadingScreen={<LoadingScreen />}>
-            <div className="App-body-top">
+            <div className="App-body-main">
                 <Modal dialogClassName="search-modal" show={searchVisible} onShow={() => {
                     setDisableTyping(true);
                 }} onHide={onSearchModalClose}
-                    style={{ color: "white" }}
+                    style={{ color: "white", zIndex: modalZ }}
 
                     data-bs-theme={"dark"}>
                     {/* <Modal.Title>
@@ -969,26 +919,84 @@ export default function Dashboard() {
                     <Search onClose={onSearchModalClose} />
                     {/* </Modal.Body> */}
                 </Modal>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: "100%", padding: padding }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: "100%", padding: padding, backgroundColor: Colors.black, position: 'sticky', top: 0, zIndex: topBarZ }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <SmallLogo />
-                        <span className="App-montserrat-normaltext" style={{ paddingLeft: padding, fontWeight: 'bold', color: "#fff8" }}>Biz Dashboard</span>
+                        {/* <span className="App-montserrat-normaltext" style={{ paddingLeft: padding, fontWeight: 'bold', color: "#fff8" }}>Biz Dashboard</span> */}
+                        <div style={{ display: 'flex', alignItems: 'center', paddingLeft: padding }}>
+                            {/* <span style={{ paddingRight: padding, fontWeight: 'bold' }}>Bar's ID: {bar.business_id}</span> */}
+                            <ProfileButton position="relative" name={bar.business_name}></ProfileButton>
+                        </div>
                     </div>
-                    <div>
+                    <div style={{ flex: 1, maxWidth: 200 }}>
                         <SearchBar onClick={() => setSearchVisible(true)} />
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <span style={{ paddingRight: padding, fontWeight: 'bold' }}>Bar's ID: {bar.business_id}</span>
-                        <ProfileButton position="relative" name={bar.business_name}></ProfileButton>
-                    </div>
                 </div>
-                <PageSwitcher page={PAGE} />
+                <div style={{
+                    // display: 'grid', gridTemplateColumns: '200px, 1fr', 
+                    display: 'flex',
+                    width: "100%", height: "100%", overflow: "scroll"
+                }}>
+                    <MenuSelection currentPage={PAGE} pages={PAGES} setPage={setPage} />
+                    {/* <div style={{ display: 'flex', flex: 1, width: "100%", flexDirection: 'column', overflowY: "scroll" }}> */}
+                    {/* <PageSwitcher page={PAGE} /> */}
+                    {
+                        PAGE === "Queue" ?
+                            <QueueRequestsDJMemo
+                                energyState={[djEnergy, setDJEnergy]}
+                                bangersState={[djBangersOnly, setDJBangersOnly]}
+                                tagsState={[djTags, setDJTags]}
+                                sendDJSettings={sendDJSettings}
+                                djSettingPlayingNumberState={[djSettingPlayingNumber, setDJSettingPlayingNumber]}
+                                djSettingsState={[djSettings, setDJSettings]}
+                                djCurrentSettingNumberState={[djCurrentSettingNumber, setDJCurrentSettingNumber]}
+                                acceptRadioValueState={[acceptRadioValue, setAcceptRadioValue]}
+                                shuffleRadioValueState={[shuffleValue, setShuffleValue]}
+                                onSetShuffle={onSetShuffle}
+                                onSetAccept={onSetAccept}
+                                disableTypingState={[disableTyping, setDisableTyping]}
+                                setToggles={setToggles}
+                                toggleBlockExplicitRequestsState={[toggleBlockExplicitRequests, setToggleBlockExplcitRequests]}
+                                onPause={onPause}
+                                onSkip={onSkip}
+                                queueLoading={queueLoading}
+                                queueOrder={qO}
+                                editingQueue={eQ}
+                                currentlyPlaying={currentlyPlaying}
+                                reorderingState={[reordering, setReordering]}
+                                sessionStarted={sessionStarted}
+                                reorderQueue={async () => {
+                                    console.log('reordering', reordering)
+                                    if (!reordering) {
+                                        try {
+                                            await reorderQueue().catch((e: Error) => {
+                                                //alert(e.message);
+                                                throw e;
+                                            });
+                                            setReordering(false);
+                                        }
+                                        catch (e) {
+                                            setReordering(false);
+                                            throw e;
+                                        }
+                                    }
+                                }}
+                            />
+                            : PAGE === "Requests" ? <Requests />
+                                : PAGE === "Account" ? <Account />
+                                    : <NotFoundPage title="404" body="We can't seem to find that page. Make sure you have the correct address!" backPath={-1} />
+                    }
+                    {/* </div> */}
+                </div>
                 <CurrentlyPlayingBar queueLoading={queueLoading} pauseOverride={pausedUI} current={currentlyPlaying} onPause={onPause} onSkip={onSkip} lastPullTime={lastPullTime} />
                 <AlertModal onHide={() => setAlertContent(undefined)} content={alertContent} />
             </div>
         </DisplayOrLoading>
     )
 }
+
+const QueueRequestsDJMemo = memo(QueueRequestsDJ);
+
 
 const AISideTab = (props: { onClick: () => any, close?: boolean }) => {
     const [hover, setHover] = useState(false);
@@ -1098,7 +1106,7 @@ const setAccepting = async (usc: UserSessionContextType, v: AcceptingType) => {
         .catch((e: Error) => alert(`Error: Can't change accept pattern: ` + e.message));
 }
 
-const setBlockExplcitRequests = async (usc: UserSessionContextType, b: boolean) => {
+export const setBlockExplcitRequests = async (usc: UserSessionContextType, b: boolean) => {
     // const url = b ? 'business/' : 'business/disallow_requests/';
     await fetchWithToken(usc, 'business/', "PATCH", JSON.stringify({
         block_explicit: b
@@ -1138,7 +1146,7 @@ function RejectAllButton(props: { onClick: () => void }) {
     )
 }
 
-const getToggles = async (usc: UserSessionContextType): Promise<[boolean, AcceptingType, boolean]> => {
+export const getToggles = async (usc: UserSessionContextType): Promise<[boolean, AcceptingType, boolean]> => {
     const u = await getBusiness(usc).catch((e: Error) => console.log("Can't get acc in toggles", e.message));
     return ([u.data.allowing_requests, checkAutoAccept(u.data.auto_accept_requests, u.data.gpt_accept_requests), u.data.block_explicit]);
 }
@@ -1184,26 +1192,6 @@ const getQueue = async (usc: UserSessionContextType): Promise<[CurrentlyPlayingT
 
             return [np, q, { isLocked: isLocked, top: q[0] }];
         })
-}
-
-function NotPlaying() {
-    return (
-        <div style={{ padding: padding, backgroundColor: "#FFF1", borderRadius: radius, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            {/* <span style={{ textAlign: 'center' }}>Start playing music on your streaming app to accept requests and view the queue!</span> */}
-            <span style={{ textAlign: 'center' }}>Start playing music to accept requests and view the queue!</span>
-        </div>
-    )
-}
-
-function SearchBar(props: { onClick: () => any }) {
-    const window = useWindowDimensions();
-    const [hovered, setHovered] = useState(false);
-    return (
-        <div onClick={props.onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} style={{ padding: padding, backgroundColor: hovered ? "#FFF2" : "#FFF1", borderRadius: radius * 2, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', cursor: 'pointer' }}>
-            <FontAwesomeIcon icon={faMagnifyingGlass} />
-            <span style={{ textAlign: 'center', color: "#fffa", paddingLeft: padding, paddingRight: padding, minWidth: Math.min(500, window.width / 3), textAlignLast: 'left' }}>Add a song to queue...</span>
-        </div>
-    )
 }
 
 // const DJSettingsMemo = memo(DJSettings, (prev, next) => {

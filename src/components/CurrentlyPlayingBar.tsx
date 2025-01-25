@@ -28,7 +28,7 @@ export default function CurrentlyPlayingBar(props: CurrentlyPlayingBarProps) {
         if (!paused) {
             setPos(Date.now() - props.lastPullTime);
         }
-        console.log("pos", (current ? current[1].progressMs : 0) + Date.now() - props.lastPullTime, current ? current[1].progressMs : 0, Date.now() - props.lastPullTime)
+        // console.log("pos", (current ? current[1].progressMs : 0) + Date.now() - props.lastPullTime, current ? current[1].progressMs : 0, Date.now() - props.lastPullTime)
     }, 100);
 
     if (!current) return (<></>);
@@ -36,8 +36,8 @@ export default function CurrentlyPlayingBar(props: CurrentlyPlayingBarProps) {
 
 
     return (
-        <div style={{ position: "relative", width: "100%" }}>
-            <div style={{ width: "100%", padding: padding * 1.5, backgroundColor: Colors.darkBackground, display: "flex", opacity: queueLoading ? 0.5 : 1 }}>
+        <div style={{ position: "sticky", width: "100%", bottom: 0 }}>
+            <div style={{ width: "100%", padding: padding * 1.5, backgroundColor: Colors.black, display: "flex", opacity: queueLoading ? 0.5 : 1 }}>
                 <div style={{ flex: 1 }}>
                     <Song song={current[0]} />
                 </div>

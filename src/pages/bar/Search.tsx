@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { router } from "../../App";
-import { Colors, padding, radius, useFdim } from "../../lib/Constants";
+import { Colors, modalZ, padding, radius, useFdim } from "../../lib/Constants";
 import { faMagnifyingGlass, faMusic } from "@fortawesome/free-solid-svg-icons";
 import useWindowDimensions from "../../lib/useWindowDimensions";
 import { memo, useContext, useState } from "react";
@@ -22,7 +22,7 @@ const SearchModal = (props: { completed?: boolean, loading: boolean, visible: bo
         : <img src={props.song.albumart} alt={props.song.title} style={{ height: dims, width: dims, overflow: "hidden" }} />
 
     return (
-        <Modal show={props.visible} onHide={() => props.setVisible(false)} onExited={props.onExited} data-bs-theme={"dark"}>
+        <Modal style={{ zIndex: modalZ }} show={props.visible} onHide={() => props.setVisible(false)} onExited={props.onExited} data-bs-theme={"dark"}>
             <Modal.Body style={{ color: "white", display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <span className="App-montserrat-normaltext" style={{ fontWeight: 'bold', paddingBottom: padding }}>{props.title}</span>
                 <Img />

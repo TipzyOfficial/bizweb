@@ -45,7 +45,7 @@ export function millisToHoursMinutes(millis: number) {
 
 export function parseSongJson(json: any): SongType {
     return {
-        id: json.track_id ?? json.id,
+        id: (json.track_id ?? json.id),
         title: json.track_name ?? json.name,
         artists: json.artists ?? json.artist,
         albumart: json.images?.thumbnail ?? "",

@@ -9,14 +9,14 @@ import _ from "lodash";
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import TZButton from "../../components/TZButton";
-import { CurrentlyPlayingType } from "./Dashboard";
+import { CurrentlyPlayingType, QueueOrderType } from "./Dashboard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRightArrowLeft, faArrowsUpDown, faForwardStep, faPause, faPlay, faRightLeft, faVolumeDown, faVolumeLow, faVolumeMute, faVolumeUp, IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { millisToHoursMinutes, millisToMinutesAndSeconds, useInterval } from "../../lib/utils";
 import { PlaybackButton } from "../../components/PlaybackButton";
 
 
-type SongDraggableType = SongType// { id: string, song: SongType }
+// type SongDraggableType = { id: string, song: SongType }
 export interface SongCardProps {
     id: string,
     song: SongType,
@@ -32,29 +32,36 @@ interface Item {
 };
 
 type QueueProps = {
-    pauseOverride?: boolean;
+    // pauseOverride?: boolean;
     current: CurrentlyPlayingType,
-    queueOrder: [SongType[], React.Dispatch<React.SetStateAction<SongType[]>>],
+    queueOrder: [QueueOrderType[], React.Dispatch<React.SetStateAction<QueueOrderType[]>>],
     editingQueue: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
-    volumeState: [number, React.Dispatch<React.SetStateAction<number>>]
+    // volumeState: [number, React.Dispatch<React.SetStateAction<number>>]
     songDims?: number,
     reorderQueue: () => Promise<any>,
     disable?: boolean,
-    onPauseClick: () => any,
-    onSkipClick: () => any,
-    lastPullTime: number,
+    // onPauseClick: () => any,
+    // onSkipClick: () => any,
+    // lastPullTime: number,
 }
 
 export default function Queue(props: QueueProps) {
     // const queue = props.queue;
     const current = props.current[0];
     const progress = props.current[1];
-    const paused = props.pauseOverride === undefined ? progress.paused : props.pauseOverride;
+    // const paused = props.pauseOverride === undefined ? progress.paused : props.pauseOverride;
 
     const queueOrder = props.queueOrder[0];
+
+    // useEffect(() => {
+    //     setSDQueueOrder(queueOrder.map(v => { return { song: v, id: v.id } }))
+    // }, queueOrder)
+
+    // console.log("qol", queueOrder.length)
+
     const [editingQueue, setEditingQueue] = props.editingQueue;
-    const [volume, setVolume] = props.volumeState;
-    const [pos, setPos] = useState(0);
+    // const [volume, setVolume] = props.volumeState;
+    // const [pos, setPos] = useState(0);
 
     // console.log("QO", props.queueOrder);
 
@@ -72,13 +79,13 @@ export default function Queue(props: QueueProps) {
 
     // console.log("tslp", Date.now() - props.lastPullTime);
 
-    useInterval(() => {
-        setPos(Date.now() - props.lastPullTime)
-    }, 1000);
+    // useInterval(() => {
+    //     setPos(Date.now() - props.lastPullTime)
+    // }, 1000);
 
     const totalMs = (): number => {
         if (!queueOrder || queueOrder.length === 0) return 0;
-        return queueOrder.reduce((prev, curr) => { return { ...curr, duration: (prev.duration ?? 0) + (curr.duration ?? 0) } }).duration ?? 0;
+        return queueOrder.reduce((prev, curr) => { return { ...curr, duration: (prev.song.duration ?? 0) + (curr.song.duration ?? 0) } }).song.duration ?? 0;
     }
 
     return (
@@ -150,7 +157,7 @@ export default function Queue(props: QueueProps) {
 }
 
 const Container = memo(function Container(props: {
-    data: [SongDraggableType[], (s: SongDraggableType[]) => void],
+    data: [QueueOrderType[], (s: QueueOrderType[]) => void],
     editingQueue: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
     dims?: number,
     disable?: boolean,
@@ -163,7 +170,7 @@ const Container = memo(function Container(props: {
     const findCard = useCallback(
         (id: string | undefined) => {
             if (id === undefined) return { card: undefined, index: -1 };
-            const card = cards.filter((c) => `${c.id}` === id)[0] as SongType
+            const card = cards.filter((c) => `${c.id}` === id)[0] as QueueOrderType
             return {
                 card,
                 index: cards.indexOf(card),
@@ -202,7 +209,7 @@ const Container = memo(function Container(props: {
                     <SongCard
                         key={card.id}
                         id={card.id}
-                        song={card}
+                        song={card.song}
                         moveCard={moveCard}
                         findCard={findCard}
                         dims={props.dims}
