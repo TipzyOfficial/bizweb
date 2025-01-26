@@ -928,7 +928,7 @@ export default function Dashboard() {
                             <ProfileButton position="relative" name={bar.business_name}></ProfileButton>
                         </div>
                     </div>
-                    <div style={{ flex: 1, maxWidth: 200 }}>
+                    <div style={{}}>
                         <SearchBar onClick={() => setSearchVisible(true)} />
                     </div>
                 </div>
