@@ -233,6 +233,7 @@ export default function Dashboard() {
             const qDef = q ?? [];
             const newQ: SongType[] = [];
             const qids = qDef.map(v => v.id);
+            // console.log(q)
 
             if (q !== undefined && qids.length !== 0 && JSON.stringify(q) !== JSON.stringify(queueOrder)) {
                 for (let i = 0; i < queueOrder.length; i++) {
@@ -1185,6 +1186,8 @@ const getQueue = async (usc: UserSessionContextType): Promise<[CurrentlyPlayingT
             const np: CurrentlyPlayingType | undefined = npS ? [npS, { progressMs: npD.progress_ms, durationMs: npD.duration_ms, paused: paused }] : undefined;
             const qD = data.queue;
             const q: SongType[] = [];
+            console.log("raw data", json)
+
             qD.forEach((e: any) => {
                 const song: SongType = parseSongJson(e);
                 q.push(song);

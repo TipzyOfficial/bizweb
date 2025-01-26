@@ -69,10 +69,6 @@ export default function QueueRequestsDJ(props: QRDJProps) {
 
     const songDims = fdim / 15;
 
-    useEffect(() => {
-        console.log("QDJ just reloadng!")
-    }, [])
-
     return (
         <div style={{
             position: 'relative', height: "100%",
