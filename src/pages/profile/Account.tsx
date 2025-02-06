@@ -125,7 +125,7 @@ export default function Account() {
 
 
     return (
-        <div className={"App-body-top"}>
+        <div className={"App-body-top"} style={{ overflow: 'scroll' }}>
             {/* <TZHeader title="" leftComponent={
                 <BackButton onClick={handleBackClick}></BackButton>
             } /> */}
