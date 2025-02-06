@@ -7,7 +7,7 @@ import ProfileButton from "../../components/ProfileButton";
 import Queue from "./Queue";
 import { fetchWithToken, getBusiness } from "../..";
 import { SongRequestType, SongType } from "../../lib/song";
-import { etaBuffer, getCookies, millisToMinutesAndSeconds, parseSongJson, useInterval, stringArrayToStringFormatted, numberToPrice } from "../../lib/utils";
+import { etaBuffer, getCookies, millisToMinutesAndSeconds, parseSongJson, useInterval, stringArrayToStringFormatted, numberToPrice, isMobile } from "../../lib/utils";
 import _, { eq } from "lodash";
 import BigLogo, { SmallLogo } from "../../components/BigLogo";
 import Song, { compactSongStyle } from "../../components/Song";
@@ -533,7 +533,7 @@ export default function Dashboard() {
     const Requests = () => {
         const outlineColor = Colors.tertiaryDark;
         return (
-            <div style={{ paddingTop: padding, paddingBottom: padding, width: "100%", height: "100%", borderRadius: radius, }}>
+            <div style={{ paddingTop: padding, paddingBottom: padding, width: "100%", height: "100%", borderRadius: radius, overflow: isMobile() ? 'scroll' : undefined }}>
                 <div style={{ paddingLeft: padding, paddingRight: padding }}>
                     <span className="App-tertiarytitle">Pending Requests</span>
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: padding / 2 }}>
@@ -551,6 +551,7 @@ export default function Dashboard() {
                         </div>
                     </div>
                     <Border />
+                    {/* <div style={{ width: 50, height: 2000, backgroundColor: 'red' }}></div> */}
 
                     <div className="App-smalltext" style={{ width: "100%", display: 'flex', paddingBottom: smallPadding, fontWeight: 'bold', color: "#fff8" }}>
                         <div style={{ flex: songRequestSongRatio, }}>
@@ -936,11 +937,11 @@ export default function Dashboard() {
                 <div style={{
                     // display: 'grid', gridTemplateColumns: '200px, 1fr', 
                     display: 'flex',
+                    flexDirection: isMobile() ? 'column-reverse' : 'row',
                     width: "100%", height: "100%", overflow: "scroll"
                 }}>
                     <MenuSelection currentPage={PAGE} pages={PAGES} setPage={setPage} />
-                    {/* <div style={{ display: 'flex', flex: 1, width: "100%", flexDirection: 'column', overflowY: "scroll" }}> */}
-                    {/* <PageSwitcher page={PAGE} /> */}
+                    {isMobile() ? <CurrentlyPlayingBar queueLoading={queueLoading} pauseOverride={pausedUI} current={currentlyPlaying} onPause={onPause} onSkip={onSkip} lastPullTime={lastPullTime} /> : <></>}
                     {
                         PAGE === "Queue" ?
                             <QueueRequestsDJMemo
@@ -989,7 +990,7 @@ export default function Dashboard() {
                     }
                     {/* </div> */}
                 </div>
-                <CurrentlyPlayingBar queueLoading={queueLoading} pauseOverride={pausedUI} current={currentlyPlaying} onPause={onPause} onSkip={onSkip} lastPullTime={lastPullTime} />
+                {isMobile() ? <></> : <CurrentlyPlayingBar queueLoading={queueLoading} pauseOverride={pausedUI} current={currentlyPlaying} onPause={onPause} onSkip={onSkip} lastPullTime={lastPullTime} />}
                 <AlertModal onHide={() => setAlertContent(undefined)} content={alertContent} />
             </div>
         </DisplayOrLoading>

@@ -54,6 +54,7 @@ const TagItemsGenerator = (onSelect: (s: TagType) => any): TagItemType[] => {
 
 type DJSettingsProps = {
     genres: string[],
+    mobile?: boolean,
     // selectedState: [Set<string>, (s: Set<string>) => any],
     energyState: [number, (n: number) => any],
     bangersState: [number, (n: number) => any],
@@ -258,115 +259,130 @@ export default function DJSettings(props: DJSettingsProps) {
 
     const tagItems = TagItemsGenerator(onSelectTag);
 
+    const mobile = props.mobile;
+
     return (
         <div style={{ width: "100%" }}>
             {/* <Header /> */}
             <div style={{ display: 'flex', flexDirection: 'column', paddingTop: padding, position: 'relative' }}>
+                {loading ?
+                    <div style={{ width: "100%", height: "100%", position: "absolute", top: 0, zIndex: 100, backgroundColor: "#0008", display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <Spinner />
+                    </div> : <></>
+                }
                 <DJSettingsTabs djSettings={djSettings} currentSettingNumber={currentSettingNumber} setCurrentSettingNumber={setCurrentSettingNumber} playingSettingNumber={playingSettingNumber} />
-                <div style={{ display: 'flex', justifyContent: 'space-between', }}>
-                    {loading ?
-                        <div style={{ width: "100%", height: "100%", position: "absolute", top: 0, zIndex: 100, backgroundColor: "#0008", display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <Spinner />
-                        </div> : <></>
-                    }
-                    <div style={{ padding: padding, display: 'flex', flex: 1 }}>
-                        <div style={{ flexShrink: 1, padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1 }}>
-                            <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingBottom: 5 }}>Handle requests</div>
-                            <Dropdown>
-                                <Dropdown.Toggle className="App-montserrat-smallertext" variant="tertiary" style={{ height: "100%", color: "white", fontWeight: "bold", padding: padding, borderRadius: radius }} id="dropdown-basic">
-                                    {acceptRadioValue === "Manual" ? "Manual" :
-                                        acceptRadioValue === "Auto" ? "Accept all" :
-                                            acceptRadioValue === "TipzyAI" ? "Virtual DJ" : "..."}
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu variant="dark" style={{ padding: 0, overflow: 'hidden', borderRadius: radius + 5 }} >
-                                    <DIR onSet={onSetAccept} accepting="Manual" val={acceptRadioValue} text="Manual" desc="All requests go by you." />
-                                    <DIR onSet={onSetAccept} accepting="Auto" val={acceptRadioValue} text="Accept all" desc={<span>Automatically accepts all reasonable requests.<br />Will only reject songs sent with obviously bad intentions.</span>} />
-                                    <DIR onSet={onSetAccept} accepting="TipzyAI" val={acceptRadioValue} text="Virtual DJ" desc={<span>Lets our Virtual DJ accept/reject songs.<br />If it's unsure, it'll defer to you for the final say!</span>} />
-                                </Dropdown.Menu>
-                            </Dropdown>                                    <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingTop: padding, paddingBottom: 5 }}>Handle shuffle</div>
-                            <Dropdown>
-                                <Dropdown.Toggle className="App-montserrat-smallertext" variant="tertiary" style={{ height: "100%", color: "white", fontWeight: "bold", padding: padding, borderRadius: radius }} id="dropdown-basic">
-                                    {shuffleRadioValue === "Playlist" ? "Playlist" :
-                                        shuffleRadioValue === "TipzyAI" ? "Virtual DJ" : "..."}
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu variant="dark" style={{ padding: 0, overflow: 'hidden', borderRadius: radius + 5 }} >
-                                    <DIS onSet={onSetShuffle} accepting="Playlist" val={shuffleRadioValue} text="Playlist" desc="Shuffles through a playlist set by you." />
-                                    <DIS onSet={onSetShuffle} accepting="TipzyAI" val={shuffleRadioValue} text="Virtual DJ" desc={<span>Virtual DJ takes over the night!<br />You curate the type of songs it selects.</span>} />
-                                </Dropdown.Menu>
-                            </Dropdown>
+                <div style={{ padding: padding }}>
+                    <div style={{ display: 'flex', justifyContent: mobile ? 'center' : "flex-start" }}>
+                        <div style={{
+                            display: 'flex', flexShrink: 1, padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1
+                        }}>
+                            <div>
+                                <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingBottom: 5 }}>Handle requests</div>
+                                <Dropdown>
+                                    <Dropdown.Toggle className="App-montserrat-smallertext" variant="tertiary" style={{ height: "100%", color: "white", fontWeight: "bold", padding: padding, borderRadius: radius }} id="dropdown-basic">
+                                        {acceptRadioValue === "Manual" ? "Manual" :
+                                            acceptRadioValue === "Auto" ? "Accept all" :
+                                                acceptRadioValue === "TipzyAI" ? "Virtual DJ" : "..."}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu variant="dark" style={{ padding: 0, overflow: 'hidden', borderRadius: radius + 5 }} >
+                                        <DIR onSet={onSetAccept} accepting="Manual" val={acceptRadioValue} text="Manual" desc="All requests go by you." />
+                                        <DIR onSet={onSetAccept} accepting="Auto" val={acceptRadioValue} text="Accept all" desc={<span>Automatically accepts all reasonable requests.<br />Will only reject songs sent with obviously bad intentions.</span>} />
+                                        <DIR onSet={onSetAccept} accepting="TipzyAI" val={acceptRadioValue} text="Virtual DJ" desc={<span>Lets our Virtual DJ accept/reject songs.<br />If it's unsure, it'll defer to you for the final say!</span>} />
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </div>
+                            <div style={{ width: padding * 2 }} />
+                            <div>
+                                <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingBottom: 5 }}>Handle shuffle</div>
+                                <Dropdown>
+                                    <Dropdown.Toggle className="App-montserrat-smallertext" variant="tertiary" style={{ height: "100%", color: "white", fontWeight: "bold", padding: padding, borderRadius: radius }} id="dropdown-basic">
+                                        {shuffleRadioValue === "Playlist" ? "Playlist" :
+                                            shuffleRadioValue === "TipzyAI" ? "Virtual DJ" : "..."}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu variant="dark" style={{ padding: 0, overflow: 'hidden', borderRadius: radius + 5 }} >
+                                        <DIS onSet={onSetShuffle} accepting="Playlist" val={shuffleRadioValue} text="Playlist" desc="Shuffles through a playlist set by you." />
+                                        <DIS onSet={onSetShuffle} accepting="TipzyAI" val={shuffleRadioValue} text="Virtual DJ" desc={<span>Virtual DJ takes over the night!<br />You curate the type of songs it selects.</span>} />
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </div>
                         </div>
-                        {shuffleRadioValue === "TipzyAI" ?
-                            <div style={{ display: 'flex', width: "100", flexGrow: 1 }}>
-                                <div style={{ paddingLeft: padding }} />
-                                <div style={{ padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1 }}>
-                                    <GenreList {...props} onGenreClicked={onGenreClicked} />
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'row', paddingLeft: padding, flexGrow: 1 }}>
-                                    <div style={{ paddingBottom: padding, display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: radius, backgroundColor: Colors.tertiaryDark, padding: padding }}>
-                                        <div style={{ width: "100%", flex: 1, display: "flex", justifyContent: 'space-around' }}>
-                                            <input type="range" className="slider-fader"
-                                                min={0} max={100}
-                                                value={energy}
-                                                onChange={(e) => onEnergyChange(parseInt(e.target.value))}
-                                                onClick={onEnergyClick}
-                                            />
-                                            <div style={{ flex: 0, display: 'flex' }}>
-                                                <VolumeDisplay val={energy} />
-                                                <div style={{ width: 3 }} />
-                                                <VolumeDisplay val={energy} />
+                    </div>
+                    <div style={{ paddingTop: padding, display: 'flex', justifyContent: 'space-between', }}>
+                        <div style={{ display: 'flex', flex: 1 }}>
+                            {shuffleRadioValue === "TipzyAI" ?
+                                <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', width: "100%", flexGrow: 1 }}>
+                                    <div style={{ width: mobile ? "100%" : undefined, padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1, }}>
+                                        <GenreList {...props} onGenreClicked={onGenreClicked} />
+                                    </div>
+                                    <div style={{ display: 'flex', paddingTop: mobile ? padding : 0, paddingLeft: mobile ? 0 : padding, }}>
+                                        <div style={{ display: 'flex', flexDirection: 'row' }}>
+                                            <div style={{ paddingBottom: padding, display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: radius, backgroundColor: Colors.tertiaryDark, padding: padding }}>
+                                                <div style={{ width: "100%", flex: 1, display: "flex", justifyContent: 'space-around' }}>
+                                                    <input type="range" className="slider-fader"
+                                                        min={0} max={100}
+                                                        value={energy}
+                                                        onChange={(e) => onEnergyChange(parseInt(e.target.value))}
+                                                        onClick={onEnergyClick}
+                                                    />
+                                                    <div style={{ flex: 0, display: 'flex' }}>
+                                                        <VolumeDisplay val={energy} />
+                                                        <div style={{ width: 3 }} />
+                                                        <VolumeDisplay val={energy} />
+                                                    </div>
+                                                </div>
+                                                <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingTop: padding }}>Energy</span>
                                             </div>
                                         </div>
-                                        <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingTop: padding }}>Energy</span>
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', paddingLeft: padding, }}>
-                                    {/* <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold' }}>Bangers only</span> */}
-                                    {/* <TZToggle title="Bangers Only" value={currentSetting.bangersOnly} onClick={onBangersClicked} /> */}
-                                    <div style={{ padding: padding, borderRadius: radius, backgroundColor: Colors.tertiaryDark, display: "flex", flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                                        <span className="App-montserrat-smallertext" style={{ paddingBottom: padding / 2, fontWeight: "bold" }}>Popularity</span>
-                                        <Dividers />
-                                        <input style={{ zIndex: 2, width: "100%", minWidth: 150 }} type="range" className="slider-bangers"
-                                            min={0} max={100}
-                                            value={bangersOnly}
-                                            onChange={(e) => onBangersChange(parseInt(e.target.value))}
-                                            onClick={onBangersClicked}
-                                        />
-                                        <Dividers />
-                                        <div style={{ display: "flex", justifyContent: 'space-between', fontSize: 12, fontWeight: 'bold', width: "100%", minWidth: 170, paddingTop: padding / 2 }}>
-                                            <div style={{ flexShrink: 1, textAlign: "left" }}>
-                                                Mix it up
+                                        <div style={{ display: 'flex', flexDirection: 'column', paddingLeft: padding, }}>
+                                            {/* <span className="App-montserrat-smallertext" style={{ fontWeight: 'bold' }}>Bangers only</span> */}
+                                            {/* <TZToggle title="Bangers Only" value={currentSetting.bangersOnly} onClick={onBangersClicked} /> */}
+                                            <div style={{ padding: padding, borderRadius: radius, backgroundColor: Colors.tertiaryDark, display: "flex", flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                                <span className="App-montserrat-smallertext" style={{ paddingBottom: padding / 2, fontWeight: "bold" }}>Popularity</span>
+                                                <Dividers />
+                                                <input style={{ zIndex: 2, width: "100%", minWidth: 150 }} type="range" className="slider-bangers"
+                                                    min={0} max={100}
+                                                    value={bangersOnly}
+                                                    onChange={(e) => onBangersChange(parseInt(e.target.value))}
+                                                    onClick={onBangersClicked}
+                                                />
+                                                <Dividers />
+                                                <div style={{ display: "flex", justifyContent: 'space-between', fontSize: 12, fontWeight: 'bold', width: "100%", minWidth: 170, paddingTop: padding / 2, paddingBottom: padding }}>
+                                                    <div style={{ flexShrink: 1, textAlign: "left" }}>
+                                                        Mix it up
+                                                    </div>
+                                                    <div style={{ flexShrink: 1, textAlign: "right" }}>
+                                                        Only bangers
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div style={{ flexShrink: 1, textAlign: "right" }}>
-                                                Only bangers
-                                            </div>
+                                            <div style={{ paddingTop: padding }} />
                                         </div>
                                     </div>
-                                    <div style={{ paddingTop: padding }} />
-                                </div>
-                                <div style={{ width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingLeft: padding }}>
-                                    <div style={{ paddingTop: padding }} />
-                                    {/* {props.ExplicitButton}
+                                    <div style={{ width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingLeft: padding }}>
+                                        <div style={{ paddingTop: padding }} />
+                                        {/* {props.ExplicitButton}
                                             <div style={{ paddingTop: padding }} /> */}
 
-                                    <div style={{ display: "flex" }}>
+                                        <div style={{ display: "flex" }}>
 
 
-                                        {/* <div style={{ padding: 4, backgroundColor: Colors.tertiaryDark, borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}> */}
-                                        {/* </div> */}
+                                            {/* <div style={{ padding: 4, backgroundColor: Colors.tertiaryDark, borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}> */}
+                                            {/* </div> */}
+                                        </div>
+                                        <div>
+                                            {!playing || (edited && playing) ? <TZButton title={playingSettingNumber !== undefined ? "Update session" : "Start session"} brandingFont onClick={onUpdateSession} /> : <></>}
+                                        </div>
                                     </div>
-                                    <div>
-                                        {!playing || (edited && playing) ? <TZButton title={playingSettingNumber !== undefined ? "Update session" : "Start session"} brandingFont onClick={onUpdateSession} /> : <></>}
-                                    </div>
+                                </div> :
+                                <div style={{ paddingLeft: padding, }}>
+                                    {props.PlaylistScreen}
                                 </div>
-                            </div> :
-                            <div style={{ paddingLeft: padding, }}>
-                                {props.PlaylistScreen}
-                            </div>
-                        }
+                            }
+                        </div>
                     </div>
-                </div>
-                <div style={{ width: "100%", paddingLeft: padding, paddingRight: padding }}>
-                    <TagsMemo tags={tags} onXClick={onXClick} tagItems={tagItems} />
+                    <div style={{ width: "100%", paddingTop: padding, }}>
+                        <TagsMemo tags={tags} onXClick={onXClick} tagItems={tagItems} />
+                    </div>
                 </div>
                 {/* <div style={{ flex: 1, paddingLeft: padding }}>
                             <span>Virtual DJ is an unfinished feature. For now, enjoy this preview of its interface!</span>

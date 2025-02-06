@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Colors, padding, radius, smallPadding } from "../lib/Constants";
-import { useInterval } from "../lib/utils";
+import { Colors, padding, radius, smallPadding, topBarZ } from "../lib/Constants";
+import { isMobile, useInterval } from "../lib/utils";
 import { CurrentlyPlayingType } from "../pages/bar/Dashboard";
 import Song from "./Song";
 import PlaybackComponent from "../pages/bar/PlaybackComponent";
@@ -36,26 +36,46 @@ export default function CurrentlyPlayingBar(props: CurrentlyPlayingBarProps) {
 
 
     return (
-        <div style={{ position: "sticky", width: "100%", bottom: 0 }}>
-            <div style={{ width: "100%", padding: padding * 1.5, backgroundColor: Colors.black, display: "flex", opacity: queueLoading ? 0.5 : 1 }}>
-                <div style={{ flex: 1 }}>
-                    <Song song={current[0]} />
-                </div>
-                <div style={{ flex: 2, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                    <div style={{ width: "100%", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div style={{ padding: padding }} />
-                        <PlaybackButton icon={paused ? faPlay : faPause} onClick={props.onPause} disable={queueLoading} />
-                        <div style={{ padding: padding }} />
-                        <PlaybackButton icon={faForwardStep} onClick={props.onSkip} disable={queueLoading} />
+        <div style={{ position: "sticky", width: "100%", bottom: 0, left: 0, zIndex: topBarZ }}>
+            {isMobile() ?
+                <div style={{ width: "100%", padding: padding, backgroundColor: Colors.black, display: "flex", opacity: queueLoading ? 0.5 : 1 }}>
+                    <div style={{ flex: 1 }}>
+                        <Song song={current[0]} />
                     </div>
-                    <div style={{ width: "100%", height: 5, backgroundColor: "#fff3", borderRadius: radius, overflow: 'hidden' }}>
-                        <div className="App-animated-gradient-fast-light" style={{ width: `${((current[1].progressMs + pos) / current[1].durationMs) * 100}%`, height: 5, borderRadius: radius, overflow: 'hidden' }} />
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                        <div style={{ width: "100%", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ padding: padding }} />
+                            <PlaybackButton icon={paused ? faPlay : faPause} onClick={props.onPause} disable={queueLoading} />
+                            <div style={{ padding: padding }} />
+                            <PlaybackButton icon={faForwardStep} onClick={props.onSkip} disable={queueLoading} />
+                        </div>
+                        <div style={{ width: "100%", height: 5, backgroundColor: "#fff3", borderRadius: radius, overflow: 'hidden' }}>
+                            <div className="App-animated-gradient-fast-light" style={{ width: `${((current[1].progressMs + pos) / current[1].durationMs) * 100}%`, height: 5, borderRadius: radius, overflow: 'hidden' }} />
+                        </div>
                     </div>
                 </div>
-                <div style={{ flex: 1 }}>
+                :
+                <div style={{ width: "100%", padding: padding * 1.5, backgroundColor: Colors.black, display: "flex", opacity: queueLoading ? 0.5 : 1 }}>
 
+                    <div style={{ flex: 1 }}>
+                        <Song song={current[0]} />
+                    </div>
+                    <div style={{ flex: 2, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                        <div style={{ width: "100%", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ padding: padding }} />
+                            <PlaybackButton icon={paused ? faPlay : faPause} onClick={props.onPause} disable={queueLoading} />
+                            <div style={{ padding: padding }} />
+                            <PlaybackButton icon={faForwardStep} onClick={props.onSkip} disable={queueLoading} />
+                        </div>
+                        <div style={{ width: "100%", height: 5, backgroundColor: "#fff3", borderRadius: radius, overflow: 'hidden' }}>
+                            <div className="App-animated-gradient-fast-light" style={{ width: `${((current[1].progressMs + pos) / current[1].durationMs) * 100}%`, height: 5, borderRadius: radius, overflow: 'hidden' }} />
+                        </div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+
+                    </div>
                 </div>
-            </div>
+            }
             {queueLoading ? <div style={{
                 position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center',
                 zIndex: 100, backgroundColor: "#0003"

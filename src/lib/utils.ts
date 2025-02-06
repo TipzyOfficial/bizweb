@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Cookies from "universal-cookie";
 import { Business } from "./user";
 import { SongType } from "./song";
+import { isMobile as rddIsMobile } from "react-device-detect";
 
 export const goodETA = 600000;
 export const okETA = 180000;
@@ -58,9 +59,12 @@ export function parseSongJson(json: any): SongType {
     }
 }
 
-function isMobile() {
-    const o = typeof window.screen.orientation !== 'undefined';
-    return o;
+export function isMobile() {
+    const ism = rddIsMobile;
+    // const orientation = typeof window.screen.orientation !== 'undefined';
+    const orientation = window.screen.orientation.type === "portrait-primary" || window.screen.orientation.type === "portrait-secondary";
+    const width = document.documentElement.clientWidth < 700;
+    return orientation || width || ism;
 }
 
 export function numberToPrice(n: number): string {

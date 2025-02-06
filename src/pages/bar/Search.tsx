@@ -6,7 +6,7 @@ import useWindowDimensions from "../../lib/useWindowDimensions";
 import { memo, useContext, useState } from "react";
 import { SongType } from "../../lib/song";
 import { artistsStringListToString, SongList } from "../../components/Song";
-import { onlyAlphanumeric } from "../../lib/utils";
+import { isMobile, onlyAlphanumeric } from "../../lib/utils";
 import { DisplayOrLoading } from "../../components/DisplayOrLoading";
 import { Modal, Spinner } from "react-bootstrap";
 import { fetchNoToken } from "../../lib/serverinfo";
@@ -274,7 +274,7 @@ function SearchBar(props: { value: string, setValue: (s: string) => void }) {
                 onBlur={() => {
                     setFocused(false);
                 }}
-                placeholder="Add a song to queue..."
+                placeholder={isMobile() ? "Queue a song..." : "Add a song to queue..."}
             >
             </input>
         </div>

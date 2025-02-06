@@ -1,7 +1,7 @@
 import FlatList from "flatlist-react/lib";
 import { SongType } from "../../lib/song";
 import Song, { SongRenderItem } from "../../components/Song";
-import { Colors, padding, radius, useFdim } from "../../lib/Constants";
+import { Colors, modalZ, padding, radius, useFdim } from "../../lib/Constants";
 import LogoLetter from "../../assets/LogoLetter.svg"
 import { useContext, useEffect, useState } from "react";
 import { UserSessionContext } from "../../lib/UserSessionContext";
@@ -195,6 +195,7 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
 
     return (
         <Modal show={props.show} data-bs-theme={"dark"}
+            style={{ zIndex: modalZ }}
             onShow={() => {
                 setToggleLogin(false);
                 setLoginLoading(false);

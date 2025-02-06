@@ -6,7 +6,7 @@ import FlatList from "flatlist-react/lib";
 import { memo, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCirclePlus, faMusic } from "@fortawesome/free-solid-svg-icons";
-import { millisToMinutesAndSeconds, numberToPrice, useInterval } from "../lib/utils";
+import { isMobile, millisToMinutesAndSeconds, numberToPrice, useInterval } from "../lib/utils";
 import LogoLetter from "../assets/LogoLetter.svg";
 import { compact } from "lodash";
 
@@ -72,7 +72,10 @@ export default function Song(props: { song: SongType, compact?: boolean, dims?: 
     }
     const radius = 5;
     const bigDims = 128;
-    const dims = props.dims ?? 50;
+
+    const fdim = useFdim();
+
+    const dims = props.dims ?? (isMobile() ? fdim / 20 : fdim / 15);
     const logoDim = (dims / 3) //fdim / 30;
 
     const Img = () => props.song.albumart === "" || !props.song.albumart ? <div style={{ borderRadius: props.roundedEdges ? radius : 0, overflow: "hidden", height: dims, width: dims, backgroundColor: "#888", display: 'flex', justifyContent: 'center', alignItems: 'center' }}><FontAwesomeIcon color={"#fff8"} fontSize={dims / 3} icon={faMusic}></FontAwesomeIcon></div>
