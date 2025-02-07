@@ -18,6 +18,7 @@ import { getCookies, getStored } from './lib/utils';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Search } from './pages/bar/Search';
+import CreateAccount from './pages/CreateAccount';
 
 export const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_KEY ?? "");
 

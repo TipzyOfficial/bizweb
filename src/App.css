@@ -80,6 +80,23 @@
   -moz-box-sizing: border-box;
 }
 
+.input-setup {
+  padding: 12;
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  border-radius: 10;
+  border: none;
+  border-bottom: 2px solid;
+  border-color: #888;
+  background-color: #0000;
+  color: white;
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+}
+
 .text {
   font-size: calc(12x + 1vmin);
   font-size: calc(12px + 1vmin);
