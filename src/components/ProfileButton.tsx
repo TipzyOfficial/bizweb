@@ -54,7 +54,7 @@ export default function ProfileButton(props: { position?: "fixed" | "relative" |
                     transition: "all 0.2s"
                 }}>
                 <FontAwesomeIcon icon={faProfile} color={'white'} fontSize={dims / 3}></FontAwesomeIcon>
-                <span style={{ fontSize: dims / 3, paddingLeft: smallPadding }}>{props.name}</span>
+                <span style={{ fontSize: dims / 3, paddingLeft: smallPadding }} className="onelinetextplain">{props.name}</span>
             </button>
         </div>
     );

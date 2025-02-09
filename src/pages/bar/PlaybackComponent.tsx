@@ -4,13 +4,24 @@ import Song, { SongRenderItem } from "../../components/Song";
 import { Colors, modalZ, padding, radius, useFdim } from "../../lib/Constants";
 import LogoLetter from "../../assets/LogoLetter.svg"
 import { useContext, useEffect, useState } from "react";
-import { UserSessionContext } from "../../lib/UserSessionContext";
+import { UserSessionContext, UserSessionContextType } from "../../lib/UserSessionContext";
 import { fetchWithToken } from "../..";
 import TZButton from "../../components/TZButton";
 import { Modal, Spinner } from "react-bootstrap";
 import { styles } from "../Login";
 
-export default function PlaybackComponent(props: { setDisableTyping: (b: boolean) => void }) {
+type getSSReturnType = {
+    streamingService: string, playlistName: string | undefined
+}
+export async function getStreamingService(usc: UserSessionContextType): Promise<getSSReturnType> {
+    const json = await fetchWithToken(usc, "business/", "GET").then((r) => r.json());
+    const streamingService = json.data.streaming_service;
+    const playlistName = json.data.playlist_name;
+
+    return ({ streamingService: streamingService, playlistName: playlistName })
+}
+
+export default function PlaybackComponent(props: { setDisableTyping: (b: boolean) => void, setStreamingService?: (b: boolean) => any }) {
     const [ss, setSS] = useState<string | null>("...");
     const usc = useContext(UserSessionContext);
     const [currentPlaylist, setCurrentPlaylistIn] = useState("loading...");
@@ -25,23 +36,25 @@ export default function PlaybackComponent(props: { setDisableTyping: (b: boolean
         setCurrentPlaylistIn(p);
     }
 
-    const getStreamingService = async () => {
+    const igetStreamingService = async () => {
         console.log("updating")
         setSS("...");
         setCurrentPlaylist("...");
 
-        const json = await fetchWithToken(usc, "business/", "GET").then((r) => r.json());
-        const streamingService = json.data.streaming_service;
+        const res = await getStreamingService(usc);
+        const streamingService = res.streamingService;
         if (streamingService === "NONE") {
-            setSS(null)
+            setSS(null);
+            if (props.setStreamingService) props.setStreamingService(false);
         } else {
             setSS(streamingService);
-            setCurrentPlaylist(json.data.playlist_name);
+            setCurrentPlaylist(res.playlistName ?? "");
+            if (props.setStreamingService) props.setStreamingService(true);
         }
     }
 
     useEffect(() => {
-        getStreamingService();
+        igetStreamingService();
     }, [])
 
     // useEffect(() => {
@@ -87,7 +100,7 @@ export default function PlaybackComponent(props: { setDisableTyping: (b: boolean
                     <span className="App-montserrat-normaltext" style={{ paddingBottom: 7, fontWeight: 'bold', color: Colors.primaryLight }}>Set up your streaming service!</span>
                 }
             </div>
-            <PlaybackModal show={visible} setShow={setVisible} streaming={ss !== null || ss !== undefined} update={getStreamingService} />
+            <PlaybackModal show={visible} setShow={setVisible} streaming={ss !== null && ss !== undefined} update={igetStreamingService} />
 
             <div style={{ paddingBottom: padding }} />
         </>
@@ -207,15 +220,20 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
             }}>
             {page === 0 ?
                 <Modal.Body style={{ color: "white" }}>
-                    Select a playlist here:
-                    <div style={{ paddingTop: padding, paddingBottom: padding }}>
-                        <TZButton title="Select Playlist" backgroundColor="#f23440" onClick={() => playlistPage()}></TZButton>
-                    </div>
+
+                    {props.streaming ?
+                        <>
+                            Select a playlist here:
+                            <div style={{ paddingTop: padding, paddingBottom: padding }}>
+                                <TZButton title="Select Playlist" backgroundColor="#f23440" onClick={() => playlistPage()}></TZButton>
+                            </div>
+                        </> : <></>
+                    }
                     {props.streaming && !toggleLogin ?
                         <span style={{ color: Colors.primaryRegular, cursor: 'pointer' }} onClick={() => setToggleLogin(true)}>Not logged into Soundtrack?</span>
                         :
                         <>
-                            {props.streaming ? "You're using your most recent Soundtrack credentials right now, but here is the sign-in screen in case you've run into any problems." : "To select a Soundtrack playlist, please log in to Soundtrack first."} We won't store your login details!
+                            {props.streaming ? "Log in to Soundtrack here." : "To select a Soundtrack playlist, please log in to Soundtrack first."} We won't store your login details!
                             <div style={{ paddingTop: padding }}></div>
                             <input className="input" style={{ width: "100%" }} placeholder="email@address.com" onChange={(e) => setEmail(e.target.value)} />
                             <div style={{ paddingTop: padding }}></div>

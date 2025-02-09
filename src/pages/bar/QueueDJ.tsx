@@ -99,7 +99,9 @@ export default function QueueRequestsDJ(props: QRDJProps) {
                         {currentlyPlaying && sessionStarted ?
                             <Queue disable={queueLoading} queueOrder={props.queueOrder} current={currentlyPlaying} editingQueue={props.editingQueue} reorderQueue={props.reorderQueue} />
                             :
-                            <NotPlaying />
+                            <div style={{ paddingTop: padding }}>
+                                <NotPlaying />
+                            </div>
                         }
                     </div>
                 </div>

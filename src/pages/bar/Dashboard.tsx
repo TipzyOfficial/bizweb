@@ -16,7 +16,7 @@ import { faCheck, faChevronLeft, faChevronRight, faMagnifyingGlass, faQuestionCi
 import Dropdown from 'react-bootstrap/Dropdown';
 import TZHeader from "../../components/TZHeader";
 import Stats from "./Stats";
-import PlaybackComponent from "./PlaybackComponent";
+import PlaybackComponent, { getStreamingService } from "./PlaybackComponent";
 import Price from "./Price";
 import useWindowDimensions from "../../lib/useWindowDimensions";
 import { router } from "../../App";
@@ -141,6 +141,7 @@ export default function Dashboard() {
     }
 
     const [ready, setReady] = useState(false);
+    const [isSetup, setIsSetup] = useState(false);
     const [currentlyPlaying, setCurrentlyPlayingIn] = useState<CurrentlyPlayingType | undefined>(undefined);
     const [queue, setQueueIn] = useState<SongType[] | undefined>([]);
 
@@ -504,7 +505,7 @@ export default function Dashboard() {
         setDJEnergy(energy * 10);
         setDJBangersOnly(energy * 10);
         const setting: DJSettingsType = {
-            genres: genres.split(", "),
+            genres: genres.toString().split(", "),
             energy: energy * 10,
             popularity: popularity * 10,
         }
@@ -515,14 +516,29 @@ export default function Dashboard() {
         setDJSettings(settings);
     }
 
+    const checkIfSetup = async () => {
+        const res = await getStreamingService(usc);
+        const streamingService = res.streamingService;
+        if (streamingService === "NONE") {
+            setIsSetup(false);
+        } else {
+            setIsSetup(true);
+        }
+    }
+
     const initAll = async () => {
         await initDJ();
+        await checkIfSetup();
         await refreshAllData();
     }
 
     useEffect(() => {
         refreshPrice(true);
-        initAll().then(() => setReady(true)).catch((e) => { console.error(e); setReady(true) });
+        initAll().then(() => {
+            console.log("ready!")
+            setReady(true);
+        }
+        ).catch((e) => { console.error(e); setReady(true) });
     }, []);
 
     useInterval(refreshAllData, refreshQueueTime, 500, false);
@@ -589,7 +605,7 @@ export default function Dashboard() {
                                 acceptRadioValue === "TipzyAI" ? <span>You're letting Virtual DJ check if each request is a good fit. If it doesn't think a song matches your vibe, it'll put it here for you to decide.</span>
                                     : <span>No new song requests...yet!</span>}
                         </div>)
-                    : <div style={{ paddingLeft: padding }}><NotPlaying /></div>
+                    : <div style={{ padding: padding }}><NotPlaying /></div>
                 }
                 {songRequests.length > 1 ?
                     songRequests.slice(1).map((r, i) =>
@@ -934,63 +950,71 @@ export default function Dashboard() {
                         <SearchBar onClick={() => setSearchVisible(true)} />
                     </div>
                 </div>
-                <div style={{
-                    // display: 'grid', gridTemplateColumns: '200px, 1fr', 
-                    display: 'flex',
-                    flexDirection: isMobile() ? 'column-reverse' : 'row',
-                    width: "100%", height: "100%", overflow: "scroll"
-                }}>
-                    <MenuSelection currentPage={PAGE} pages={PAGES} setPage={setPage} />
-                    {isMobile() ? <CurrentlyPlayingBar queueLoading={queueLoading} pauseOverride={pausedUI} current={currentlyPlaying} onPause={onPause} onSkip={onSkip} lastPullTime={lastPullTime} /> : <></>}
-                    {
-                        PAGE === "Queue" ?
-                            <QueueRequestsDJMemo
-                                energyState={[djEnergy, setDJEnergy]}
-                                bangersState={[djBangersOnly, setDJBangersOnly]}
-                                tagsState={[djTags, setDJTags]}
-                                sendDJSettings={sendDJSettings}
-                                djSettingPlayingNumberState={[djSettingPlayingNumber, setDJSettingPlayingNumber]}
-                                djSettingsState={[djSettings, setDJSettings]}
-                                djCurrentSettingNumberState={[djCurrentSettingNumber, setDJCurrentSettingNumber]}
-                                acceptRadioValueState={[acceptRadioValue, setAcceptRadioValue]}
-                                shuffleRadioValueState={[shuffleValue, setShuffleValue]}
-                                onSetShuffle={onSetShuffle}
-                                onSetAccept={onSetAccept}
-                                disableTypingState={[disableTyping, setDisableTyping]}
-                                setToggles={setToggles}
-                                toggleBlockExplicitRequestsState={[toggleBlockExplicitRequests, setToggleBlockExplcitRequests]}
-                                onPause={onPause}
-                                onSkip={onSkip}
-                                queueLoading={queueLoading}
-                                queueOrder={qO}
-                                editingQueue={eQ}
-                                currentlyPlaying={currentlyPlaying}
-                                reorderingState={[reordering, setReordering]}
-                                sessionStarted={sessionStarted}
-                                reorderQueue={async () => {
-                                    console.log('reordering', reordering)
-                                    if (!reordering) {
-                                        try {
-                                            await reorderQueue().catch((e: Error) => {
-                                                //alert(e.message);
-                                                throw e;
-                                            });
-                                            setReordering(false);
-                                        }
-                                        catch (e) {
-                                            setReordering(false);
-                                            throw e;
-                                        }
-                                    }
-                                }}
-                            />
-                            : PAGE === "Requests" ? <Requests />
-                                : PAGE === "Account" ? <Account />
-                                    : <NotFoundPage title="404" body="We can't seem to find that page. Make sure you have the correct address!" backPath={-1} />
-                    }
-                    {/* </div> */}
-                </div>
-                {isMobile() ? <></> : <CurrentlyPlayingBar queueLoading={queueLoading} pauseOverride={pausedUI} current={currentlyPlaying} onPause={onPause} onSkip={onSkip} lastPullTime={lastPullTime} />}
+                {
+                    !isSetup ?
+                        PAGE === "Account" ? <Account /> :
+                            <SetupPage setIsSetup={setIsSetup} setDisableTyping={setDisableTyping} />
+                        :
+                        <>
+                            <div style={{
+                                // display: 'grid', gridTemplateColumns: '200px, 1fr', 
+                                display: 'flex',
+                                flexDirection: isMobile() ? 'column-reverse' : 'row',
+                                width: "100%", height: "100%", overflow: "scroll"
+                            }}>
+                                <MenuSelection currentPage={PAGE} pages={PAGES} setPage={setPage} />
+                                {isMobile() ? <CurrentlyPlayingBar queueLoading={queueLoading} pauseOverride={pausedUI} current={currentlyPlaying} onPause={onPause} onSkip={onSkip} lastPullTime={lastPullTime} /> : <></>}
+                                {
+                                    PAGE === "Queue" ?
+                                        <QueueRequestsDJMemo
+                                            energyState={[djEnergy, setDJEnergy]}
+                                            bangersState={[djBangersOnly, setDJBangersOnly]}
+                                            tagsState={[djTags, setDJTags]}
+                                            sendDJSettings={sendDJSettings}
+                                            djSettingPlayingNumberState={[djSettingPlayingNumber, setDJSettingPlayingNumber]}
+                                            djSettingsState={[djSettings, setDJSettings]}
+                                            djCurrentSettingNumberState={[djCurrentSettingNumber, setDJCurrentSettingNumber]}
+                                            acceptRadioValueState={[acceptRadioValue, setAcceptRadioValue]}
+                                            shuffleRadioValueState={[shuffleValue, setShuffleValue]}
+                                            onSetShuffle={onSetShuffle}
+                                            onSetAccept={onSetAccept}
+                                            disableTypingState={[disableTyping, setDisableTyping]}
+                                            setToggles={setToggles}
+                                            toggleBlockExplicitRequestsState={[toggleBlockExplicitRequests, setToggleBlockExplcitRequests]}
+                                            onPause={onPause}
+                                            onSkip={onSkip}
+                                            queueLoading={queueLoading}
+                                            queueOrder={qO}
+                                            editingQueue={eQ}
+                                            currentlyPlaying={currentlyPlaying}
+                                            reorderingState={[reordering, setReordering]}
+                                            sessionStarted={sessionStarted}
+                                            reorderQueue={async () => {
+                                                console.log('reordering', reordering)
+                                                if (!reordering) {
+                                                    try {
+                                                        await reorderQueue().catch((e: Error) => {
+                                                            //alert(e.message);
+                                                            throw e;
+                                                        });
+                                                        setReordering(false);
+                                                    }
+                                                    catch (e) {
+                                                        setReordering(false);
+                                                        throw e;
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                        : PAGE === "Account" ? <Account />
+                                            : PAGE === "Requests" ? <Requests />
+                                                : <NotFoundPage title="404" body="We can't seem to find that page. Make sure you have the correct address!" backPath={-1} />
+                                }
+                                {/* </div> */}
+                            </div>
+                            {isMobile() ? <></> : <CurrentlyPlayingBar queueLoading={queueLoading} pauseOverride={pausedUI} current={currentlyPlaying} onPause={onPause} onSkip={onSkip} lastPullTime={lastPullTime} />}
+                        </>
+                }
                 <AlertModal onHide={() => setAlertContent(undefined)} content={alertContent} />
             </div>
         </DisplayOrLoading>
@@ -998,6 +1022,18 @@ export default function Dashboard() {
 }
 
 const QueueRequestsDJMemo = memo(QueueRequestsDJ);
+
+const SetupPage = (props: { setIsSetup: (b: boolean) => any, setDisableTyping: (b: boolean) => void }) => {
+    return (
+        <div style={{ padding: padding, overflow: isMobile() ? 'scroll' : undefined, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <span className="App-subtitle">One last step!</span>
+            <span style={{ padding: padding, textAlign: 'center' }}>To start the music, tap below to set up your streaming service!</span>
+            <div style={{ display: 'flex' }}>
+                <PlaybackComponent setStreamingService={props.setIsSetup} setDisableTyping={props.setDisableTyping} />
+            </div>
+        </div>
+    )
+}
 
 
 const AISideTab = (props: { onClick: () => any, close?: boolean }) => {
@@ -1155,7 +1191,8 @@ export const getToggles = async (usc: UserSessionContextType): Promise<[boolean,
 
 const getStats = async (usc: UserSessionContextType): Promise<FinanceStatsType | undefined> => {
     const json = await fetchWithToken(usc, `get_bar_stats/`, 'GET').then(r => r.json()).catch((e: Error) => { console.log("Can't get acc in toggles", e.message); return undefined; });
-    if (!json) return undefined;
+    if (!json || !json.stats) return undefined;
+    console.log(json)
     const stats: FinanceStatsType = {
         pendingBarCut: json.stats.Pending_bar_cut,
         pendingRequests: json.stats.pending_requests,
