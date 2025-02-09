@@ -235,9 +235,6 @@ const BarPage1 = (props: { setPage: (n: number) => void, setInfo: (l: LocationTy
     // const [result, setRes] = useState<Geocoder.GeocoderResponse | null>(null);
 
     const Search = async () => {
-
-        console.log("mkey", mapsKey);
-
         setKey(mapsKey ?? "");
         const loc = await fromAddress(baddr).catch((e) => {
             console.log(e);
