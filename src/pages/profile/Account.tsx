@@ -118,7 +118,7 @@ export default function Account() {
                 <div>
                     <div style={{ paddingBottom: padding / 2 }}>
                         <ProfileTop title="Name" value={user.user.name} profilePic={user.user.image} email={user.user.email} />
-
+                        <span>Your bar's ID: {usc.user.business_id}</span>
                         {/* <span className="App-tertiarytitle">Your Information</span> */}
                     </div>
                     <div style={{ paddingBottom: padding / 2 }}>

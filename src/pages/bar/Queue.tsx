@@ -1,7 +1,7 @@
 import FlatList from "flatlist-react/lib";
 import { SongType } from "../../lib/song";
 import Song, { SongList } from "../../components/Song";
-import { Colors, padding, radius, useFdim } from "../../lib/Constants";
+import { Colors, padding, radius, smallPadding, useFdim } from "../../lib/Constants";
 import { useDrag, useDrop } from 'react-dnd';
 import { FC, memo, useCallback, useEffect, useState } from "react";
 import update from 'immutability-helper';
@@ -9,13 +9,14 @@ import _ from "lodash";
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import TZButton from "../../components/TZButton";
-import { CurrentlyPlayingType } from "./Dashboard";
+import { CurrentlyPlayingType, QueueOrderType } from "./Dashboard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faForwardStep, faPause, faPlay, faVolumeDown, faVolumeLow, faVolumeMute, faVolumeUp, IconDefinition } from "@fortawesome/free-solid-svg-icons";
-import { useInterval } from "../../lib/utils";
+import { faArrowRightArrowLeft, faArrowsUpDown, faForwardStep, faPause, faPlay, faRightLeft, faVolumeDown, faVolumeLow, faVolumeMute, faVolumeUp, IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { millisToHoursMinutes, millisToMinutesAndSeconds, useInterval } from "../../lib/utils";
+import { PlaybackButton } from "../../components/PlaybackButton";
 
 
-type SongDraggableType = SongType// { id: string, song: SongType }
+// type SongDraggableType = { id: string, song: SongType }
 export interface SongCardProps {
     id: string,
     song: SongType,
@@ -24,6 +25,7 @@ export interface SongCardProps {
     dims?: number,
     onDrop: () => void,
     disable?: boolean
+    editingQueue: boolean,
 };
 interface Item {
     id: string
@@ -31,44 +33,41 @@ interface Item {
 };
 
 type QueueProps = {
-    pauseOverride?: boolean;
+    // pauseOverride?: boolean;
     current: CurrentlyPlayingType,
-    queueOrder: [SongType[], React.Dispatch<React.SetStateAction<SongType[]>>],
+    queueOrder: [QueueOrderType[], React.Dispatch<React.SetStateAction<QueueOrderType[]>>],
     editingQueue: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
-    volumeState: [number, React.Dispatch<React.SetStateAction<number>>]
+    // volumeState: [number, React.Dispatch<React.SetStateAction<number>>]
     songDims?: number,
     reorderQueue: () => Promise<any>,
     disable?: boolean,
-    onPauseClick: () => any,
-    onSkipClick: () => any,
-    lastPullTime: number,
-}
-
-function PlaybackButton(props: { icon: IconDefinition, onClick: () => any, disable?: boolean }) {
-    const fdim = useFdim();
-    const iconsize = fdim / 30;
-
-    const [hovered, setHovered] = useState(0);
-
-    return (
-        <div onClick={() => {
-            if (!props.disable) props.onClick();
-        }} style={{ opacity: props.disable ? 1 : 1 - hovered * 0.5 }} onMouseDown={() => setHovered(1)} onMouseUp={() => setHovered(0.5)} onMouseEnter={() => setHovered(0.5)} onMouseLeave={() => setHovered(0)}>
-            <FontAwesomeIcon fontSize={iconsize} icon={props.icon} />
-        </div>
-    )
+    // onPauseClick: () => any,
+    // onSkipClick: () => any,
+    // lastPullTime: number,
 }
 
 export default function Queue(props: QueueProps) {
     // const queue = props.queue;
     const current = props.current[0];
     const progress = props.current[1];
-    const paused = props.pauseOverride === undefined ? progress.paused : props.pauseOverride;
+
+    // useEffect(() => {
+    //     console.log("Q just reloadng!")
+    // }, [])
+
+    // const paused = props.pauseOverride === undefined ? progress.paused : props.pauseOverride;
 
     const queueOrder = props.queueOrder[0];
+
+    // useEffect(() => {
+    //     setSDQueueOrder(queueOrder.map(v => { return { song: v, id: v.id } }))
+    // }, queueOrder)
+
+    // console.log("qol", queueOrder.length)
+
     const [editingQueue, setEditingQueue] = props.editingQueue;
-    const [volume, setVolume] = props.volumeState;
-    const [pos, setPos] = useState(0);
+    // const [volume, setVolume] = props.volumeState;
+    // const [pos, setPos] = useState(0);
 
     // console.log("QO", props.queueOrder);
 
@@ -86,79 +85,41 @@ export default function Queue(props: QueueProps) {
 
     // console.log("tslp", Date.now() - props.lastPullTime);
 
-    useInterval(() => {
-        setPos(Date.now() - props.lastPullTime)
-    }, 1000)
+    // useInterval(() => {
+    //     setPos(Date.now() - props.lastPullTime)
+    // }, 1000);
+
+    const totalMs = (): number => {
+        if (!queueOrder || queueOrder.length === 0) return 0;
+        return queueOrder.reduce((prev, curr) => {
+            return {
+                ...curr, song: { ...curr.song, duration: (prev.song.duration ?? 0) + (curr.song.duration ?? 0) }
+            }
+        }).song.duration ?? 0;
+    }
+
+    const dragBoxStyle: React.CSSProperties = { display: 'flex', justifyContent: 'center', alignItems: 'center', width: "100%", height: "100%", flex: 1, borderRadius: radius }
 
     return (
-        <div style={{ width: "100%" }}>
-            <div style={{ display: 'flex' }}>
-                <div style={{ padding: padding, backgroundColor: "#fff1", borderRadius: radius, flex: 1 }}>
-                    <div style={{ display: 'flex' }}>
-                        <div style={{ flexGrow: 1, width: '100%' }}>
-                            <Song song={current ?? { title: "No song playing", artists: ["No artist"], id: "", albumart: "", explicit: false }} dims={props.songDims}></Song>
-                        </div>
-                        <div style={{ width: "100%", display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, paddingLeft: padding, paddingRight: padding }}>
-                            <PlaybackButton icon={paused ? faPlay : faPause} disable={props.disable} onClick={props.onPauseClick} />
-                            <div style={{ width: padding * 2 }} />
-                            <PlaybackButton icon={faForwardStep} disable={props.disable} onClick={props.onSkipClick} />
-                        </div>
-                    </div>
-                    {/* 
-                    <div style={{ paddingTop: padding, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-
-
-                    </div> */}
-
-                    {progress ?
-                        <>
-                            {/* <div style={{ paddingBottom: padding }} /> */}
-                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <div style={{ width: "100%", height: playbackHeight, backgroundColor: "#fff2" }}>
-                                    <div className="App-animated-gradient-fast-light" style={{ width: `${((progress.progressMs + Date.now() - props.lastPullTime) / progress.durationMs) * 100}%`, height: "100%", backgroundColor: 'white' }}></div>
-                                </div>
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'row', position: "relative", justifyContent: 'flex-end', alignItems: 'center' }}>
-                                    <div style={{ position: "absolute", left: padding }}>
-                                        <FontAwesomeIcon icon={volume > 50 ? faVolumeUp : volume > 0 ? faVolumeDown : faVolumeMute}></FontAwesomeIcon>
-                                    </div>
-                                    <div style={{ width: padding }} />
-                                    <div style={{ padding: padding }} />
-                                    <div style={{ display: 'flex', height: "100%" }}>
-                                        <input type="range" className="slider-volume"
-                                            style={{ width: 100 }}
-                                            // style={{
-                                            //     // position: 'absolute',
-                                            //     // height: "100%",
-                                            //     flex: 0,
-                                            //     borderRadius: 25,
-                                            //     width: 5,
-                                            //     backgroundColor: "#17171E",
-                                            //     writingMode: "vertical-lr",
-                                            //     direction: "rtl",
-                                            //     verticalAlign: "bottom",
-                                            // }}
-                                            min={0} max={100}
-                                            step={10}
-                                            value={volume}
-                                            onChange={(e) => setVolume(parseInt(e.target.value))}
-                                        />
-                                    </div>
-                                </div>
+        <div style={{ width: "100%", display: 'flex', flexDirection: 'column' }}>
+            <span className="App-smalltext">{queueOrder.length} tracks · {millisToHoursMinutes(totalMs())}</span>
+            <div style={{ paddingBottom: padding, paddingTop: smallPadding, display: "flex", justifyContent: 'center', alignItems: 'center', height: 70 }}>
+                {
+                    editingQueue ?
+                        <div style={dragBoxStyle}>
+                            <UpNextButton title="Save changes" onClick={onSave} backgroundColor={Colors.green} />
+                            <div style={{ width: padding }} />
+                            <UpNextButton title="Cancel" onClick={onCancel} backgroundColor={Colors.red} />
+                        </div> :
+                        <div style={{ ...dragBoxStyle, backgroundColor: Colors.background, }}>
+                            <div style={{ paddingRight: 7 }}>
+                                <FontAwesomeIcon style={{ transform: "rotate(90deg) scaleX(-1)" }} icon={faArrowRightArrowLeft}></FontAwesomeIcon>
                             </div>
-                        </> : <></>}
-                </div>
+                            <span className="App-smalltext">Drag to reorder the queue</span>
+                        </div>
+
+                }
             </div>
-            <div style={{ paddingBottom: padding }} />
-            {
-                editingQueue ?
-                    <div style={{ display: 'flex' }}>
-                        <TZButton title="Save changes" onClick={onSave} backgroundColor={Colors.green}></TZButton>
-                        <div style={{ width: padding }} />
-                        <TZButton title="Cancel" onClick={onCancel} backgroundColor={Colors.red}></TZButton>
-                    </div> : <></>
-            }
-            <span className="App-montserrat-normaltext" style={{ paddingBottom: 7 }}>Next up: (drag to reorder)</span>
-            <div style={{ paddingBottom: padding }} />
             {
                 queueOrder ?
                     <Container disable={props.disable} data={props.queueOrder} dims={props.songDims} editingQueue={props.editingQueue} />
@@ -171,8 +132,22 @@ export default function Queue(props: QueueProps) {
     )
 }
 
+const UpNextButton = (props: { backgroundColor: string, title: string, onClick: () => any }) => {
+
+    const [hover, setHover] = useState(1);
+
+    return (
+        <div onClick={props.onClick}
+            onMouseEnter={() => setHover(0.5)}
+            onMouseLeave={() => setHover(1)}
+            style={{ cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', width: "100%", height: "100%", backgroundColor: props.backgroundColor, flex: 1, borderRadius: radius, opacity: hover }}>
+            {props.title}
+        </div>
+    );
+}
+
 const Container = memo(function Container(props: {
-    data: [SongDraggableType[], (s: SongDraggableType[]) => void],
+    data: [QueueOrderType[], (s: QueueOrderType[]) => void],
     editingQueue: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
     dims?: number,
     disable?: boolean,
@@ -185,7 +160,7 @@ const Container = memo(function Container(props: {
     const findCard = useCallback(
         (id: string | undefined) => {
             if (id === undefined) return { card: undefined, index: -1 };
-            const card = cards.filter((c) => `${c.id}` === id)[0] as SongType
+            const card = cards.filter((c) => `${c.id}` === id)[0] as QueueOrderType
             return {
                 card,
                 index: cards.indexOf(card),
@@ -224,12 +199,13 @@ const Container = memo(function Container(props: {
                     <SongCard
                         key={card.id}
                         id={card.id}
-                        song={card}
+                        song={card.song}
                         moveCard={moveCard}
                         findCard={findCard}
                         dims={props.dims}
                         onDrop={() => setEditingQueue(true)}
                         disable={props.disable}
+                        editingQueue={editingQueue}
                     />
             ))}
         </div>
@@ -244,7 +220,9 @@ const SongCard: FC<SongCardProps> = memo(function Card({
     dims,
     onDrop,
     disable,
+    editingQueue,
 }) {
+
     const originalIndex = id ? findCard(id).index : undefined;
     const [{ isDragging }, drag] = useDrag(
         () => ({
@@ -270,6 +248,11 @@ const SongCard: FC<SongCardProps> = memo(function Card({
         }),
         [id, originalIndex, moveCard, disable],
     );
+
+    if (isDragging && !editingQueue) {
+        console.log("ndrop!");
+        onDrop();
+    }
 
     const [, drop] = useDrop(
         () => ({

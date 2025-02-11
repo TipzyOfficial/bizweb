@@ -7,9 +7,12 @@ export function NotFoundPage(props: { title?: string, body: string, backPath: st
             <span className="App-title" style={{ color: Colors.primaryRegular, }}>{props.title ?? "Oops!"}</span>
             <span className="App-normaltext" style={{ padding: padding }}>{props.body}</span>
             <span className="App-normaltext" style={{ color: Colors.primaryRegular, fontWeight: 'bold', cursor: 'pointer' }} onClick={() => {
-                if (props.backPath === -1) router.navigate(props.backPath);
+                window.location.reload();
+            }}>Reload</span>
+            {/* <span className="App-normaltext" style={{ color: Colors.primaryRegular, fontWeight: 'bold', cursor: 'pointer' }} onClick={() => {
+                if (props.backPath === -1) window.location.reload();
                 else router.navigate(props.backPath);
-            }}>Go back</span>
+            }}>Go back</span> */}
         </div>
     )
 }

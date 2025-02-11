@@ -21,13 +21,14 @@ export default function TZToggle(props: { title?: string, value: boolean, onClic
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
             style={{
-                padding: padding, backgroundColor: Colors.tertiaryDark, borderRadius: radius, display: 'flex', alignItems: 'center', cursor: 'pointer',
-                opacity: props.disabled ? 0.5 : loading ? 0.6 : hover ? 0.8 : 1
+                borderRadius: radius, display: 'flex', alignItems: 'center', cursor: 'pointer',
+                opacity: props.disabled ? 0.5 : loading ? 0.9 : hover ? 0.8 : 1
             }} onClick={onClick}>
             {props.title ? <span className="App-montserrat-smallertext" style={{ paddingRight: padding, fontWeight: 'bold' }}>{props.title}</span> : <></>}
 
             {!loading ? <FontAwesomeIcon icon={props.value ? faYes : faNo} fontSize={dim}></FontAwesomeIcon> :
-                <Spinner style={{ width: dim, height: dim }} />
+                //<Spinner size={"sm"} style={{ width: dim, height: dim }} />
+                <FontAwesomeIcon icon={props.value ? faNo : faYes} fontSize={dim}></FontAwesomeIcon>
             }
         </div>
     );

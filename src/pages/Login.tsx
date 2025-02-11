@@ -21,6 +21,7 @@ import GoogleLogo from '../assets/google_logo_clear.svg';
 // import raveVideo from "../assets/TipzyHomePageVideo.mp4";
 import FullLogo from '../assets/Tipzy_Full_Orange.png';
 import rave from '../assets/rave.png';
+import CreateAccount from './CreateAccount';
 
 
 
@@ -110,6 +111,7 @@ function Login(props: { back?: boolean }) {
             return;
         }
 
+
         setGlobalDisable(true);
 
         loginWithGoogleAccessToken(token).then((value) => login(value.access_token, value.refresh_token, value.expires_at)).catch(
@@ -137,55 +139,55 @@ function Login(props: { back?: boolean }) {
         }
     }
 
-    const createAccount = async (user: Business, isApple?: boolean, customName?: AppleReturnType) => {
-        console.log(customName);
+    // const createAccount = async (user: Business, isApple?: boolean, customName?: AppleReturnType) => {
+    //     console.log(customName);
 
-        if (!isApple)
-            fetch(`${ServerInfo.baseurl}tipper/`, {
-                method: 'POST',
-                headers:
-                {
-                    Authorization: `Bearer ${user.user.access_token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    birthday: formatBirthday(new Date()),
-                })
-            }).catch((e: Error) => {
-                alert(`Error creating new account. Please try again later: ${e.message}`);
-                return null;
-            })
-        else
-            return customName ?
-                fetch(`${ServerInfo.baseurl}tipper/?first_name=${customName.name.firstName}&last_name=${customName.name.lastName}&email=${customName.email}`, {
-                    method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${user.user.access_token}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        birthday: formatBirthday(new Date()),
-                    })
-                }).catch((e: Error) => {
-                    alert(`Error creating new account. Please try again later: ${e.message}`);
-                    return null;
-                })
-                :
-                fetch(`${ServerInfo.baseurl}tipper/?first_name=${localStorage.getItem("firstName") ?? "Guest"}&last_name=${localStorage.getItem("lastName") ?? "Guest"}&email=${localStorage.getItem("email") ?? "guest@guest.com"}`, {
-                    method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${user.user.access_token}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        birthday: formatBirthday(new Date()),
-                    })
-                }).catch((e: Error) => {
-                    alert(`Error creating new account. Please try again later: ${e.message}`);
-                    return null;
-                })
+    //     if (!isApple)
+    //         fetch(`${ServerInfo.baseurl}tipper/`, {
+    //             method: 'POST',
+    //             headers:
+    //             {
+    //                 Authorization: `Bearer ${user.user.access_token}`,
+    //                 'Content-Type': 'application/json',
+    //             },
+    //             body: JSON.stringify({
+    //                 birthday: formatBirthday(new Date()),
+    //             })
+    //         }).catch((e: Error) => {
+    //             alert(`Error creating new account. Please try again later: ${e.message}`);
+    //             return null;
+    //         })
+    //     else
+    //         return customName ?
+    //             fetch(`${ServerInfo.baseurl}tipper/?first_name=${customName.name.firstName}&last_name=${customName.name.lastName}&email=${customName.email}`, {
+    //                 method: 'POST',
+    //                 headers: {
+    //                     Authorization: `Bearer ${user.user.access_token}`,
+    //                     'Content-Type': 'application/json',
+    //                 },
+    //                 body: JSON.stringify({
+    //                     birthday: formatBirthday(new Date()),
+    //                 })
+    //             }).catch((e: Error) => {
+    //                 alert(`Error creating new account. Please try again later: ${e.message}`);
+    //                 return null;
+    //             })
+    //             :
+    //             fetch(`${ServerInfo.baseurl}tipper/?first_name=${localStorage.getItem("firstName") ?? "Guest"}&last_name=${localStorage.getItem("lastName") ?? "Guest"}&email=${localStorage.getItem("email") ?? "guest@guest.com"}`, {
+    //                 method: 'POST',
+    //                 headers: {
+    //                     Authorization: `Bearer ${user.user.access_token}`,
+    //                     'Content-Type': 'application/json',
+    //                 },
+    //                 body: JSON.stringify({
+    //                     birthday: formatBirthday(new Date()),
+    //                 })
+    //             }).catch((e: Error) => {
+    //                 alert(`Error creating new account. Please try again later: ${e.message}`);
+    //                 return null;
+    //             })
 
-    }
+    // }
 
 
     async function loginWithTipzyToken(accessToken: string | null, refreshToken: string | null, expiresAt: number, isApple?: boolean, customName?: AppleReturnType) {
@@ -219,29 +221,29 @@ function Login(props: { back?: boolean }) {
                 });
 
             } else {
-                createAccount(user, isApple, customName).then((r) => {
-                    console.log("creating account.", usc);
-                    checkIfAccountExists({
-                        user: user,
-                        setUser: () => { },
-                    }).then(r => {
-                        if (!r.result) return undefined
-                        return r.data;
-                    }).then(newUser => {
-                        if (!newUser) {
-                            alert("Problem verifying account exists. Try again later.");
-                            return;
-                        }
-                        usc.setUser(newUser);
-                        // console.log(newUser);
-                        storeAll({
-                            user: newUser,
-                            setUser: usc.setUser,
-                        }, refreshToken).then((u) => {
-                            nextPage();
-                        });
-                    })
-                }).catch(e => console.log(e));;
+                checkIfAccountExists({
+                    user: user,
+                    setUser: () => { },
+                }).then(r => {
+                    if (!r.result) return undefined
+                    return r.data;
+                }).then(newUser => {
+                    if (!newUser) {
+                        console.log(newUser);
+                        //router.navigate("/register");
+                        setGlobalDisable(false);
+                        setLoginPage(false);
+                        return;
+                    }
+                    usc.setUser(newUser);
+                    // console.log(newUser);
+                    storeAll({
+                        user: newUser,
+                        setUser: usc.setUser,
+                    }, refreshToken).then((u) => {
+                        nextPage();
+                    });
+                })
                 // props.navigation.replace('CreateAccount', {
                 //     refreshToken: refreshToken,
                 //     user: user
@@ -253,115 +255,115 @@ function Login(props: { back?: boolean }) {
         })
     }
 
-    function Register() {
-        const [firstName, setFirstName] = useState("");
-        const [lastName, setLastName] = useState("");
-        const [username, setUsername] = useState("");
-        const [email, setEmail] = useState("");
-        const [password, setPassword] = useState("");
-        const [confirmPassword, setConfirmPassword] = useState("");
-        const [pm, setPm] = useState(true);
-        const [disabled, setDisabled] = useState(true);
-        const [registerPressed, setRegisterPressed] = useState(false);
+    // function Register() {
+    //     const [firstName, setFirstName] = useState("");
+    //     const [lastName, setLastName] = useState("");
+    //     const [username, setUsername] = useState("");
+    //     const [email, setEmail] = useState("");
+    //     const [password, setPassword] = useState("");
+    //     const [confirmPassword, setConfirmPassword] = useState("");
+    //     const [pm, setPm] = useState(true);
+    //     const [disabled, setDisabled] = useState(true);
+    //     const [registerPressed, setRegisterPressed] = useState(false);
 
-        const emailRegex = new RegExp(".@.*\..");
+    //     const emailRegex = new RegExp(".@.*\..");
 
 
-        const checkShouldDisable = () => {
-            if (password.length < 8) return true;
-            return Math.min(firstName.length, lastName.length, username.length, email.length, password.length) === 0;
-        }
+    //     const checkShouldDisable = () => {
+    //         if (password.length < 8) return true;
+    //         return Math.min(firstName.length, lastName.length, username.length, email.length, password.length) === 0;
+    //     }
 
-        const PasswordRule = () => password.length < 8 ?
-            <div style={regstyles.rule}>
-                <span style={{ paddingTop: 2, fontSize: 12, color: Colors.secondaryLight, lineHeight: 1, display: 'block' }}>Password must have a minimum of 8 characters.</span>
-            </div> : <></>
+    //     const PasswordRule = () => password.length < 8 ?
+    //         <div style={regstyles.rule}>
+    //             <span style={{ paddingTop: 2, fontSize: 12, color: Colors.secondaryLight, lineHeight: 1, display: 'block' }}>Password must have a minimum of 8 characters.</span>
+    //         </div> : <></>
 
-        const ConfirmPasswordRule = () => !pm ?
-            <div style={regstyles.rule}>
-                <span style={{ paddingTop: 2, fontSize: 12, color: Colors.secondaryLight, lineHeight: 1, display: 'block' }}>Passwords don't match.</span>
-            </div> : <></>
+    //     const ConfirmPasswordRule = () => !pm ?
+    //         <div style={regstyles.rule}>
+    //             <span style={{ paddingTop: 2, fontSize: 12, color: Colors.secondaryLight, lineHeight: 1, display: 'block' }}>Passwords don't match.</span>
+    //         </div> : <></>
 
-        if (disabled !== checkShouldDisable()) setDisabled(checkShouldDisable());
+    //     if (disabled !== checkShouldDisable()) setDisabled(checkShouldDisable());
 
-        const onRegister = () => {
-            if (!registerPressed) {
-                setRegisterPressed(true);
-                if (!emailRegex.test(email)) {
-                    alert("Invalid email. Please enter in a valid email.");
-                    setRegisterPressed(false);
-                    return;
-                }
-                if (confirmPassword !== password) {
-                    setRegisterPressed(false)
-                    setPm(false); return;
-                }
-                setPm(true);
+    //     const onRegister = () => {
+    //         if (!registerPressed) {
+    //             setRegisterPressed(true);
+    //             if (!emailRegex.test(email)) {
+    //                 alert("Invalid email. Please enter in a valid email.");
+    //                 setRegisterPressed(false);
+    //                 return;
+    //             }
+    //             if (confirmPassword !== password) {
+    //                 setRegisterPressed(false)
+    //                 setPm(false); return;
+    //             }
+    //             setPm(true);
 
-                registerUsernamePassword(firstName, lastName, email, username, password).then((response) => response.json()).then(json => {
-                    setRegisterPressed(false)
-                    if (json.status === 201) {
-                        alert("Woohoo! Account successfully created! Please log in.");
-                        setLoginPage(true);
-                    }
-                    else if (json.status === 406) {
-                        alert(`Register failed: ${json.detail}`);
-                    }
-                    else {
-                        alert(`Register failed: Bad response, status: ${json.status}. Contact help@tipzy.com for assistance.`);
-                    }
-                }).catch(() => setRegisterPressed(false))
-            }
-        }
+    //             registerUsernamePassword(firstName, lastName, email, username, password).then((response) => response.json()).then(json => {
+    //                 setRegisterPressed(false)
+    //                 if (json.status === 201) {
+    //                     alert("Woohoo! Account successfully created! Please log in.");
+    //                     setLoginPage(true);
+    //                 }
+    //                 else if (json.status === 406) {
+    //                     alert(`Register failed: ${json.detail}`);
+    //                 }
+    //                 else {
+    //                     alert(`Register failed: Bad response, status: ${json.status}. Contact help@tipzy.com for assistance.`);
+    //                 }
+    //             }).catch(() => setRegisterPressed(false))
+    //         }
+    //     }
 
-        return (
-            <div className="App-body" style={{ width: "100%", justifyContent: 'flex-end' }}>
-                <div style={{
-                    zIndex: 1, justifyContent: 'flex-end', alignItems: 'center', display: 'flex', flexDirection: 'column', flex: 0,
-                    width: "100%",
-                    maxWidth: 500,
-                    padding: padding,
-                    borderTopLeftRadius: radius, borderTopRightRadius: radius, backgroundColor: Colors.background
-                }}>
-                    <div style={styles.header}>
-                        <div style={{ width: "100%", display: 'flex', flexDirection: 'row-reverse', alignItems: 'center', paddingBottom: 0 }}>
-                            <div style={{ cursor: 'pointer' }} onClick={() => setLoginPage(true)}><FontAwesomeIcon icon={faXmark}></FontAwesomeIcon></div>
-                        </div>
-                        <div style={{ width: "100%", justifyContent: 'center', display: 'flex' }}>
-                            <span className='App-subtitle' style={{ textAlign: 'center' }}>Sign Up</span>
-                        </div>
-                    </div>
-                    <div style={{ paddingBottom: 10, width: "100%" }}>
-                        <input className='input' placeholder='First name' value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-                    </div>
-                    <div style={{ paddingBottom: 10, width: "100%" }}>
-                        <input className='input' type='' placeholder='Last name' value={lastName} onChange={(e) => setLastName(e.target.value)} />
-                    </div>
-                    <div style={{ paddingBottom: 10, width: "100%" }}>
-                        <input className='input' placeholder='Username' value={username} autoCorrect='off' autoCapitalize='off' onChange={(e) => setUsername(e.target.value)} />
-                    </div>
-                    <div style={{ paddingBottom: 10, width: "100%" }}>
-                        <input className='input' type='email' placeholder='email@address.com' value={email} onChange={(e) => setEmail(e.target.value)} />
-                    </div>
-                    <div style={{ paddingBottom: 10, justifyContent: 'flex-start', width: "100%" }}>
-                        <input className='input' type='Password' placeholder='Password' value={password} onChange={(e) => setPassword(e.target.value)} />
-                        <PasswordRule />
-                    </div>
-                    <div style={{ paddingBottom: 10, width: "100%" }}>
-                        <input className='input' type='Password' placeholder='Confirm Password' value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                        <ConfirmPasswordRule />
-                    </div>
-                    <TZButton onClick={onRegister} disabled={false} title="Sign up"></TZButton>
-                    <div style={{ paddingTop: 10, width: "100%", textAlign: 'center' }}>
-                        Have an account? <a href={"#"} onClick={() => { if (!registerPressed) setLoginPage(true) }}>Sign In</a>
-                    </div>
-                    <div style={{ fontSize: 12, paddingTop: padding, textAlign: 'center' }}>
-                        By logging in or creating an account you agree to our <a href="https://www.tipzy.app/privacy" target='_blank' rel="noreferrer">privacy policy.</a>
-                    </div>
-                </div>
-            </div>
-        )
-    }
+    //     return (
+    //         <div className="App-body" style={{ width: "100%", justifyContent: 'flex-end' }}>
+    //             <div style={{
+    //                 zIndex: 1, justifyContent: 'flex-end', alignItems: 'center', display: 'flex', flexDirection: 'column', flex: 0,
+    //                 width: "100%",
+    //                 maxWidth: 500,
+    //                 padding: padding,
+    //                 borderTopLeftRadius: radius, borderTopRightRadius: radius, backgroundColor: Colors.background
+    //             }}>
+    //                 <div style={styles.header}>
+    //                     <div style={{ width: "100%", display: 'flex', flexDirection: 'row-reverse', alignItems: 'center', paddingBottom: 0 }}>
+    //                         <div style={{ cursor: 'pointer' }} onClick={() => setLoginPage(true)}><FontAwesomeIcon icon={faXmark}></FontAwesomeIcon></div>
+    //                     </div>
+    //                     <div style={{ width: "100%", justifyContent: 'center', display: 'flex' }}>
+    //                         <span className='App-subtitle' style={{ textAlign: 'center' }}>Sign Up</span>
+    //                     </div>
+    //                 </div>
+    //                 <div style={{ paddingBottom: 10, width: "100%" }}>
+    //                     <input className='input' placeholder='First name' value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+    //                 </div>
+    //                 <div style={{ paddingBottom: 10, width: "100%" }}>
+    //                     <input className='input' type='' placeholder='Last name' value={lastName} onChange={(e) => setLastName(e.target.value)} />
+    //                 </div>
+    //                 <div style={{ paddingBottom: 10, width: "100%" }}>
+    //                     <input className='input' placeholder='Username' value={username} autoCorrect='off' autoCapitalize='off' onChange={(e) => setUsername(e.target.value)} />
+    //                 </div>
+    //                 <div style={{ paddingBottom: 10, width: "100%" }}>
+    //                     <input className='input' type='email' placeholder='email@address.com' value={email} onChange={(e) => setEmail(e.target.value)} />
+    //                 </div>
+    //                 <div style={{ paddingBottom: 10, justifyContent: 'flex-start', width: "100%" }}>
+    //                     <input className='input' type='Password' placeholder='Password' value={password} onChange={(e) => setPassword(e.target.value)} />
+    //                     <PasswordRule />
+    //                 </div>
+    //                 <div style={{ paddingBottom: 10, width: "100%" }}>
+    //                     <input className='input' type='Password' placeholder='Confirm Password' value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+    //                     <ConfirmPasswordRule />
+    //                 </div>
+    //                 <TZButton onClick={onRegister} disabled={false} title="Sign up"></TZButton>
+    //                 <div style={{ paddingTop: 10, width: "100%", textAlign: 'center' }}>
+    //                     Have an account? <a href={"#"} onClick={() => { if (!registerPressed) setLoginPage(true) }}>Sign In</a>
+    //                 </div>
+    //                 <div style={{ fontSize: 12, paddingTop: padding, textAlign: 'center' }}>
+    //                     By logging in or creating an account you agree to our <a href="https://www.tipzy.app/privacy" target='_blank' rel="noreferrer">privacy policy.</a>
+    //                 </div>
+    //             </div>
+    //         </div>
+    //     )
+    // }
 
     // const LoginPageMobile = () => {
     //     return (
@@ -370,27 +372,28 @@ function Login(props: { back?: boolean }) {
     // }
 
     return (
-        <div className="App-body" style={{ width: "100%" }}>
-            {/* <img src={require('../assets/rave.gif')} style={{ objectFit: 'fill' }}></img> */}
-            <div
-                style={{
-                    zIndex: 0,
-                    position: 'fixed',
-                    right: 0,
-                    top: 0,
-                    minWidth: "100%",
-                    minHeight: "100%",
-                    // backgroundColor: "black",
-                    backgroundImage: `url("${rave}")`,
-                    backgroundSize: 'cover',
-                }}
-            >
-                {/* <video autoPlay loop muted style={{ objectFit: 'fill', minWidth: "100%", minHeight: "100%", opacity: 0.3 }}>
+        loginPage ?
+            <div className="App-body" style={{ width: "100%" }}>
+                {/* <img src={require('../assets/rave.gif')} style={{ objectFit: 'fill' }}></img> */}
+                <div
+                    style={{
+                        zIndex: 0,
+                        position: 'fixed',
+                        right: 0,
+                        top: 0,
+                        minWidth: "100%",
+                        minHeight: "100%",
+                        // backgroundColor: "black",
+                        backgroundImage: `url("${rave}")`,
+                        backgroundSize: 'cover',
+                    }}
+                >
+                    {/* <video autoPlay loop muted style={{ objectFit: 'fill', minWidth: "100%", minHeight: "100%", opacity: 0.3 }}>
                     <source src={raveVideo} type='video/mp4' />
                 </video> */}
-            </div>
+                </div>
 
-            {loginPage ?
+
                 <div style={{
                     display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', flex: 1, width: "100%"
                 }}>
@@ -469,16 +472,16 @@ function Login(props: { back?: boolean }) {
                         </div>
                     </div>
                 </div >
-                : <Register />
-            }
-            {
-                (globalDisable || loginPressed) ?
-                    <div className='App-body' style={{ position: 'fixed', zIndex: 10, top: 0, display: 'flex', flex: 1, width: '100%', backgroundColor: Colors.background + "aa" }}>
-                        <Spinner style={{ color: Colors.primaryRegular, width: 75, height: 75 }}></Spinner>
-                    </div>
-                    : <></>
-            }
-        </div >
+                {
+                    (globalDisable || loginPressed) ?
+                        <div className='App-body' style={{ position: 'fixed', zIndex: 10, top: 0, display: 'flex', flex: 1, width: '100%', backgroundColor: Colors.background + "aa" }}>
+                            <Spinner style={{ color: Colors.primaryRegular, width: 75, height: 75 }}></Spinner>
+                        </div>
+                        : <></>
+                }
+            </div >
+            :
+            <CreateAccount returnToLogin={() => setLoginPage(true)} />
     )
 }
 

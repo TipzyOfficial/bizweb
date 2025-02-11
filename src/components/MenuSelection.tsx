@@ -30,7 +30,6 @@ function MenuButtonMobile(props: { page: PageType, currentPage: PageType, setPag
             props.page === "Requests" ? faCheck :
                 props.page === "Settings" ? faGear :
                     props.page === "Finances" ? faMoneyBill :
-
                         props.page === "Account" ? faGear :
                             faQuestionCircle
 
