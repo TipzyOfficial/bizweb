@@ -983,7 +983,14 @@ export default function Dashboard() {
                                             }}
                                         />
                                         : PAGE === "Account" ? <Account />
-                                            : PAGE === "Finances" ? <Finances requests={finSongRequestHistory} page={finHistoryPage} setPage={setFinancesPage} songCount={finHistoryPageCount} />
+                                            : PAGE === "Finances" ? <Finances
+                                                minPriceState={[miniumumPrice, setMinimumPrice]}
+                                                currPriceState={[currentPrice, setCurrentPrice]}
+                                                refresh={getPrice}
+                                                requests={finSongRequestHistory}
+                                                page={finHistoryPage}
+                                                setPage={setFinancesPage}
+                                                songCount={finHistoryPageCount} />
                                                 : PAGE === "Requests" ? <Requests />
                                                     : <NotFoundPage title="404" body="We can't seem to find that page. Make sure you have the correct address!" backPath={-1} />
                                 }

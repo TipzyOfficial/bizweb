@@ -6,11 +6,15 @@ import { FitAnalysisType, SongRequestType, SongType, TipperType } from "../../li
 import { isMobile, numberToPrice } from "../../lib/utils";
 import { faCheck, faChevronLeft, faChevronRight, faCheckCircle, faQuestionCircle, faWarning, faXmark, faXmarkCircle, IconDefinition, faQuestion } from "@fortawesome/free-solid-svg-icons";
 import { Modal, Spinner } from "react-bootstrap";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import Border from "../../components/Border";
 import { last } from "lodash";
 import { router } from "../../App";
 import { useParams } from "react-router-dom";
+import Price from "./Price";
+import { UserSessionContext, UserSessionContextType } from "../../lib/UserSessionContext";
+import TZButton from "../../components/TZButton";
+import { fetchWithToken } from "../..";
 
 export const pageStyle: React.CSSProperties = {
     position: 'relative', height: "100%",
@@ -68,7 +72,6 @@ const SongRequestRenderItem = (props: { request: SongRequestType, index: number,
 
     const request = props.request;
     const dim = compactSongDim;
-
     return (
         <div
             onClick={props.onClick}
@@ -118,7 +121,7 @@ function PageButtons(props: { currentPage: number, onFirstClick: () => any, onLa
     const [hover, setHover] = useState(1);
 
     const startPage = props.currentPage === 1;
-    const endPage = props.currentPage === props.pageCount;
+    const endPage = props.currentPage >= props.pageCount;
 
     return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -143,20 +146,52 @@ function PageButtons(props: { currentPage: number, onFirstClick: () => any, onLa
     )
 }
 
-export default function Finances(props: { requests: SongRequestType[], page: number, setPage: (n: number) => any, songCount: number }) {
+export default function Finances(props: {
+    minPriceState: [number | undefined, (n: number | undefined) => any],
+    currPriceState: [number | undefined, (n: number | undefined) => any],
+    refresh: (usc: UserSessionContextType) => any,
+    requests: SongRequestType[], page: number, setPage: (n: number) => any, songCount: number
+}) {
     const songRequests: SongRequestType[] = props.requests;
-
     const SONGS_PER_PAGE = 10; //how many songs server returns
-
     const page = props.page;
     const pageCount = Math.ceil(props.songCount / SONGS_PER_PAGE);
     const setPage = props.setPage;
+    const usc = useContext(UserSessionContext);
+
+    const [minPrice, setMinPrice] = props.minPriceState;
+    const [currPrice, setCurrPrice] = props.currPriceState;
 
     const [modalContent, setModalContent] = useState<SongRequestType | undefined>();
+
+    const onStripeClick = async () => {
+        const json = await fetchWithToken(usc, `create_stripe_express/`, 'POST', JSON.stringify({
+            email: usc.user.user.email
+        })).then(r => r.json())
+
+        if (json.status === 200) {
+            const url = json.account_url;
+            window.open(url, "_blank")
+        } else {
+            throw new Error(`Can't open Stripe account. status: ${json.status} detail: ${json.detail}`)
+        }
+
+        console.log("stripe response", json)
+    }
 
     return (
         <div style={pageStyle}>
             <TZHeader title="Your Finances" />
+            <div style={{ width: "100%", display: 'flex', flexDirection: isMobile() ? 'column' : 'row', justifyContent: 'center', padding: padding }}>
+                <div style={{ display: 'flex', paddingRight: isMobile() ? 0 : padding, paddingBottom: isMobile() ? padding : 0 }}>
+                    <div>
+                        <TZButton title="View Stripe Dashboard" onClick={onStripeClick} />
+                    </div>
+                </div>
+                <div style={{ display: 'flex' }}>
+                    <Price minPrice={minPrice} setMinPrice={setMinPrice} currPrice={currPrice} refresh={props.refresh} />
+                </div>
+            </div>
             <div className="App-tertiarytitle" style={{ paddingLeft: padding }}>History of accepted requests</div>
             <div style={{ paddingLeft: padding }}>Tap on a request for more info</div>
             <PageButtons currentPage={page} pageCount={pageCount}
