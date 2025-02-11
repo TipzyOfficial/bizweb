@@ -166,6 +166,17 @@ export default function Finances(props: {
     const [modalContent, setModalContent] = useState<SongRequestType | undefined>();
 
     const onCashoutClick = async () => {
+        const json = await fetchWithToken(usc, `business/cashout_notify/`, 'POST', JSON.stringify({
+            amount: props.totalRevenue
+        })).then(r => r.json())
+
+        if (json.status === 200) {
+            alert("Your request to cash out your earnings has been sent! Expect a response within 48 hours.")
+        } else {
+            throw new Error(`Can't open Stripe account. status: ${json.status} detail: ${json.detail}`)
+        }
+
+        console.log("stripe response", json)
 
     }
 
@@ -191,7 +202,7 @@ export default function Finances(props: {
                 <span className="App-subtitle" style={{ textAlign: 'center', width: "100%" }}>Total Revenue: <b>${numberToPrice(props.totalRevenue)}</b></span>
                 <div style={{ display: 'flex', paddingTop: padding }}>
                     <div>
-                        <TZButton title="Cash Out" onClick={onStripeClick} />
+                        <TZButton title="Cash Out" onClick={onCashoutClick} />
                     </div>
                 </div>
             </div>
