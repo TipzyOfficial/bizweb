@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Cookies from "universal-cookie";
 import { Business } from "./user";
 import { SongType } from "./song";
+import { isMobile as rddIsMobile } from "react-device-detect";
 
 export const goodETA = 600000;
 export const okETA = 180000;
@@ -34,9 +35,18 @@ export function millisToMinutesAndSeconds(millis: number) {
     return (seconds === 60 ? (minutes + 1) + ":00" : minutes + ":" + (seconds < 10 ? "0" : "") + seconds);
 }
 
+export function millisToHoursMinutes(millis: number) {
+    let hours = Math.floor(millis / 3600000);
+    let minutes = Math.floor((millis % 3600000) / 60000);
+    return (
+        (hours > 0 ? `${hours} hours ` : "") +
+        (minutes > 0 || hours === 0 ? `${minutes} minute${minutes !== 1 ? "s" : ""}` : ""));
+}
+
+
 export function parseSongJson(json: any): SongType {
     return {
-        id: json.track_id ?? json.id,
+        id: (json.track_id ?? json.id),
         title: json.track_name ?? json.name,
         artists: json.artists ?? json.artist,
         albumart: json.images?.thumbnail ?? "",
@@ -49,9 +59,12 @@ export function parseSongJson(json: any): SongType {
     }
 }
 
-function isMobile() {
-    const o = typeof window.screen.orientation !== 'undefined';
-    return o;
+export function isMobile() {
+    const ism = rddIsMobile;
+    // const orientation = typeof window.screen.orientation !== 'undefined';
+    const orientation = window.screen.orientation.type === "portrait-primary" || window.screen.orientation.type === "portrait-secondary";
+    const width = document.documentElement.clientWidth < 700;
+    return orientation || width || ism;
 }
 
 export function numberToPrice(n: number): string {

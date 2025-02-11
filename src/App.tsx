@@ -18,6 +18,7 @@ import { getCookies, getStored } from './lib/utils';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Search } from './pages/bar/Search';
+import CreateAccount from './pages/CreateAccount';
 
 export const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_KEY ?? "");
 
@@ -49,14 +50,26 @@ export const router = createBrowserRouter([{
       Component: Dashboard
     },
     {
+      path: "/queue",
+      Component: Dashboard
+    },
+    {
+      path: "/requests",
+      Component: Dashboard
+    },
+    {
+      path: "/settings",
+      Component: Dashboard
+    },
+    {
       path: "/account",
-      Component: Account
+      Component: Dashboard
     },
     {
       path: "/contact-us",
       Component: About
     }
-    ], errorElement: <NotFoundPage title="Oops!" body={"We can't seem to find that page. Are you sure you entered everything correctly?"} backPath={-1} />
+    ], errorElement: <NotFoundPage title="Oops!" body={"There seems to be a problem loading this page. Are you sure you entered everything correctly?"} backPath={-1} />
 }
 ], {});
 

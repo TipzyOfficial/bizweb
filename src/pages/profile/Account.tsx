@@ -125,15 +125,15 @@ export default function Account() {
 
 
     return (
-        <div className={"App-body-top"}>
-            <TZHeader title="" leftComponent={
+        <div className={"App-body-top"} style={{ overflow: 'scroll' }}>
+            {/* <TZHeader title="" leftComponent={
                 <BackButton onClick={handleBackClick}></BackButton>
-            } />
+            } /> */}
             <div style={styles}>
                 <div>
                     <div style={{ paddingBottom: padding / 2 }}>
                         <ProfileTop title="Name" value={user.user.name} profilePic={user.user.image} email={user.user.email} />
-
+                        <span>Your bar's ID: {usc.user.business_id}</span>
                         {/* <span className="App-tertiarytitle">Your Information</span> */}
                     </div>
                     <div style={{ paddingBottom: padding / 2 }}>

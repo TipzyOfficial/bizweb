@@ -18,7 +18,13 @@ import { Dropdown as NestedDropdown, DropdownProps } from 'react-nested-dropdown
 
 const SettingsNameMapping = ["Opening", "Peak", "Closing"];
 // type TagValue = { label: string, category: string }
-const TagItemsGenerator = (onSelect: (s: TagType) => any) => {
+
+type TagItemType = {
+    label: string,
+    items: { label: string, value: CategoryType, onSelect: () => any }[]
+}
+
+const TagItemsGenerator = (onSelect: (s: TagType) => any): TagItemType[] => {
     const label = (label: string, category: CategoryType) => {
         return { label: label, value: category, onSelect: () => onSelect({ label, category }) }
     }
@@ -48,7 +54,7 @@ const TagItemsGenerator = (onSelect: (s: TagType) => any) => {
 
 type DJSettingsProps = {
     genres: string[],
-    expandState: [boolean, (b: boolean) => any]
+    mobile?: boolean,
     // selectedState: [Set<string>, (s: Set<string>) => any],
     energyState: [number, (n: number) => any],
     bangersState: [number, (n: number) => any],
@@ -87,7 +93,6 @@ export default function DJSettings(props: DJSettingsProps) {
     // const [selectedGenres, setSelectedGenres] = props.selectedState;
     const [energy, setEnergy] = props.energyState;//useState(50)//props.energyState;
     const [bangersOnly, setBangersOnly] = props.bangersState;//useState(75)//props.bangersState;
-    const [expanded, setExpanded] = props.expandState;
     const [acceptRadioValue,] = props.acceptRadioValueState;
     const [shuffleRadioValue,] = props.shuffleRadioValueState;
     const [tags, setTags] = props.tagsState;
@@ -207,7 +212,9 @@ export default function DJSettings(props: DJSettingsProps) {
 
         return (
             <div style={{ paddingLeft: padding, paddingRight: padding, paddingTop: padding }}>
-                <div className="App-montserrat-normaltext" onClick={() => setExpanded(!expanded)} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+                <div className="App-montserrat-normaltext"
+                    // onClick={() => setExpanded(!expanded)} 
+                    onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
                     style={{
                         textAlign: 'left', width: "100%", fontWeight: 'bold', display: 'flex', padding: padding,
                         alignItems: 'center', cursor: 'pointer', opacity: hovered ? 0.7 : 1, borderColor: Colors.tertiaryDark,
@@ -218,8 +225,7 @@ export default function DJSettings(props: DJSettingsProps) {
                     {
                         <span>{text}</span>
                     }
-                    {expanded ? <></> : <span style={{ paddingLeft: padding, color: Colors.tertiaryLight }}>Configure</span>}
-
+                    {/* {expanded ? <></> : <span style={{ paddingLeft: padding, color: Colors.tertiaryLight }}>Configure</span>} */}
                 </div>
             </div>
         )
@@ -251,54 +257,65 @@ export default function DJSettings(props: DJSettingsProps) {
         </div>
 
 
-    const TagItems = TagItemsGenerator(onSelectTag);
+    const tagItems = TagItemsGenerator(onSelectTag);
+
+    const mobile = props.mobile;
 
     return (
         <div style={{ width: "100%" }}>
-            <Header />
-            {
-                expanded ?
-                    <div style={{ display: 'flex', flexDirection: 'column', paddingTop: padding, position: 'relative' }}>
-                        <DJSettingsTabs djSettings={djSettings} currentSettingNumber={currentSettingNumber} setCurrentSettingNumber={setCurrentSettingNumber} playingSettingNumber={playingSettingNumber} />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', }}>
-                            {loading ?
-                                <div style={{ width: "100%", height: "100%", position: "absolute", top: 0, zIndex: 100, backgroundColor: "#0008", display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Spinner />
-                                </div> : <></>
-                            }
-                            <div style={{ padding: padding, display: 'flex', flex: 1 }}>
-                                <div style={{ flexShrink: 1, padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1 }}>
-                                    <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingBottom: 5 }}>Handle requests</div>
-                                    <Dropdown>
-                                        <Dropdown.Toggle className="App-montserrat-smallertext" variant="tertiary" style={{ height: "100%", color: "white", fontWeight: "bold", padding: padding, borderRadius: radius }} id="dropdown-basic">
-                                            {acceptRadioValue === "Manual" ? "Manual" :
-                                                acceptRadioValue === "Auto" ? "Accept all" :
-                                                    acceptRadioValue === "TipzyAI" ? "Virtual DJ" : "..."}
-                                        </Dropdown.Toggle>
-                                        <Dropdown.Menu variant="dark" style={{ padding: 0, overflow: 'hidden', borderRadius: radius + 5 }} >
-                                            <DIR onSet={onSetAccept} accepting="Manual" val={acceptRadioValue} text="Manual" desc="All requests go by you." />
-                                            <DIR onSet={onSetAccept} accepting="Auto" val={acceptRadioValue} text="Accept all" desc={<span>Automatically accepts all reasonable requests.<br />Will only reject songs sent with obviously bad intentions.</span>} />
-                                            <DIR onSet={onSetAccept} accepting="TipzyAI" val={acceptRadioValue} text="Virtual DJ" desc={<span>Lets our Virtual DJ accept/reject songs.<br />If it's unsure, it'll defer to you for the final say!</span>} />
-                                        </Dropdown.Menu>
-                                    </Dropdown>                                    <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingTop: padding, paddingBottom: 5 }}>Handle shuffle</div>
-                                    <Dropdown>
-                                        <Dropdown.Toggle className="App-montserrat-smallertext" variant="tertiary" style={{ height: "100%", color: "white", fontWeight: "bold", padding: padding, borderRadius: radius }} id="dropdown-basic">
-                                            {shuffleRadioValue === "Playlist" ? "Playlist" :
-                                                shuffleRadioValue === "TipzyAI" ? "Virtual DJ" : "..."}
-                                        </Dropdown.Toggle>
-                                        <Dropdown.Menu variant="dark" style={{ padding: 0, overflow: 'hidden', borderRadius: radius + 5 }} >
-                                            <DIS onSet={onSetShuffle} accepting="Playlist" val={shuffleRadioValue} text="Playlist" desc="Shuffles through a playlist set by you." />
-                                            <DIS onSet={onSetShuffle} accepting="TipzyAI" val={shuffleRadioValue} text="Virtual DJ" desc={<span>Virtual DJ takes over the night!<br />You curate the type of songs it selects.</span>} />
-                                        </Dropdown.Menu>
-                                    </Dropdown>
-                                </div>
-                                {shuffleRadioValue === "TipzyAI" ?
-                                    <div style={{ display: 'flex', width: "100", flexGrow: 1 }}>
-                                        <div style={{ paddingLeft: padding }} />
-                                        <div style={{ padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1 }}>
-                                            <GenreList {...props} onGenreClicked={onGenreClicked} />
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'row', paddingLeft: padding, flexGrow: 1 }}>
+            {/* <Header /> */}
+            <div style={{ display: 'flex', flexDirection: 'column', paddingTop: padding, position: 'relative' }}>
+                {loading ?
+                    <div style={{ width: "100%", height: "100%", position: "absolute", top: 0, zIndex: 100, backgroundColor: "#0008", display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <Spinner />
+                    </div> : <></>
+                }
+                <DJSettingsTabs djSettings={djSettings} currentSettingNumber={currentSettingNumber} setCurrentSettingNumber={setCurrentSettingNumber} playingSettingNumber={playingSettingNumber} />
+                <div style={{ padding: padding }}>
+                    <div style={{ display: 'flex', justifyContent: mobile ? 'center' : "flex-start" }}>
+                        <div style={{
+                            display: 'flex', flexShrink: 1, padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1
+                        }}>
+                            <div>
+                                <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingBottom: 5 }}>Handle requests</div>
+                                <Dropdown>
+                                    <Dropdown.Toggle className="App-montserrat-smallertext" variant="tertiary" style={{ height: "100%", color: "white", fontWeight: "bold", padding: padding, borderRadius: radius }} id="dropdown-basic">
+                                        {acceptRadioValue === "Manual" ? "Manual" :
+                                            acceptRadioValue === "Auto" ? "Accept all" :
+                                                acceptRadioValue === "TipzyAI" ? "Virtual DJ" : "..."}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu variant="dark" style={{ padding: 0, overflow: 'hidden', borderRadius: radius + 5 }} >
+                                        <DIR onSet={onSetAccept} accepting="Manual" val={acceptRadioValue} text="Manual" desc="All requests go by you." />
+                                        <DIR onSet={onSetAccept} accepting="Auto" val={acceptRadioValue} text="Accept all" desc={<span>Automatically accepts all reasonable requests.<br />Will only reject songs sent with obviously bad intentions.</span>} />
+                                        <DIR onSet={onSetAccept} accepting="TipzyAI" val={acceptRadioValue} text="Virtual DJ" desc={<span>Lets our Virtual DJ accept/reject songs.<br />If it's unsure, it'll defer to you for the final say!</span>} />
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </div>
+                            <div style={{ width: padding * 2 }} />
+                            <div>
+                                <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingBottom: 5 }}>Handle shuffle</div>
+                                <Dropdown>
+                                    <Dropdown.Toggle className="App-montserrat-smallertext" variant="tertiary" style={{ height: "100%", color: "white", fontWeight: "bold", padding: padding, borderRadius: radius }} id="dropdown-basic">
+                                        {shuffleRadioValue === "Playlist" ? "Playlist" :
+                                            shuffleRadioValue === "TipzyAI" ? "Virtual DJ" : "..."}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu variant="dark" style={{ padding: 0, overflow: 'hidden', borderRadius: radius + 5 }} >
+                                        <DIS onSet={onSetShuffle} accepting="Playlist" val={shuffleRadioValue} text="Playlist" desc="Shuffles through a playlist set by you." />
+                                        <DIS onSet={onSetShuffle} accepting="TipzyAI" val={shuffleRadioValue} text="Virtual DJ" desc={<span>Virtual DJ takes over the night!<br />You curate the type of songs it selects.</span>} />
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ paddingTop: padding, display: 'flex', justifyContent: 'space-between', }}>
+                        <div style={{ display: 'flex', flex: 1 }}>
+                            {shuffleRadioValue === "TipzyAI" ?
+                                <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', width: "100%", flexGrow: 1 }}>
+                                    <div style={{ width: mobile ? "100%" : undefined, padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1, }}>
+                                        <GenreList {...props} onGenreClicked={onGenreClicked} />
+                                    </div>
+                                    <div style={{ display: 'flex', paddingTop: mobile ? padding : 0, paddingLeft: mobile ? 0 : padding, }}>
+                                        <div style={{ display: 'flex', flexDirection: 'row' }}>
                                             <div style={{ paddingBottom: padding, display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: radius, backgroundColor: Colors.tertiaryDark, padding: padding }}>
                                                 <div style={{ width: "100%", flex: 1, display: "flex", justifyContent: 'space-around' }}>
                                                     <input type="range" className="slider-fader"
@@ -329,7 +346,7 @@ export default function DJSettings(props: DJSettingsProps) {
                                                     onClick={onBangersClicked}
                                                 />
                                                 <Dividers />
-                                                <div style={{ display: "flex", justifyContent: 'space-between', fontSize: 12, fontWeight: 'bold', width: "100%", minWidth: 170, paddingTop: padding / 2 }}>
+                                                <div style={{ display: "flex", justifyContent: 'space-between', fontSize: 12, fontWeight: 'bold', width: "100%", minWidth: 170, paddingTop: padding / 2, paddingBottom: padding }}>
                                                     <div style={{ flexShrink: 1, textAlign: "left" }}>
                                                         Mix it up
                                                     </div>
@@ -340,12 +357,52 @@ export default function DJSettings(props: DJSettingsProps) {
                                             </div>
                                             <div style={{ paddingTop: padding }} />
                                         </div>
-                                        <div style={{ width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingLeft: padding }}>
-                                            <div style={{ paddingTop: padding }} />
-                                            {/* {props.ExplicitButton}
+                                    </div>
+                                    <div style={{ width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingLeft: padding }}>
+                                        <div style={{ paddingTop: padding }} />
+                                        {/* {props.ExplicitButton}
                                             <div style={{ paddingTop: padding }} /> */}
-                                            <div style={{ display: 'inline-block', verticalAlign: 'top', flex: 1, width: "100%" }}>
-                                                {/* {props.allArtists.slice(0, 6).map((data) => {
+
+                                        <div style={{ display: "flex" }}>
+
+
+                                            {/* <div style={{ padding: 4, backgroundColor: Colors.tertiaryDark, borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}> */}
+                                            {/* </div> */}
+                                        </div>
+                                        <div>
+                                            {!playing || (edited && playing) ? <TZButton title={playingSettingNumber !== undefined ? "Update session" : "Start session"} brandingFont onClick={onUpdateSession} /> : <></>}
+                                        </div>
+                                    </div>
+                                </div> :
+                                <div style={{ paddingLeft: padding, }}>
+                                    {props.PlaylistScreen}
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div style={{ width: "100%", paddingTop: padding, }}>
+                        <TagsMemo tags={tags} onXClick={onXClick} tagItems={tagItems} />
+                    </div>
+                </div>
+                {/* <div style={{ flex: 1, paddingLeft: padding }}>
+                            <span>Virtual DJ is an unfinished feature. For now, enjoy this preview of its interface!</span>
+                        </div> */}
+            </div>
+
+        </div>
+    );
+}
+
+const TagsMemo = memo(Tags);
+
+function Tags(props: { tags: TagType[], onXClick: ((s: TagType) => any) | undefined, tagItems: TagItemType[] }) {
+    const tags = props.tags;
+    const onXClick = props.onXClick;
+    const tagItems = props.tagItems;
+
+    return (
+        <div style={{ display: 'inline-block', verticalAlign: 'top', flex: 1, width: "100%" }}>
+            {/* {props.allArtists.slice(0, 6).map((data) => {
                                                     return (
                                                         <div style={{ display: 'inline-flex', width: "auto", paddingBottom: padding / 2 }}>
                                                             <span onClick={() => setQuery(data)} style={{ backgroundColor: "#fff", padding: 7, borderRadius: 20, color: "black", fontWeight: 'bold' }}>{data}</span>
@@ -353,66 +410,37 @@ export default function DJSettings(props: DJSettingsProps) {
                                                         </div>
                                                     );
                                                 })} */}
-                                                <TagComponent icon={faLocationDot} tag={{ label: "San Francisco, CA", category: "location" }} removeX />
-                                                {
-                                                    tags.map((v, i) =>
-                                                        <TagComponent tag={v} onXClick={onXClick} />
-                                                    )
-                                                }
-
-                                                <div style={{ display: 'inline-flex', width: "auto", backgroundColor: "#0000", justifyContent: 'center', alignItems: 'center', verticalAlign: 'top', zIndex: 100 }}>
-                                                    <NestedDropdown
-                                                        renderOption={(option) =>
-                                                            <div onClick={() => {
-                                                                if (option.onSelect) option.onSelect();
-                                                            }} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                                                                <div style={{ flex: 1 }}>
-                                                                    {option.label}
-                                                                </div>
-                                                                {option.items && option.items.length > 0 ?
-                                                                    <FontAwesomeIcon icon={faChevronRight} /> : <></>}
-                                                            </div>
-                                                        }
-                                                        onSelect={(value, option) => {
-                                                            console.log("selected", value, option)
-                                                        }}
-                                                        items={TagItems}>
-                                                        {({ isOpen, onClick }) => (
-                                                            <TagPlusComponent onClick={onClick} isOpen={isOpen} />
-                                                        )}
-                                                    </NestedDropdown>
-                                                </div>
-
-
-                                            </div>
-                                            <div style={{ display: "flex" }}>
-
-
-                                                {/* <div style={{ padding: 4, backgroundColor: Colors.tertiaryDark, borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}> */}
-                                                {/* </div> */}
-                                            </div>
-                                            <div>
-                                                {!playing || (edited && playing) ? <TZButton title={playingSettingNumber !== undefined ? "Update session" : "Start session"} brandingFont onClick={onUpdateSession} /> : <></>}
-                                            </div>
-                                        </div>
-                                    </div> :
-                                    <div style={{ paddingLeft: padding, }}>
-                                        {props.PlaylistScreen}
-                                    </div>
-                                }
-                            </div>
-
-                        </div>
-                        {/* <div style={{ flex: 1, paddingLeft: padding }}>
-                            <span>Virtual DJ is an unfinished feature. For now, enjoy this preview of its interface!</span>
-                        </div> */}
-                    </div>
-
-                    : <></>
+            <TagComponent icon={faLocationDot} tag={{ label: "San Francisco, CA", category: "location" }} removeX />
+            {
+                tags.map((v, i) =>
+                    <TagComponent tag={v} onXClick={onXClick} />
+                )
             }
 
+            <div style={{ display: 'inline-flex', width: "auto", backgroundColor: "#0000", justifyContent: 'center', alignItems: 'center', verticalAlign: 'top', zIndex: 1000000 }}>
+                <NestedDropdown
+                    renderOption={(option) =>
+                        <div onClick={() => {
+                            if (option.onSelect) option.onSelect();
+                        }} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                            <div style={{ flex: 1 }}>
+                                {option.label}
+                            </div>
+                            {option.items && option.items.length > 0 ?
+                                <FontAwesomeIcon icon={faChevronRight} /> : <></>}
+                        </div>
+                    }
+                    onSelect={(value, option) => {
+                        console.log("selected", value, option)
+                    }}
+                    items={tagItems}>
+                    {({ isOpen, onClick }) => (
+                        <TagPlusComponent onClick={onClick} isOpen={isOpen} />
+                    )}
+                </NestedDropdown>
+            </div>
         </div>
-    );
+    )
 }
 
 const TagComponent = (props: { icon?: IconDefinition, tag: TagType, removeX?: boolean, onXClick?: (s: TagType) => any }) => {
