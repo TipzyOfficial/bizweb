@@ -49,8 +49,24 @@ export const router = createBrowserRouter([{
       Component: Dashboard
     },
     {
+      path: "/queue",
+      Component: Dashboard
+    },
+    {
+      path: "/requests",
+      Component: Dashboard
+    },
+    {
+      path: "/settings",
+      Component: Dashboard
+    },
+    {
+      path: "/finances",
+      Component: Dashboard
+    },
+    {
       path: "/account",
-      Component: Account
+      Component: Dashboard
     },
     {
       path: "/contact-us",

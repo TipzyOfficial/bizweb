@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Colors, padding } from "../lib/Constants";
+import { Colors, modalZ, padding } from "../lib/Constants";
 import { Modal } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
 
 
-export default function HelpButton(props: {text: string}){
+export default function HelpButton(props: { text: string }) {
     const [hovered, setHovered] = useState(false);
     const [visible, setVisible] = useState(false);
 
@@ -23,18 +23,18 @@ export default function HelpButton(props: {text: string}){
     };
 
     return (
-    <>
-        <div style={backButtonStyle}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            onClick={() => setVisible(true)}>
-            <FontAwesomeIcon icon={faQuestionCircle}></FontAwesomeIcon>
-        </div>
-        <Modal show={visible} onHide={() => setVisible(false)}>
-            <Modal.Body>
-                {props.text}
-            </Modal.Body>
-        </Modal>
-    </>
+        <>
+            <div style={backButtonStyle}
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
+                onClick={() => setVisible(true)}>
+                <FontAwesomeIcon icon={faQuestionCircle}></FontAwesomeIcon>
+            </div>
+            <Modal style={{ zIndex: modalZ }} show={visible} onHide={() => setVisible(false)}>
+                <Modal.Body>
+                    {props.text}
+                </Modal.Body>
+            </Modal>
+        </>
     );
 }

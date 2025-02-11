@@ -6,13 +6,13 @@ import { UserSessionContext, UserSessionContextType } from "../../lib/UserSessio
 import ProfileButton from "../../components/ProfileButton";
 import Queue from "./Queue";
 import { fetchWithToken, getBusiness } from "../..";
-import { SongRequestType, SongType } from "../../lib/song";
+import { FitAnalysisType, SongRequestType, SongType } from "../../lib/song";
 import { etaBuffer, getCookies, millisToMinutesAndSeconds, parseSongJson, useInterval, stringArrayToStringFormatted, numberToPrice } from "../../lib/utils";
 import _, { eq } from "lodash";
 import BigLogo, { SmallLogo } from "../../components/BigLogo";
 import Song from "../../components/Song";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faChevronLeft, faChevronRight, faMagnifyingGlass, faXmark, IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faChevronLeft, faChevronRight, faCheckCircle, faQuestionCircle, faWarning, faXmark, faXmarkCircle, IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import Dropdown from 'react-bootstrap/Dropdown';
 import TZHeader from "../../components/TZHeader";
 import Stats from "./Stats";
@@ -25,8 +25,17 @@ import { PlaylistScreen } from "./PlaylistScreen";
 import DJSettings from "./DJSettings";
 import TZToggle from "../../components/TZToggle";
 import { Search } from "./Search";
-
-const BACKEND_STATUS = ["OPENING", "PEAK", "CLOSING"];
+import Border from "../../components/Border";
+import { useLocation, useParams, useSearchParams } from "react-router-dom";
+import { NotFoundPage } from "./NotFoundPage";
+import TZButton from "../../components/TZButton";
+import Account from "../profile/Account";
+import CurrentlyPlayingBar from "../../components/CurrentlyPlayingBar";
+import SearchBar from "../../components/SearchBar";
+import { MenuSelection } from "../../components/MenuSelection";
+import QueueRequestsDJ from "./QueueDJ";
+import NotPlaying from "../../components/NotPlaying";
+import Finances from "./Finances";
 
 const GENRES = [
     "Rock",
@@ -39,6 +48,12 @@ const GENRES = [
     "Country",
     "Singalong",
 ]
+
+const BACKEND_STATUS = ["OPENING", "PEAK", "CLOSING"];
+
+export type PageType = "Queue" | "Requests" | "Account" | "Settings" | "Loading" | "Finances" | "Unknown";
+const PAGES: PageType[] = ["Queue", "Requests", "Finances", "Account"];
+
 
 export type DJSettingsType = {
     genres: string[],
@@ -95,6 +110,44 @@ const AITABWIDTH = 17;
 export default function Dashboard() {
     const usc = useContext(UserSessionContext);
     const bar = usc.user;
+    const location = useLocation();
+
+    const pathname = location.pathname.split("/")[1];
+
+    // const [PAGE, setPage] = useState<PageType>("Loading");
+
+    let PAGE: PageType = "Loading";
+    const setPage = (page: PageType) => router.navigate("/" + page.toLowerCase());
+
+    let DEFAULT_FINPAGE = 1;
+    const [params, setParams] = useSearchParams();
+
+    // alert(pathname);
+
+    switch (pathname) {
+        case "dashboard":
+            PAGE = "Queue";
+            break;
+        case "account":
+            PAGE = "Account";
+            break;
+        case "requests":
+            PAGE = "Requests";
+            break;
+        case "queue":
+            PAGE = "Queue";
+            break;
+        case "finances":
+            PAGE = "Finances";
+            DEFAULT_FINPAGE = parseInt(params.get("page") ?? "1");
+            break;
+        default:
+            PAGE = "Unknown";
+            break;
+    }
+
+    // console.log("finpage", DEFAULT_FINPAGE)
+
     const [ready, setReady] = useState(false);
     const [currentlyPlaying, setCurrentlyPlayingIn] = useState<CurrentlyPlayingType | undefined>(undefined);
     const [queue, setQueueIn] = useState<SongType[] | undefined>([]);
@@ -149,6 +202,16 @@ export default function Dashboard() {
 
     const [shuffleValue, setShuffleValue] = useState<ShuffleType>("TipzyAI");
 
+    const songRequestSongRatio = 40;
+    const compactSongDim = 40;
+    const compactRequestSecondHalfCols = `1fr 1.5fr 2fr 0.5fr`;
+
+    //finances
+    const [finSongRequestHistory, setFinSongRequestHistory] = useState<SongRequestType[]>([]);
+    const [finHistoryPageCount, setFinHistoryPageCount] = useState(0);
+
+    const finHistoryPage = DEFAULT_FINPAGE;
+
     //TODO REMOVE THIS LATER
     const sessionStarted = true//djSettingPlayingNumber !== undefined;
 
@@ -174,6 +237,10 @@ export default function Dashboard() {
             }
         }
     }
+
+    useEffect(() => {
+        updateFinancesHistory(finHistoryPage);
+    }, [finHistoryPage])
 
     useEffect(() => {
         console.log("editingQueue", editingQueue)
@@ -307,6 +374,12 @@ export default function Dashboard() {
         return [cur, q];
     }
 
+    const updateFinancesHistory = async (n: number) => {
+        const [fhistory, pcount] = await getFinancesHistory(usc, n).catch((e) => { console.log("ERROR", e); return [] });
+        setFinHistoryPageCount(pcount);
+        if (!_.isEqual(fhistory, finSongRequestHistory)) setFinSongRequestHistory(fhistory);
+    }
+
     const refreshAllData = async () => {
         console.log("refreshing all");
         //reqs
@@ -318,8 +391,11 @@ export default function Dashboard() {
         setLastPullTime(Date.now());
 
         //stats
-        const stats = await getStats(usc);
+        const stats = await getFinancesStats(usc);
         if (!_.isEqual(stats, financeStats)) setFinanceStats(stats);
+
+        //finance history?
+        await updateFinancesHistory(finHistoryPage);
 
         //price
         await refreshPrice(false);
@@ -464,6 +540,8 @@ export default function Dashboard() {
 
     const initAll = async () => {
         await initDJ();
+        await checkIfSetup();
+        // await updateFinancesHistory(finHistoryPage);
         await refreshAllData();
     }
 
@@ -558,6 +636,43 @@ export default function Dashboard() {
                     <FontAwesomeIcon icon={props.icon} fontSize={dim * 0.6} color={props.color}></FontAwesomeIcon>
                 </div>
             )
+        }
+
+        const colEl: React.CSSProperties = { height: "100%", display: "inline-flex", flexDirection: 'column', justifyContent: 'center', overflow: "hidden", minWidth: 0, paddingRight: padding }
+        const first = props.first;
+
+        const parseFitAnalysis = (str: string): FitAnalysisType => {
+            const first = str.substring(0, 1);
+
+            switch (first) {
+                case "G":
+                    return "GOOD";
+                case "O":
+                    return "OK";
+                case "B":
+                    return "BAD";
+                case "P":
+                    return "PENDING";
+                default:
+                    return "UNKNOWN";
+            }
+        }
+
+        const FitAnalysis = (): JSX.Element => {
+            const fitAnalysis = parseFitAnalysis(request.fitAnalysis.toUpperCase())
+
+            switch (fitAnalysis) {
+                case "GOOD":
+                    return <FontAwesomeIcon fontSize={dim * 0.5} icon={faCheckCircle} color={Colors.green} />;
+                case "OK":
+                    return <FontAwesomeIcon fontSize={dim * 0.5} icon={faQuestionCircle} color={Colors.primaryRegular} />;
+                case "BAD":
+                    return <FontAwesomeIcon fontSize={dim * 0.5} icon={faXmarkCircle} color={Colors.red} />;
+                case "PENDING":
+                    return <Spinner size={"sm"} />;
+                default:
+                    return <FontAwesomeIcon fontSize={dim * 0.5} icon={faWarning} color={"white"} />;
+            }
         }
 
         return (
@@ -734,6 +849,10 @@ genres is just a string. send em over like this: “pop, rock, rap”
         }
     }
 
+    const setFinancesPage = async (n: number) => {
+        router.navigate(`/finances?page=${n}`)
+    }
+
     return (
         <DisplayOrLoading condition={ready} loadingScreen={<LoadingScreen />}>
             <div className="App-body-top">
@@ -763,76 +882,114 @@ genres is just a string. send em over like this: “pop, rock, rap”
                         <ProfileButton position="relative" name={bar.business_name}></ProfileButton>
                     </div>
                 </div>
-                <div className="App-dashboard-grid" style={{ overflow: 'hidden', position: 'relative', gridTemplateColumns: aiTabVisible ? "1.5fr 3.5fr 1.5fr" : "1.5fr 5fr" }}>
-                    <div className="remove-scrollbar" style={{ paddingLeft: padding, paddingRight: padding, height: "100%", overflowY: 'scroll', position: 'relative' }}>
-                        {queueLoading ? <div style={{ position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background + "88", zIndex: 100 }}>
-                            <Spinner />
-                        </div> : <></>}
-                        <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} />
-                        <div style={{ paddingBottom: padding }} />
-                        {currentlyPlaying && sessionStarted ?
-                            <Queue volumeState={[volume, setVolume]} lastPullTime={lastPullTime} pauseOverride={pausedUI} disable={queueLoading} queueOrder={qO} current={currentlyPlaying} songDims={songDims} editingQueue={eQ} onPauseClick={onPause} onSkipClick={onSkip} reorderQueue={async () => {
-                                console.log('reordering', reordering)
-
-                                if (!reordering) {
-                                    try {
-                                        await reorderQueue().catch((e: Error) => {
-                                            alert(e.message);
-                                        });
-                                        setReordering(false);
-                                    }
-                                    catch (e) {
-                                        setReordering(false);
-                                        throw e;
-                                    }
+                {
+                    !isSetup ?
+                        PAGE === "Account" ? <Account /> :
+                            <SetupPage setIsSetup={setIsSetup} setDisableTyping={setDisableTyping} />
+                        :
+                        <>
+                            <div style={{
+                                // display: 'grid', gridTemplateColumns: '200px, 1fr', 
+                                display: 'flex',
+                                flexDirection: isMobile() ? 'column-reverse' : 'row',
+                                width: "100%", height: "100%", overflow: "scroll"
+                            }}>
+                                <MenuSelection currentPage={PAGE} pages={PAGES} setPage={setPage} />
+                                {isMobile() ? <CurrentlyPlayingBar queueLoading={queueLoading} pauseOverride={pausedUI} current={currentlyPlaying} onPause={onPause} onSkip={onSkip} lastPullTime={lastPullTime} /> : <></>}
+                                {
+                                    PAGE === "Queue" ?
+                                        <QueueRequestsDJMemo
+                                            energyState={[djEnergy, setDJEnergy]}
+                                            bangersState={[djBangersOnly, setDJBangersOnly]}
+                                            tagsState={[djTags, setDJTags]}
+                                            sendDJSettings={sendDJSettings}
+                                            djSettingPlayingNumberState={[djSettingPlayingNumber, setDJSettingPlayingNumber]}
+                                            djSettingsState={[djSettings, setDJSettings]}
+                                            djCurrentSettingNumberState={[djCurrentSettingNumber, setDJCurrentSettingNumber]}
+                                            acceptRadioValueState={[acceptRadioValue, setAcceptRadioValue]}
+                                            shuffleRadioValueState={[shuffleValue, setShuffleValue]}
+                                            onSetShuffle={onSetShuffle}
+                                            onSetAccept={onSetAccept}
+                                            disableTypingState={[disableTyping, setDisableTyping]}
+                                            setToggles={setToggles}
+                                            toggleBlockExplicitRequestsState={[toggleBlockExplicitRequests, setToggleBlockExplcitRequests]}
+                                            onPause={onPause}
+                                            onSkip={onSkip}
+                                            queueLoading={queueLoading}
+                                            queueOrder={qO}
+                                            editingQueue={eQ}
+                                            currentlyPlaying={currentlyPlaying}
+                                            reorderingState={[reordering, setReordering]}
+                                            sessionStarted={sessionStarted}
+                                            reorderQueue={async () => {
+                                                console.log('reordering', reordering)
+                                                if (!reordering) {
+                                                    try {
+                                                        await reorderQueue().catch((e: Error) => {
+                                                            //alert(e.message);
+                                                            throw e;
+                                                        });
+                                                        setReordering(false);
+                                                    }
+                                                    catch (e) {
+                                                        setReordering(false);
+                                                        throw e;
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                        : PAGE === "Account" ? <Account />
+                                            : PAGE === "Finances" ? <Finances requests={finSongRequestHistory} page={finHistoryPage} setPage={setFinancesPage} songCount={finHistoryPageCount} />
+                                                : PAGE === "Requests" ? <Requests />
+                                                    : <NotFoundPage title="404" body="We can't seem to find that page. Make sure you have the correct address!" backPath={-1} />
                                 }
                             }} />
-                            :
-                            <NotPlaying />
+                                :
+                                <NotPlaying />
                         }
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden', paddingRight: aiTabVisible ? 0 : AITABWIDTH }}>
-                        {/* <input value={djLocation} onChange={(e) => setDJLocation(e.target.value)}></input> */}
-                        <div style={{ display: "flex", justifyContent: 'space-between' }}>
-                            <DJSettings
-                                genres={GENRES}
-                                expandState={[djExpanded, setDJExpanded]}
-                                // selectedState={[djSelectedGenres, setDJSelectedGenres]}
-                                energyState={[djEnergy, setDJEnergy]}
-                                bangersState={[djBangersOnly, setDJBangersOnly]}
-                                tagsState={[djTags, setDJTags]}
-                                sendDJSettings={sendDJSettings}
-                                djSettingPlayingNumberState={[djSettingPlayingNumber, setDJSettingPlayingNumber]}
-                                djSettingsState={[djSettings, setDJSettings]}
-                                djCurrentSettingNumberState={[djCurrentSettingNumber, setDJCurrentSettingNumber]}
-                                acceptRadioValueState={[acceptRadioValue, setAcceptRadioValue]}
-                                shuffleRadioValueState={[shuffleValue, setShuffleValue]}
-                                onSetShuffle={onSetShuffle}
-                                onSetAccept={onSetAccept}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: Colors.darkBackground, height: "100%", overflowY: 'hidden', paddingRight: aiTabVisible ? 0 : AITABWIDTH }}>
+                                {/* <input value={djLocation} onChange={(e) => setDJLocation(e.target.value)}></input> */}
+                                <div style={{ display: "flex", justifyContent: 'space-between' }}>
+                                    <DJSettings
+                                        genres={GENRES}
+                                        expandState={[djExpanded, setDJExpanded]}
+                                        // selectedState={[djSelectedGenres, setDJSelectedGenres]}
+                                        energyState={[djEnergy, setDJEnergy]}
+                                        bangersState={[djBangersOnly, setDJBangersOnly]}
+                                        tagsState={[djTags, setDJTags]}
+                                        sendDJSettings={sendDJSettings}
+                                        djSettingPlayingNumberState={[djSettingPlayingNumber, setDJSettingPlayingNumber]}
+                                        djSettingsState={[djSettings, setDJSettings]}
+                                        djCurrentSettingNumberState={[djCurrentSettingNumber, setDJCurrentSettingNumber]}
+                                        acceptRadioValueState={[acceptRadioValue, setAcceptRadioValue]}
+                                        shuffleRadioValueState={[shuffleValue, setShuffleValue]}
+                                        onSetShuffle={onSetShuffle}
+                                        onSetAccept={onSetAccept}
 
-                                ExplicitButton={
-                                    <></>
-                                }
-                                PlaylistScreen={
-                                    <>
-                                        <PlaybackComponent setDisableTyping={setDisableTyping} />
-                                        <div style={{ display: "flex" }}>
-                                            <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
-                                                await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
-                                                setToggles(...await getToggles(usc));
-                                            }} />
-                                        </div>
+                                        ExplicitButton={
+                                            <></>
+                                        }
+                                        PlaylistScreen={
+                                            <>
+                                                <PlaybackComponent setDisableTyping={setDisableTyping} />
+                                                <div style={{ display: "flex" }}>
+                                                    <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
+                                                        await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
+                                                        setToggles(...await getToggles(usc));
+                                                    }} />
+                                                </div>
 
-                                    </>
+                                            </>
 
-                                }
-                            />
+                                        }
+                                    />
 
-                        </div>
-                        <div className="remove-scrollbar" style={{ flex: 1, height: "100%", overflowY: 'scroll', }}>
-                            <Requests />
-                        </div>
-                        {/* <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
+                                </div>
+                                <div className="remove-scrollbar" style={{ flex: 1, height: "100%", overflowY: 'scroll', }}>
+                                    <Requests />
+                                </div>
+                                {/* <div style={{ padding: padding, backgroundColor: "#0003", display: "flex", justifyContent: 'space-between' }}>
                             <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
                                 await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
                                 setToggles(...await getToggles(usc));
@@ -843,9 +1000,9 @@ genres is just a string. send em over like this: “pop, rock, rap”
                             </div>
                             <div style={{ paddingLeft: padding }} />
                         </div> */}
-                    </div>
-                    <PlaylistScreen djSongList={djSongs} visibleState={[aiTabVisible, setAITabVisible]} setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} />
-                    {/* 
+                            </div>
+                            <PlaylistScreen djSongList={djSongs} visibleState={[aiTabVisible, setAITabVisible]} setDisableTyping={setDisableTyping} setAlertContent={setAlertContent} />
+                            {/* 
                     {aiTabVisible ?
                         <div style={{ height: "100%", overflowY: 'scroll', position: 'relative', display: 'flex', }}>
                             <AISideTab close onClick={() => setAITabVisible(!aiTabVisible)} />
@@ -857,10 +1014,10 @@ genres is just a string. send em over like this: “pop, rock, rap”
                         </div>
                         : <AISideTab onClick={() => setAITabVisible(!aiTabVisible)} />
                     } */}
-                </div>
+                        </div>
                 <AlertModal onHide={() => setAlertContent(undefined)} content={alertContent} />
-            </div>
-        </DisplayOrLoading>
+            </div >
+        </DisplayOrLoading >
     )
 }
 
@@ -883,6 +1040,23 @@ const AISideTab = (props: { onClick: () => any, close?: boolean }) => {
     )
 }
 
+const parseRequestJSON = (json: any): SongRequestType => {
+    const songJSON = json.song_json;
+    return ({
+        user: {
+            first_name: json.tipper_info.tipper_info.first_name,
+            last_name: json.tipper_info.tipper_info.last_name,
+            email: json.tipper_info.tipper_info.email
+        },
+        id: json.id,
+        song: { title: songJSON.name, artists: [songJSON.artist], albumart: songJSON.image_url, id: songJSON.id, explicit: songJSON.explicit ?? false },
+        price: json.price,
+        fitAnalysis: json.fit_analysis,
+        fitReasoning: json.fit_reasoning,
+        date: new Date(json.request_time),
+    })
+}
+
 const getRequests = async (usc: UserSessionContextType, deletedIds: Map<number, number>, deletedCheckAgain: number): Promise<SongRequestType[]> => {
     return fetchWithToken(usc, "business/requests/", "GET").then(response => {
         // console.log("Refresh Request" + (performance.now() - start))
@@ -896,19 +1070,7 @@ const getRequests = async (usc: UserSessionContextType, deletedIds: Map<number, 
             const songJSON = item.song_json;
             const exptime = deletedIds.get(item.id);
             if (!exptime || exptime + deletedCheckAgain < Date.now()) {
-                out.push({
-                    user: {
-                        first_name: item.tipper_info.tipper_info.first_name,
-                        last_name: item.tipper_info.tipper_info.last_name,
-                        email: item.tipper_info.tipper_info.email
-                    },
-                    id: item.id,
-                    song: { title: songJSON.name, artists: [songJSON.artist], albumart: songJSON.image_url, id: songJSON.id, explicit: songJSON.explicit ?? false },
-                    price: item.price,
-                    fitAnalysis: item.fit_analysis,
-                    fitReasoning: item.fit_reasoning,
-                    date: new Date(item.request_time),
-                })
+                out.push(parseRequestJSON(item))
             }
         });
 
@@ -1015,7 +1177,7 @@ const getToggles = async (usc: UserSessionContextType): Promise<[boolean, Accept
     return ([u.data.allowing_requests, checkAutoAccept(u.data.auto_accept_requests, u.data.gpt_accept_requests), u.data.block_explicit]);
 }
 
-const getStats = async (usc: UserSessionContextType): Promise<FinanceStatsType | undefined> => {
+const getFinancesStats = async (usc: UserSessionContextType): Promise<FinanceStatsType | undefined> => {
     const json = await fetchWithToken(usc, `get_bar_stats/`, 'GET').then(r => r.json()).catch((e: Error) => { console.log("Can't get acc in toggles", e.message); return undefined; });
     if (!json) return undefined;
     const stats: FinanceStatsType = {
@@ -1026,6 +1188,38 @@ const getStats = async (usc: UserSessionContextType): Promise<FinanceStatsType |
         totalCustomers: json.total_customers,
     }
     return stats;
+}
+
+const getFinancesHistory = async (usc: UserSessionContextType, page: number): Promise<[SongRequestType[], number]> => {
+    const json = await fetchWithToken(usc, `business/get_song_request_history/?page=${page}`, 'GET').then(r => r.json()).catch((e: Error) => { console.log("Can't get song request history", e.message); return undefined; });
+    if (json.status !== 200) {
+        console.log("bad response getting song request history.", json)
+        return [[], -1];
+    }
+
+    const data = json.data;
+    const count = json.count;
+
+    console.log("finances history", json);
+    const results = data;
+
+    const out: SongRequestType[] = [];
+
+    for (const result of results) {
+        out.push(parseRequestJSON(result));
+        // console.log("pushing to prj", result)
+    }
+
+    console.log("prj out", out);
+
+    // const stats: FinanceStatsType = {
+    //     pendingBarCut: json.stats.Pending_bar_cut,
+    //     pendingRequests: json.stats.pending_requests,
+    //     barCut: json.stats.bar_cut,
+    //     totalRequests: json.stats.count_requests,
+    //     totalCustomers: json.total_customers,
+    // }
+    return [out, count];
 }
 
 // const getQueue = async (resetAnyway?: boolean, resetSomethingPressed?: boolean): Promise<{ isLocked: boolean | undefined, top: SongType | undefined }> => {

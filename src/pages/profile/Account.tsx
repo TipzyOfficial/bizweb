@@ -13,6 +13,7 @@ import TZProfileComponent from "../../components/TZProfileComponent";
 import { DisplayOrLoading } from "../../components/DisplayOrLoading";
 import { Spinner } from "react-bootstrap";
 import { getCookies } from "../../lib/utils";
+import { pageStyle } from "../bar/Finances";
 
 const ProfileTop = memo(function ProfileItem(props: { title: string, value: string, profilePic?: string, email: string, onClick?: () => void }) {
     //overriding default CSS properties by initializing within the function
@@ -65,27 +66,11 @@ export default function Account() {
     const [details, setDetails] = useState<CardDetailsType | undefined>();
     const [cdReady, setCdReady] = useState(false);
 
-    async function getCardDetails() {
-        const deets = await fetchWithToken(usc, `get_saved_card_details/`, 'GET').then((r) => r.json()).then((json) => {
-            const d = json.card_details;
-
-            if (d === 'N/A') return undefined;
-
-            console.log(json)
-
-            return { brand: d.brand, last4: d.last4, expMonth: d.exp_month, expYear: d.exp_year }
-        }).catch(() => { console.log("can't find payment details"); return undefined })
-
-        setDetails(deets);
-        setCdReady(true);
-    }
-
     useEffect(() => {
         if (user.user.access_token === "") {
             Logout(usc, undefined, true);
             return;
         }
-        getCardDetails();
     }, [])
 
     function DeleteAccount() {
@@ -125,10 +110,10 @@ export default function Account() {
 
 
     return (
-        <div className={"App-body-top"}>
-            <TZHeader title="" leftComponent={
+        <div className={"App-body-top"} style={{ overflow: 'scroll' }}>
+            {/* <TZHeader title="" leftComponent={
                 <BackButton onClick={handleBackClick}></BackButton>
-            } />
+            } /> */}
             <div style={styles}>
                 <div>
                     <div style={{ paddingBottom: padding / 2 }}>

@@ -63,12 +63,14 @@ export function songListIsEqual(s1: SongType[], s2: SongType[]): boolean {
 
 export type SongRequestStatusType = "ACCEPTED" | "REJECTED" | "PENDING" | "CANCELED" | "EXPIRED";
 
+export type TipperType = {
+    first_name: string,
+    last_name: string,
+    email: string
+}
+
 export type SongRequestType = {
-    user: {
-        first_name: string,
-        last_name: string,
-        email: string
-    },
+    user: TipperType,
     id: number,
     date: Date,
     song: SongType,
@@ -76,3 +78,5 @@ export type SongRequestType = {
     fitAnalysis: string,
     fitReasoning?: string,
 }
+
+export type FitAnalysisType = "GOOD" | "BAD" | "OK" | "PENDING" | "UNKNOWN";
