@@ -210,6 +210,7 @@ export default function Dashboard() {
     //finances
     const [finSongRequestHistory, setFinSongRequestHistory] = useState<SongRequestType[]>([]);
     const [finHistoryPageCount, setFinHistoryPageCount] = useState(0);
+    const [finTotalAmount, setFinTotalAmount] = useState(0);
 
     const finHistoryPage = DEFAULT_FINPAGE;
 
@@ -378,7 +379,8 @@ export default function Dashboard() {
     }
 
     const updateFinancesHistory = async (n: number) => {
-        const [fhistory, pcount] = await getFinancesHistory(usc, n).catch((e) => { console.log("ERROR", e); return [] });
+        const [fhistory, pcount, totalAmount] = await getFinancesHistory(usc, n).catch((e) => { console.log("ERROR", e); return [] });
+        setFinTotalAmount(totalAmount * 0.75);
         setFinHistoryPageCount(pcount);
         if (!_.isEqual(fhistory, finSongRequestHistory)) setFinSongRequestHistory(fhistory);
     }
@@ -394,8 +396,9 @@ export default function Dashboard() {
         setLastPullTime(Date.now());
 
         //stats
-        const stats = await getFinancesStats(usc);
-        if (!_.isEqual(stats, financeStats)) setFinanceStats(stats);
+        // const stats = await getFinancesStats(usc);
+        // console.log("bar stats", stats)
+        // if (!_.isEqual(stats, financeStats)) setFinanceStats(stats);
 
         //finance history?
         await updateFinancesHistory(finHistoryPage);
@@ -984,6 +987,7 @@ export default function Dashboard() {
                                         />
                                         : PAGE === "Account" ? <Account />
                                             : PAGE === "Finances" ? <Finances
+                                                totalRevenue={finTotalAmount}
                                                 minPriceState={[miniumumPrice, setMinimumPrice]}
                                                 currPriceState={[currentPrice, setCurrentPrice]}
                                                 refresh={getPrice}
@@ -1180,8 +1184,11 @@ export const getToggles = async (usc: UserSessionContextType): Promise<[boolean,
 
 const getFinancesStats = async (usc: UserSessionContextType): Promise<FinanceStatsType | undefined> => {
     const json = await fetchWithToken(usc, `get_bar_stats/`, 'GET').then(r => r.json()).catch((e: Error) => { console.log("Can't get acc in toggles", e.message); return undefined; });
+    if (json.status !== 200) {
+        console.log("bad response getting finance stats.", json)
+        return undefined
+    }
     if (!json || !json.stats) return undefined;
-    console.log(json)
     const stats: FinanceStatsType = {
         pendingBarCut: json.stats.Pending_bar_cut,
         pendingRequests: json.stats.pending_requests,
@@ -1192,18 +1199,21 @@ const getFinancesStats = async (usc: UserSessionContextType): Promise<FinanceSta
     return stats;
 }
 
-const getFinancesHistory = async (usc: UserSessionContextType, page: number): Promise<[SongRequestType[], number]> => {
+//all requests, count, totalamount
+const getFinancesHistory = async (usc: UserSessionContextType, page: number): Promise<[SongRequestType[], number, number]> => {
     const json = await fetchWithToken(usc, `business/get_song_request_history/?page=${page}`, 'GET').then(r => r.json()).catch((e: Error) => { console.log("Can't get song request history", e.message); return undefined; });
     if (json.status !== 200) {
         console.log("bad response getting song request history.", json)
-        return [[], -1];
+        return [[], -1, -1];
     }
 
     const data = json.data;
-    const count = json.count;
 
     console.log("finances history", json);
-    const results = data;
+
+    const count = data.requests.count;
+    const results = data.requests.results;
+    const totalAmount = data.total_amount;
 
     const out: SongRequestType[] = [];
 
@@ -1221,7 +1231,7 @@ const getFinancesHistory = async (usc: UserSessionContextType, page: number): Pr
     //     totalRequests: json.stats.count_requests,
     //     totalCustomers: json.total_customers,
     // }
-    return [out, count];
+    return [out, count, totalAmount];
 }
 
 // const getQueue = async (resetAnyway?: boolean, resetSomethingPressed?: boolean): Promise<{ isLocked: boolean | undefined, top: SongType | undefined }> => {

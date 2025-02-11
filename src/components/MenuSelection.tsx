@@ -4,7 +4,7 @@ import { PageType } from "../pages/bar/Dashboard";
 import { isMobile } from "../lib/utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconProp } from "@fortawesome/fontawesome-svg-core";
-import { faCheck, faGear, faHome, faMoneyBill, faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faDollarSign, faGear, faHome, faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
 
 const menuBarMobileHeight = 70;
 
@@ -29,7 +29,7 @@ function MenuButtonMobile(props: { page: PageType, currentPage: PageType, setPag
         props.page === "Queue" ? faHome :
             props.page === "Requests" ? faCheck :
                 props.page === "Settings" ? faGear :
-                    props.page === "Finances" ? faMoneyBill :
+                    props.page === "Finances" ? faDollarSign :
                         props.page === "Account" ? faGear :
                             faQuestionCircle
 

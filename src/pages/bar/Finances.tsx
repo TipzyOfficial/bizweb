@@ -147,6 +147,7 @@ function PageButtons(props: { currentPage: number, onFirstClick: () => any, onLa
 }
 
 export default function Finances(props: {
+    totalRevenue: number,
     minPriceState: [number | undefined, (n: number | undefined) => any],
     currPriceState: [number | undefined, (n: number | undefined) => any],
     refresh: (usc: UserSessionContextType) => any,
@@ -155,7 +156,7 @@ export default function Finances(props: {
     const songRequests: SongRequestType[] = props.requests;
     const SONGS_PER_PAGE = 10; //how many songs server returns
     const page = props.page;
-    const pageCount = Math.ceil(props.songCount / SONGS_PER_PAGE);
+    const pageCount = props.songCount ? Math.ceil(props.songCount / SONGS_PER_PAGE) : 0;
     const setPage = props.setPage;
     const usc = useContext(UserSessionContext);
 
@@ -163,6 +164,10 @@ export default function Finances(props: {
     const [currPrice, setCurrPrice] = props.currPriceState;
 
     const [modalContent, setModalContent] = useState<SongRequestType | undefined>();
+
+    const onCashoutClick = async () => {
+
+    }
 
     const onStripeClick = async () => {
         const json = await fetchWithToken(usc, `create_stripe_express/`, 'POST', JSON.stringify({
@@ -181,7 +186,15 @@ export default function Finances(props: {
 
     return (
         <div style={pageStyle}>
-            <TZHeader title="Your Finances" />
+            {/* <TZHeader title="Your Finances" /> */}
+            <div style={{ width: "100%", display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: padding }}>
+                <span className="App-subtitle" style={{ textAlign: 'center', width: "100%" }}>Total Revenue: <b>${numberToPrice(props.totalRevenue)}</b></span>
+                <div style={{ display: 'flex', paddingTop: padding }}>
+                    <div>
+                        <TZButton title="Cash Out" onClick={onStripeClick} />
+                    </div>
+                </div>
+            </div>
             <div style={{ width: "100%", display: 'flex', flexDirection: isMobile() ? 'column' : 'row', justifyContent: 'center', padding: padding }}>
                 <div style={{ display: 'flex', paddingRight: isMobile() ? 0 : padding, paddingBottom: isMobile() ? padding : 0 }}>
                     <div>
