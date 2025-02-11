@@ -37,8 +37,6 @@ import QueueRequestsDJ from "./QueueDJ";
 import NotPlaying from "../../components/NotPlaying";
 import Finances from "./Finances";
 
-type FitAnalysisType = "GOOD" | "BAD" | "OK" | "PENDING" | "UNKNOWN";
-
 const BACKEND_STATUS = ["OPENING", "PEAK", "CLOSING"];
 
 export type PageType = "Queue" | "Requests" | "Account" | "Settings" | "Loading" | "Finances" | "Unknown";
@@ -985,8 +983,9 @@ export default function Dashboard() {
                                             }}
                                         />
                                         : PAGE === "Account" ? <Account />
-                                            : PAGE === "Requests" ? <Requests />
-                                                : <NotFoundPage title="404" body="We can't seem to find that page. Make sure you have the correct address!" backPath={-1} />
+                                            : PAGE === "Finances" ? <Finances requests={finSongRequestHistory} page={finHistoryPage} setPage={setFinancesPage} songCount={finHistoryPageCount} />
+                                                : PAGE === "Requests" ? <Requests />
+                                                    : <NotFoundPage title="404" body="We can't seem to find that page. Make sure you have the correct address!" backPath={-1} />
                                 }
                                 {/* </div> */}
                             </div>
