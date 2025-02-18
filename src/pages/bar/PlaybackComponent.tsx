@@ -123,6 +123,9 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
     const [playlists, setPlaylists] = useState<PlaylistType[] | undefined>(undefined);
     const [done, setDone] = useState(false);
     const [toggleLogin, setToggleLogin] = useState(false);
+    const streamingService = usc.user.streaming_service;
+    const [soundtrackPage, setSoundtrackPage] = useState(streamingService === 'SPOTIFY' ? false : true);
+    const [spotifySelectPlaylist, setSpotifySelectPlaylist] = useState(false);
 
     const playlistPage = () => {
         setPage(1);
@@ -156,6 +159,15 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
 
         playlistPage();
         // Alert.alert(`${json.status === 200 ? "Success" : "Error " + json.status}`, `${json.error ? json.error : json.message}`);
+    }
+
+    const onLoginSpotify = async () => {
+        const response = await fetchWithToken(usc, "business/connect_spotify/", "GET");
+        if (!response) throw new Error("null/undefined response");
+        if (response.url) throw new Error(`bad response ${response}`);
+        setSpotifySelectPlaylist(true);
+        const url = response.url;
+        window.open(url, "_blank");
     }
 
     const getPlaylists = async () => {
@@ -212,6 +224,7 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
             onShow={() => {
                 setToggleLogin(false);
                 setLoginLoading(false);
+                setSpotifySelectPlaylist(false);
                 setDone(false);
                 setPage(0);
             }}
@@ -220,7 +233,11 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
             }}>
             {page === 0 ?
                 <Modal.Body style={{ color: "white" }}>
-
+                    <div style={{ display: 'flex', width: "100%", backgroundColor: "#0003", borderRadius: radius }}>
+                        <TZButton title="Soundtrack" backgroundColor={soundtrackPage ? "#f23440" : "#0000"} onClick={() => setSoundtrackPage(true)} />
+                        <TZButton title="Spotify" backgroundColor={soundtrackPage ? "#0000" : "#1ED760"} color={soundtrackPage ? undefined : "#121212"} onClick={() => setSoundtrackPage(false)} />
+                    </div>
+                    <div style={{ paddingTop: padding }} />
                     {props.streaming ?
                         <>
                             Select a playlist here:
@@ -232,20 +249,38 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
                     {props.streaming && !toggleLogin ?
                         <span style={{ color: Colors.primaryRegular, cursor: 'pointer' }} onClick={() => setToggleLogin(true)}>Not logged into Soundtrack?</span>
                         :
-                        <>
-                            {props.streaming ? "Log in to Soundtrack here." : "To select a Soundtrack playlist, please log in to Soundtrack first."} We won't store your login details!
-                            <div style={{ paddingTop: padding }}></div>
+                        soundtrackPage ? <>
+                            {props.streaming ? "Log in to Soundtrack here." : "To select a playlist, please log in to Soundtrack first."} We won't store your login details!
+                            <div style={{ paddingTop: padding }} />
                             <input className="input" style={{ width: "100%" }} placeholder="email@address.com" onChange={(e) => setEmail(e.target.value)} />
-                            <div style={{ paddingTop: padding }}></div>
+                            <div style={{ paddingTop: padding }} />
                             <input className="input" style={{ width: "100%" }} placeholder="Password" type="password" onChange={(e) => setPassword(e.target.value)} />
-                            <div style={{ paddingTop: padding }}></div>
-                            <TZButton title="Sign in to Soundtrack" backgroundColor="#f23440"
+                            <div style={{ paddingTop: padding }} />
+                            <TZButton title="Connect to Soundtrack" backgroundColor="#f23440"
                                 loading={loginLoading}
                                 onClick={() =>
                                     onLoginSoundtrack().catch(e => { alert(`Login failed. Check if your credentials are entered in correctly. If you still have issues, contact support. (${e})`); setLoginLoading(false); })
                                 }
                             />
                         </>
+                            :
+                            <>
+                                {props.streaming ? "Log in to Spotify here." : "To select a playlist, please connect to Spotify first."} We won't store your login details!
+                                <div style={{ paddingTop: padding }} />
+                                <TZButton title={spotifySelectPlaylist ? "Reconnect to Spotify" : "Connect to Spotify"} backgroundColor="#1ED760" color="#121212"
+                                    loading={loginLoading}
+                                    onClick={() =>
+                                        onLoginSpotify()
+                                            .catch(e => { alert(`Problem connecting with Spotify. If you still have issues, contact support. (${e})`); setLoginLoading(false); })
+                                    }
+                                />
+                                <div style={{ paddingTop: padding }} />
+                                {spotifySelectPlaylist ?
+                                    <div style={{ paddingTop: padding, paddingBottom: padding }}>
+                                        <TZButton title="Select Playlist" backgroundColor="#f23440" onClick={() => playlistPage()}></TZButton>
+                                    </div>
+                                    : <></>}
+                            </>
                     }
                 </Modal.Body>
                 :

@@ -6,6 +6,7 @@ import { faCheckCircle as faSuccess, faXmarkCircle as faFailure } from '@fortawe
 
 type TZButtonProps = {
     onClick?: () => void,
+    style?: React.CSSProperties,
     title?: string,
     backgroundColor?: string,
     width?: number | string,
@@ -48,7 +49,8 @@ function TZButton(props: TZButtonProps) {
                 WebkitBoxSizing: "border-box",
                 MozBoxSizing: "border-box",
                 opacity: props.disabled ? 0.5 : props.completed || props.loading ? 1 : opacity,
-                border: 'none'
+                border: 'none',
+                ...props.style
             }}>
             {props.completed !== undefined ?
                 <FontAwesomeIcon icon={props.completed ? faSuccess : faFailure} fontSize={props.fontSize} color={props.color ?? "white"}></FontAwesomeIcon>

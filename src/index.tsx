@@ -93,6 +93,7 @@ export const businessFromJSON = (user: Business | undefined, d: any) => {
     d.hour_explicit_blocked,
     d.gpt_accept_requests,
     d.dj_mode,
+    d.streaming_service,
   )
   return (c);
 }

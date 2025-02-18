@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { businessFromJSON } from "..";
 import { Business } from "./user";
 
-const test = false;
+const test = true;
 
 export const ServerInfo = {
     baseurl: test ? "https://test.tipzyapi.com/" : "https://www.tipzyapi.com/",
