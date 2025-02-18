@@ -74,6 +74,11 @@ export async function getBusiness(usc: UserSessionContextType) {
   return getUser("business", usc.user.user.access_token, usc.user.user.expires_at, () => rootGetRefreshToken(), () => Logout(usc), (tokens: TokenReturnType) => resetTokenValues(usc, tokens));
 }
 
+export async function updateBusiness(usc: UserSessionContextType) {
+  const b = await getBusiness(usc);
+  usc.setUser(businessFromJSON(usc.user, b.data));
+}
+
 export const businessFromJSON = (user: Business | undefined, d: any) => {
   console.log("bdata", d);
 
