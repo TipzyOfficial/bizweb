@@ -70,8 +70,9 @@ export class Business extends BusinessUser {
     gpt_accept_requests?: boolean;
     dj_mode?: boolean;
     streaming_service?: string;
+    playlist_name?: string;
 
-    constructor(user: Users, business_name?: string, business_image?: string, business_id?: number, accepting_requests?: boolean, auto_accept_requests?: boolean, type?: string, address?: string, vibe?: string, block_explicit?: boolean, hour_explicit_allowed?: number, hour_explicit_blocked?: number, gpt_accept_requests?: boolean, dj_mode?: boolean, streaming_service?: string) {
+    constructor(user: Users, business_name?: string, business_image?: string, business_id?: number, accepting_requests?: boolean, auto_accept_requests?: boolean, type?: string, address?: string, vibe?: string, block_explicit?: boolean, hour_explicit_allowed?: number, hour_explicit_blocked?: number, gpt_accept_requests?: boolean, dj_mode?: boolean, streaming_service?: string, playlist_name?: string) {
         super(user, business_name ?? "", business_image ?? "", business_id ?? -1, accepting_requests ?? false, auto_accept_requests ?? false);
         this.type = type;
         this.address = address;
@@ -82,6 +83,7 @@ export class Business extends BusinessUser {
         this.gpt_accept_requests = gpt_accept_requests;
         this.dj_mode = dj_mode;
         this.streaming_service = streaming_service;
+        this.playlist_name = playlist_name;
     }
 
     setType(type?: string) {

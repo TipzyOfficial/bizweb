@@ -11,6 +11,9 @@ import { Modal, Spinner } from "react-bootstrap";
 import { styles } from "../Login";
 import { ServerInfo } from "../../lib/serverinfo";
 
+const SOUNDTRACK_COLOR = "#f23440";
+const SPOTIFY_COLOR = "#1ED760";
+
 type getSSReturnType = {
     streamingService: string, playlistName: string | undefined
 }
@@ -22,36 +25,42 @@ export async function getStreamingService(usc: UserSessionContextType): Promise<
     return ({ streamingService: streamingService, playlistName: playlistName })
 }
 
-export default function PlaybackComponent(props: { setDisableTyping: (b: boolean) => void, setStreamingService?: (b: boolean) => any }) {
-    const [ss, setSS] = useState<string | null>("...");
+export default function PlaybackComponent(props: { noPlaylistST?: boolean, setDisableTyping: (b: boolean) => void, setHasStreamingService?: (b: boolean) => any }) {
+    // const [ss, setSS] = useState<string | null>("...");
     const usc = useContext(UserSessionContext);
-    const [currentPlaylist, setCurrentPlaylistIn] = useState("loading...");
+    // const [currentPlaylist, setCurrentPlaylistIn] = useState("loading...");
     const [visible, setVisibleIn] = useState(false);
+
+    const ss = usc.user.streaming_service ?? null;
+    const currentPlaylist = usc.user.playlist_name ?? "...";
+
 
     const setVisible = (b: boolean) => {
         props.setDisableTyping(b);
         setVisibleIn(b);
     }
 
-    const setCurrentPlaylist = (p: string) => {
-        setCurrentPlaylistIn(p);
-    }
+    // const setCurrentPlaylist = (p: string) => {
+    //     setCurrentPlaylistIn(p);
+    // }
 
     const igetStreamingService = async () => {
         console.log("updating")
-        setSS("...");
-        setCurrentPlaylist("...");
+        // setSS("...");
+        // setCurrentPlaylist("...");
 
-        const res = await getStreamingService(usc);
-        const streamingService = res.streamingService;
-        if (streamingService === "NONE") {
-            setSS(null);
-            if (props.setStreamingService) props.setStreamingService(false);
+        // const res = await getStreamingService(usc);
+        // const streamingService = res.streamingService;
+        // cons
+        if (ss === "NONE") {
+            // setSS(null);
+            if (props.setHasStreamingService) props.setHasStreamingService(false);
         } else {
-            setSS(streamingService);
-            setCurrentPlaylist(res.playlistName ?? "");
-            if (props.setStreamingService) props.setStreamingService(true);
+            // setSS(streamingService);
+            // setCurrentPlaylist(res.playlistName ?? "");
+            if (props.setHasStreamingService) props.setHasStreamingService(true);
         }
+
     }
 
     useEffect(() => {
@@ -90,18 +99,28 @@ export default function PlaybackComponent(props: { setDisableTyping: (b: boolean
 
     return (
         <>
-            <div style={{ width: "100%", padding: padding, backgroundColor: Colors.tertiaryDark, borderRadius: radius, cursor: 'pointer', opacity: opacity }} onMouseEnter={() => setOpacity(0.5)} onMouseLeave={() => setOpacity(1)} onClick={() => setVisible(true)}>
+            <div style={{ width: "100%", padding: padding, backgroundColor: props.noPlaylistST && ss ? (ss === "SPOTIFY" ? SPOTIFY_COLOR : SOUNDTRACK_COLOR) : Colors.tertiaryDark, borderRadius: radius, cursor: 'pointer', opacity: opacity }} onMouseEnter={() => setOpacity(0.5)} onMouseLeave={() => setOpacity(1)} onClick={() => setVisible(true)}>
                 {ss ?
+
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span className="App-montserrat-smallertext" style={{}}>Current playlist:</span>
-                        <span className="App-montserrat-normaltext" style={{ paddingBottom: 5, fontWeight: 'bold', color: Colors.primaryLight }}>{currentPlaylist}</span>
-                        <span className="App-smalltext" style={{ color: "#fff8" }}>(Click to change)</span>
+                        {props.noPlaylistST ?
+                            <>
+                                <span className="App-montserrat-normaltext" style={{ fontWeight: 'bold', color: ss === "SPOTIFY" ? "#121212" : "white" }}>Streaming from: {ss}</span>
+                                <span className="App-smalltext" style={{ color: ss === "SPOTIFY" ? "#0008" : "#fff8" }}>(Click to change)</span>
+                            </>
+                            :
+                            <>
+                                <span className="App-montserrat-smallertext" style={{}}>Current playlist:</span>
+                                <span className="App-montserrat-normaltext" style={{ paddingBottom: 5, fontWeight: 'bold', color: Colors.primaryLight }}>{currentPlaylist}</span>
+                                <span className="App-smalltext" style={{ color: "#fff8" }}>(Click to change)</span>
+                            </>
+                        }
                     </div>
                     :
                     <span className="App-montserrat-normaltext" style={{ paddingBottom: 7, fontWeight: 'bold', color: Colors.primaryLight }}>Set up your streaming service!</span>
                 }
             </div>
-            <PlaybackModal show={visible} setShow={setVisible} streaming={ss !== null && ss !== undefined} update={igetStreamingService} />
+            <PlaybackModal noPlaylistST={props.noPlaylistST} show={visible} setShow={setVisible} streaming={ss !== null && ss !== undefined} update={igetStreamingService} />
 
             <div style={{ paddingBottom: padding }} />
         </>
@@ -115,7 +134,7 @@ export type PlaylistType = {
 }
 
 
-function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, streaming: boolean, update: () => Promise<void> }) {
+function PlaybackModal(props: { noPlaylistST?: boolean, show: boolean, setShow: (b: boolean) => void, streaming: boolean, update: () => Promise<void> }) {
     const usc = useContext(UserSessionContext);
     const [page, setPage] = useState(0);
     const [loginLoading, setLoginLoading] = useState(false);
@@ -130,10 +149,7 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
 
     const pageIsStreamed = (soundtrackPage && streamingService === "SOUNDTRACK") || (!soundtrackPage && streamingService === "SPOTIFY");
 
-    const streaming = props.streaming && pageIsStreamed;
-
-    const SOUNDTRACK_COLOR = "#f23440";
-    const SPOTIFY_COLOR = "#1ED760";
+    const streaming = props.streaming && pageIsStreamed && !props.noPlaylistST;
 
     const playlistPage = () => {
         setPage(1);
@@ -167,7 +183,14 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
 
         await updateBusiness(usc);
 
+        // if (props.noPlaylistST !== true) {
+        //     playlistPage();
+        // } else {
+        //     props.setShow(false);
+        // }
+
         playlistPage();
+
         // Alert.alert(`${json.status === 200 ? "Success" : "Error " + json.status}`, `${json.error ? json.error : json.message}`);
     }
 
@@ -195,6 +218,7 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
     const getPlaylists = async () => {
         const json = await fetchWithToken(usc, `business/playlists/`, 'GET').then(r => r.json());
         if (!json.status || json.status !== 200) throw new Error("bad response in getPlaylists: " + json.status + " data " + json.data);
+        if (!soundtrackPage) await updateBusiness(usc);
         const data = json.data;
         const playlists: PlaylistType[] = [];
         data.forEach((e: any) => {
@@ -250,6 +274,7 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
                 setLoginLoading(false);
                 setSpotifySelectPlaylist(false);
                 setDone(false);
+                setSoundtrackPage(usc.user.streaming_service === "SPOTIFY" ? false : true)
                 setPage(0);
             }}
             onHide={() => {
@@ -266,7 +291,7 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
                         <>
                             Select a playlist here:
                             <div style={{ paddingTop: padding, paddingBottom: padding }}>
-                                <TZButton title="Select Playlist" color={"#121212"} backgroundColor={streamingService === "SPOTIFY" ? SPOTIFY_COLOR : SOUNDTRACK_COLOR} onClick={() => playlistPage()}></TZButton>
+                                <TZButton title="Select Playlist" color={streamingService === "SPOTIFY" ? "#121212" : "white"} backgroundColor={streamingService === "SPOTIFY" ? SPOTIFY_COLOR : SOUNDTRACK_COLOR} onClick={() => playlistPage()}></TZButton>
                             </div>
                         </> : <></>
                     }
@@ -274,7 +299,7 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
                         <span style={{ color: Colors.primaryRegular, cursor: 'pointer' }} onClick={() => setToggleLogin(true)}>Not logged in?</span>
                         :
                         soundtrackPage ? <>
-                            {streaming ? "Log in to Soundtrack here." : "To select a playlist, please log in to Soundtrack first."} We won't store your login details!
+                            {streaming ? "Log in to Soundtrack here." : `${props.noPlaylistST ? "P" : "To select a playlist, p"}lease log in to Soundtrack.`} We won't store your login details!
                             <div style={{ paddingTop: padding }} />
                             <input className="input" style={{ width: "100%" }} placeholder="email@address.com" onChange={(e) => setEmail(e.target.value)} />
                             <div style={{ paddingTop: padding }} />
@@ -289,7 +314,7 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
                         </>
                             :
                             <>
-                                {streaming ? "Log in to Spotify here." : "To select a playlist, please connect to Spotify first."} We won't store your login details!
+                                {streaming ? "Log in to Spotify here." : `${props.noPlaylistST ? "P" : "To select a playlist, p"}lease connect to Spotify here.`} We won't store your login details!
                                 <div style={{ paddingTop: padding }} />
                                 <TZButton title={spotifySelectPlaylist ? "Reconnect to Spotify" : "Connect to Spotify"} backgroundColor="#1ED760" color="#121212"
                                     loading={loginLoading}
@@ -300,11 +325,12 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
                                 />
                                 {/* <a href={`${ServerInfo.baseurl}business/connect_spotify/`}>connect spotify</a> */}
                                 <div style={{ paddingTop: padding }} />
-                                {spotifySelectPlaylist ?
-                                    <div style={{ paddingTop: padding, paddingBottom: padding }}>
-                                        <TZButton title="Select Playlist" backgroundColor={SPOTIFY_COLOR} onClick={() => playlistPage()}></TZButton>
-                                    </div>
-                                    : <></>}
+                                {streaming ? <></> :
+                                    spotifySelectPlaylist ?
+                                        <div style={{ paddingTop: padding, paddingBottom: padding }}>
+                                            <TZButton title="Select Playlist" color={"#121212"} backgroundColor={SPOTIFY_COLOR} onClick={() => playlistPage()}></TZButton>
+                                        </div>
+                                        : <></>}
                             </>
                     }
                 </Modal.Body>
@@ -316,7 +342,6 @@ function PlaybackModal(props: { show: boolean, setShow: (b: boolean) => void, st
                             {done ? <Spinner size="sm" /> : <></>}
                             <FlatList list={playlists}
                                 renderItem={(e) => <RenderItem playlist={e} />
-
                                 }
                             />
                         </div> : <div><Spinner></Spinner></div>}

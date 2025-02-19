@@ -201,7 +201,7 @@ export default function Dashboard() {
     const [djSongs, setDJSongs] = useState<SongType[] | undefined>();
     const [djTags, setDJTags] = useState<TagType[]>([]);
 
-    const [shuffleValue, setShuffleValue] = useState<ShuffleType>("TipzyAI");
+    const [shuffleValue, setShuffleValue] = useState<ShuffleType>("Playlist");
 
     const songRequestSongRatio = 40;
     const compactSongDim = 40;
@@ -575,6 +575,11 @@ export default function Dashboard() {
     // console.log("UE REFRESH ALL")
     ///() => rejectAll()
 
+    const toggleTakeRequests = async (b: boolean) => {
+        await setAllowingRequests(usc, b);
+        setToggles(...await getToggles(usc));
+    }
+
     const Requests = () => {
         const outlineColor = Colors.tertiaryDark;
         return (
@@ -589,10 +594,9 @@ export default function Dashboard() {
                                 setToggles(...await getToggles(usc));
                             }} />
                             <div style={{ width: padding }} />
-                            <TZToggle title="Take requests" value={toggleAllowRequests} onClick={async () => {
-                                await setAllowingRequests(usc, !toggleAllowRequests);
-                                setToggles(...await getToggles(usc));
-                            }} />
+                            <TZToggle title="Take requests" value={toggleAllowRequests} onClick={() =>
+                                toggleTakeRequests(!toggleAllowRequests)
+                            } />
                         </div>
                     </div>
                     <Border />
@@ -632,7 +636,7 @@ export default function Dashboard() {
                         : <div style={{ padding: padding, width: "100%", display: 'flex', justifyContent: 'center', opacity: 0.7, textAlign: 'center' }}>
                             {acceptRadioValue === "Auto" ? <span>Since you're auto-accepting new requests, you won't see requests show up here for review.</span> :
                                 acceptRadioValue === "TipzyAI" ? <span>You're letting Virtual DJ check if each request is a good fit. If it doesn't think a song matches your vibe, it'll put it here for you to decide.</span>
-                                    : <span>No new song requests...yet!</span>}
+                                    : (toggleAllowRequests ? <span>No new song requests...yet!</span> : <span>You're currently not taking any more requests.</span>)}
                         </div>)
                     : <div style={{ padding: padding }}><NotPlaying /></div>
                 }
@@ -935,6 +939,20 @@ export default function Dashboard() {
                             <SetupPage setIsSetup={setIsSetup} setDisableTyping={setDisableTyping} />
                         :
                         <>
+                            {
+                                !toggleAllowRequests ?
+                                    <div style={{ width: "100%", textAlign: "center", padding: padding, backgroundColor: Colors.tertiaryDark, display: "flex", justifyContent: 'center', alignItems: 'center' }}>
+                                        <span><FontAwesomeIcon icon={faWarning} /> You have requests disabled.</span>
+                                        <span onClick={() => toggleTakeRequests(true)} style={{ color: Colors.primaryLight, paddingLeft: 5, cursor: 'pointer' }}><b>Turn on</b></span>
+                                    </div> :
+                                    (!currentlyPlaying || !sessionStarted) ?
+                                        <div style={{ width: "100%", textAlign: "center", padding: padding, backgroundColor: Colors.tertiaryDark, display: "flex", justifyContent: 'center', alignItems: 'center' }}>
+                                            <span><FontAwesomeIcon icon={faWarning} /> Start playing music on your streaming service to accept requests and view the queue!</span>
+                                        </div>
+                                        :
+                                        <></>
+
+                            }
                             <div style={{
                                 // display: 'grid', gridTemplateColumns: '200px, 1fr', 
                                 display: 'flex',
@@ -1017,7 +1035,7 @@ const SetupPage = (props: { setIsSetup: (b: boolean) => any, setDisableTyping: (
             <span className="App-subtitle">One last step!</span>
             <span style={{ padding: padding, textAlign: 'center' }}>To start the music, tap below to set up your streaming service!</span>
             <div style={{ display: 'flex' }}>
-                <PlaybackComponent setStreamingService={props.setIsSetup} setDisableTyping={props.setDisableTyping} />
+                <PlaybackComponent setHasStreamingService={props.setIsSetup} setDisableTyping={props.setDisableTyping} />
             </div>
         </div>
     )

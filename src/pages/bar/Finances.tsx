@@ -209,7 +209,7 @@ export default function Finances(props: {
             <div style={{ width: "100%", display: 'flex', flexDirection: isMobile() ? 'column' : 'row', justifyContent: 'center', padding: padding }}>
                 <div style={{ display: 'flex', paddingRight: isMobile() ? 0 : padding, paddingBottom: isMobile() ? padding : 0 }}>
                     <div>
-                        <TZButton title="View Stripe Dashboard" onClick={onStripeClick} />
+                        <TZButton title="View Stripe Dashboard" onClick={() => onStripeClick().catch(e => alert(e.message))} />
                     </div>
                 </div>
                 <div style={{ display: 'flex' }}>

@@ -99,6 +99,7 @@ export const businessFromJSON = (user: Business | undefined, d: any) => {
     d.gpt_accept_requests,
     d.dj_mode,
     d.streaming_service,
+    d.playlist_name,
   )
   return (c);
 }

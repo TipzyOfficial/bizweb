@@ -12,7 +12,7 @@ export function PlaybackButton(props: { icon: IconDefinition, onClick: () => any
     return (
         <div onClick={() => {
             if (!props.disable) props.onClick();
-        }} style={{ opacity: props.disable ? 1 : 1 - hovered * 0.5 }} onMouseDown={() => setHovered(1)} onMouseUp={() => setHovered(0.5)} onMouseEnter={() => setHovered(0.5)} onMouseLeave={() => setHovered(0)}>
+        }} style={{ opacity: props.disable ? 1 : 1 - hovered * 0.5, cursor: 'pointer' }} onMouseDown={() => setHovered(1)} onMouseUp={() => setHovered(0.5)} onMouseEnter={() => setHovered(0.5)} onMouseLeave={() => setHovered(0)}>
             <FontAwesomeIcon fontSize={iconsize} icon={props.icon} />
         </div>
     )

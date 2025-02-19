@@ -81,11 +81,15 @@ export default function QueueRequestsDJ(props: QRDJProps) {
                 justifyContent: "flex-start",
                 overflow: 'scroll'
             }}>
-                {/* <span>Download the Tipzy for Business App for the best experience!</span> */}
                 <div style={{ padding: padding, flex: 1 }}>
+                    <div style={{ display: 'flex', paddingBottom: padding }}>
+                        <PlaybackComponent noPlaylistST setDisableTyping={setDisableTyping} />
+                    </div>
                     <div className="remove-scrollbar" style={{
                         padding: padding, borderRadius: radius,
-                        height: "100%", overflowY: 'scroll', position: 'relative', backgroundColor: Colors.lightBackground, width: "100%"
+                        // overflowY: 'hidden',
+                        backgroundColor: Colors.lightBackground,
+                        width: "100%"
                     }}>
                         {queueLoading ? <div style={{
                             position: 'absolute', width: "100%", height: "100%", top: 0, display: 'flex', justifyContent: 'center', alignItems: 'center',
@@ -93,11 +97,9 @@ export default function QueueRequestsDJ(props: QRDJProps) {
                         }}>
                             <Spinner />
                         </div> : <></>}
-                        {/* <Price minPrice={miniumumPrice} currPrice={currentPrice} setMinPrice={setMinimumPrice} refresh={() => refreshPrice(true)} /> */}
-                        {/* <div style={{ paddingBottom: padding }} /> */}
                         <span className="App-tertiarytitle">Up next</span>
                         {currentlyPlaying && sessionStarted ?
-                            <Queue disable={queueLoading} queueOrder={props.queueOrder} current={currentlyPlaying} editingQueue={props.editingQueue} reorderQueue={props.reorderQueue} />
+                            <Queue mobile disable={queueLoading} queueOrder={props.queueOrder} current={currentlyPlaying} editingQueue={props.editingQueue} reorderQueue={props.reorderQueue} />
                             :
                             <div style={{ paddingTop: padding }}>
                                 <NotPlaying />
@@ -105,7 +107,7 @@ export default function QueueRequestsDJ(props: QRDJProps) {
                         }
                     </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', height: "100%", paddingRight: 0, flex: 3 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', height: "100%", paddingRight: 0 }}>
                     <div style={{ display: "flex", justifyContent: 'space-between' }}>
                         <DJSettingsMemo
                             mobile
@@ -121,19 +123,17 @@ export default function QueueRequestsDJ(props: QRDJProps) {
                             shuffleRadioValueState={props.shuffleRadioValueState}
                             onSetShuffle={props.onSetShuffle}
                             onSetAccept={props.onSetAccept}
-
+                            streamingService={usc.user.streaming_service}
                             ExplicitButton={
-                                <></>
-                            }
+                                <div style={{ display: "flex" }}>
+                                    <TZToggle title="Allow explicit requests" value={!toggleBlockExplicitRequests} onClick={async () => {
+                                        await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
+                                        setToggles(...await getToggles(usc));
+                                    }} />
+                                </div>}
                             PlaylistScreen={
                                 <>
                                     <PlaybackComponent setDisableTyping={setDisableTyping} />
-                                    <div style={{ display: "flex" }}>
-                                        <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
-                                            await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
-                                            setToggles(...await getToggles(usc));
-                                        }} />
-                                    </div>
 
                                 </>
 
@@ -153,7 +153,10 @@ export default function QueueRequestsDJ(props: QRDJProps) {
             }}>
                 <div style={{ display: 'flex', flexDirection: 'column', height: "100%", paddingRight: 0, flex: 3 }}>
                     {/* <input value={djLocation} onChange={(e) => setDJLocation(e.target.value)}></input> */}
-                    <div style={{ display: "flex", justifyContent: 'space-between' }}>
+                    <div style={{ display: "flex", flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', padding: padding }}>
+                            <PlaybackComponent noPlaylistST setDisableTyping={setDisableTyping} />
+                        </div>
                         <DJSettingsMemo
                             genres={GENRES}
                             energyState={props.energyState}
@@ -167,20 +170,17 @@ export default function QueueRequestsDJ(props: QRDJProps) {
                             shuffleRadioValueState={props.shuffleRadioValueState}
                             onSetShuffle={props.onSetShuffle}
                             onSetAccept={props.onSetAccept}
-
+                            streamingService={usc.user.streaming_service}
                             ExplicitButton={
-                                <></>
-                            }
+                                <div style={{ display: "flex" }}>
+                                    <TZToggle title="Allow explicit requests" value={!toggleBlockExplicitRequests} onClick={async () => {
+                                        await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
+                                        setToggles(...await getToggles(usc));
+                                    }} />
+                                </div>}
                             PlaylistScreen={
                                 <>
                                     <PlaybackComponent setDisableTyping={setDisableTyping} />
-                                    <div style={{ display: "flex" }}>
-                                        <TZToggle title="Explicit" value={!toggleBlockExplicitRequests} onClick={async () => {
-                                            await setBlockExplcitRequests(usc, !toggleBlockExplicitRequests);
-                                            setToggles(...await getToggles(usc));
-                                        }} />
-                                    </div>
-
                                 </>
 
                             }
@@ -209,5 +209,6 @@ export default function QueueRequestsDJ(props: QRDJProps) {
                     </div>
                 </div>
             </div>
+
     )
 }

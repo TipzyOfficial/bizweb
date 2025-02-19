@@ -69,6 +69,7 @@ type DJSettingsProps = {
     shuffleRadioValueState: [ShuffleType, (s: ShuffleType) => any],
     PlaylistScreen: ReactNode,
     ExplicitButton: ReactNode,
+    streamingService: string | undefined;
 }
 
 function GenreButton(props: { genre: string, selected: Set<string>, onClick: () => any }) {
@@ -266,11 +267,11 @@ export default function DJSettings(props: DJSettingsProps) {
             {/* <Header /> */}
             <div style={{ display: 'flex', flexDirection: 'column', paddingTop: padding, position: 'relative' }}>
                 {loading ?
-                    <div style={{ width: "100%", height: "100%", position: "absolute", top: 0, zIndex: 100, backgroundColor: "#0008", display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <div style={{ width: "100%", height: "100%", position: "absolute", top: 0, zIndex: 100, backgroundColor: "#000a", display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                         <Spinner />
+                        <span>Virtual DJ is generating your playlist...</span>
                     </div> : <></>
                 }
-                <DJSettingsTabs djSettings={djSettings} currentSettingNumber={currentSettingNumber} setCurrentSettingNumber={setCurrentSettingNumber} playingSettingNumber={playingSettingNumber} />
                 <div style={{ padding: padding }}>
                     <div style={{ display: 'flex', justifyContent: mobile ? 'center' : "flex-start" }}>
                         <div style={{
@@ -282,35 +283,36 @@ export default function DJSettings(props: DJSettingsProps) {
                                     <Dropdown.Toggle className="App-montserrat-smallertext" variant="tertiary" style={{ height: "100%", color: "white", fontWeight: "bold", padding: padding, borderRadius: radius }} id="dropdown-basic">
                                         {acceptRadioValue === "Manual" ? "Manual" :
                                             acceptRadioValue === "Auto" ? "Accept all" :
-                                                acceptRadioValue === "TipzyAI" ? "Virtual DJ" : "..."}
+                                                acceptRadioValue === "TipzyAI" ? "Tipzy decides" : "..."}
                                     </Dropdown.Toggle>
                                     <Dropdown.Menu variant="dark" style={{ padding: 0, overflow: 'hidden', borderRadius: radius + 5 }} >
                                         <DIR onSet={onSetAccept} accepting="Manual" val={acceptRadioValue} text="Manual" desc="All requests go by you." />
                                         <DIR onSet={onSetAccept} accepting="Auto" val={acceptRadioValue} text="Accept all" desc={<span>Automatically accepts all reasonable requests.<br />Will only reject songs sent with obviously bad intentions.</span>} />
-                                        <DIR onSet={onSetAccept} accepting="TipzyAI" val={acceptRadioValue} text="Virtual DJ" desc={<span>Lets our Virtual DJ accept/reject songs.<br />If it's unsure, it'll defer to you for the final say!</span>} />
+                                        <DIR onSet={onSetAccept} accepting="TipzyAI" val={acceptRadioValue} text="Let Tipzy Decide" desc={<span>We'll accept/reject songs based on your preferences.<br />If unsure, we'll defer to you for the final say!</span>} />
                                     </Dropdown.Menu>
                                 </Dropdown>
                             </div>
                             <div style={{ width: padding * 2 }} />
                             <div>
-                                <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingBottom: 5 }}>Handle shuffle</div>
+                                <div className="App-montserrat-smallertext" style={{ fontWeight: 'bold', paddingBottom: 5 }}>Request evaluation:</div>
                                 <Dropdown>
                                     <Dropdown.Toggle className="App-montserrat-smallertext" variant="tertiary" style={{ height: "100%", color: "white", fontWeight: "bold", padding: padding, borderRadius: radius }} id="dropdown-basic">
                                         {shuffleRadioValue === "Playlist" ? "Playlist" :
                                             shuffleRadioValue === "TipzyAI" ? "Virtual DJ" : "..."}
                                     </Dropdown.Toggle>
                                     <Dropdown.Menu variant="dark" style={{ padding: 0, overflow: 'hidden', borderRadius: radius + 5 }} >
-                                        <DIS onSet={onSetShuffle} accepting="Playlist" val={shuffleRadioValue} text="Playlist" desc="Shuffles through a playlist set by you." />
-                                        <DIS onSet={onSetShuffle} accepting="TipzyAI" val={shuffleRadioValue} text="Virtual DJ" desc={<span>Virtual DJ takes over the night!<br />You curate the type of songs it selects.</span>} />
+                                        <DIS onSet={onSetShuffle} accepting="Playlist" val={shuffleRadioValue} text="Playlist" desc={<span>Choose a playlist of songs you like!<br />It'll help us judge which requests are a good fit.</span>} />
+                                        <DIS disabled={props.streamingService !== "SOUNDTRACK"} onSet={onSetShuffle} accepting="TipzyAI" val={shuffleRadioValue} text="Virtual DJ" desc={<span>(Experimental–SOUNDTRACK ONLY)<br />Virtual DJ takes over the night!<br />You curate the type of songs it selects.</span>} />
                                     </Dropdown.Menu>
                                 </Dropdown>
                             </div>
                         </div>
                     </div>
-                    <div style={{ paddingTop: padding, display: 'flex', justifyContent: 'space-between', }}>
+                    {shuffleRadioValue === "TipzyAI" ? <DJSettingsTabs djSettings={djSettings} currentSettingNumber={currentSettingNumber} setCurrentSettingNumber={setCurrentSettingNumber} playingSettingNumber={playingSettingNumber} /> : <></>}
+                    <div style={{ paddingTop: padding, display: 'flex', justifyContent: 'space-between', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', flex: 1 }}>
                             {shuffleRadioValue === "TipzyAI" ?
-                                <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', width: "100%", flexGrow: 1 }}>
+                                <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', width: "100%", flexGrow: 1, paddingBottom: padding }}>
                                     <div style={{ width: mobile ? "100%" : undefined, padding: padding, borderStyle: 'solid', borderColor: Colors.tertiaryDark, borderRadius: radius, borderWidth: 1, }}>
                                         <GenreList {...props} onGenreClicked={onGenreClicked} />
                                     </div>
@@ -360,8 +362,7 @@ export default function DJSettings(props: DJSettingsProps) {
                                     </div>
                                     <div style={{ width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingLeft: padding }}>
                                         <div style={{ paddingTop: padding }} />
-                                        {/* {props.ExplicitButton}
-                                            <div style={{ paddingTop: padding }} /> */}
+
 
                                         <div style={{ display: "flex" }}>
 
@@ -379,10 +380,11 @@ export default function DJSettings(props: DJSettingsProps) {
                                 </div>
                             }
                         </div>
+                        {props.ExplicitButton}
                     </div>
-                    <div style={{ width: "100%", paddingTop: padding, }}>
+                    {/* <div style={{ width: "100%", paddingTop: padding, }}>
                         <TagsMemo tags={tags} onXClick={onXClick} tagItems={tagItems} />
-                    </div>
+                    </div> */}
                 </div>
                 {/* <div style={{ flex: 1, paddingLeft: padding }}>
                             <span>Virtual DJ is an unfinished feature. For now, enjoy this preview of its interface!</span>
@@ -496,13 +498,14 @@ const VolumeDisplay = (props: { val: number }) => {
 }
 
 
-function DropdownItem<T>(props: { accepting: T, val: T, text: string, desc: string | JSX.Element, onSet: (a: T) => any }) {
+function DropdownItem<T>(props: { disabled?: boolean, accepting: T, val: T, text: string, desc: string | JSX.Element, onSet: (a: T) => any }) {
     const accepting = props.accepting;
     const val = props.val;
+    const disabled = props.disabled;
     const Surrounding = (props: { children: JSX.Element | JSX.Element[] }) => {
         const condition = accepting === val;
         return (
-            <div style={{ padding: 5 }}>
+            <div style={{ padding: 5, opacity: disabled ? 0.5 : 1 }}>
                 <div style={{
                     borderWidth: 1, borderRadius: radius,
                     padding: padding, backgroundColor: condition ? "#fff2" : "#0000",
@@ -519,7 +522,7 @@ function DropdownItem<T>(props: { accepting: T, val: T, text: string, desc: stri
     }
 
     return (
-        <Dropdown.Item style={{ padding: 0 }} onClick={async () => {
+        <Dropdown.Item disabled={disabled} style={{ padding: 0 }} onClick={async () => {
             props.onSet(props.accepting)
         }}>
             <Surrounding>

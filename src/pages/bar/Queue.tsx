@@ -3,7 +3,7 @@ import { SongType } from "../../lib/song";
 import Song, { SongList } from "../../components/Song";
 import { Colors, padding, radius, smallPadding, useFdim } from "../../lib/Constants";
 import { useDrag, useDrop } from 'react-dnd';
-import { FC, memo, useCallback, useEffect, useState } from "react";
+import { FC, memo, useCallback, useContext, useEffect, useState } from "react";
 import update from 'immutability-helper';
 import _ from "lodash";
 import { DndProvider } from 'react-dnd'
@@ -14,6 +14,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRightArrowLeft, faArrowsUpDown, faForwardStep, faPause, faPlay, faRightLeft, faVolumeDown, faVolumeLow, faVolumeMute, faVolumeUp, IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import { millisToHoursMinutes, millisToMinutesAndSeconds, useInterval } from "../../lib/utils";
 import { PlaybackButton } from "../../components/PlaybackButton";
+import { UserSessionContext } from "../../lib/UserSessionContext";
 
 
 // type SongDraggableType = { id: string, song: SongType }
@@ -41,6 +42,7 @@ type QueueProps = {
     songDims?: number,
     reorderQueue: () => Promise<any>,
     disable?: boolean,
+    mobile?: boolean
     // onPauseClick: () => any,
     // onSkipClick: () => any,
     // lastPullTime: number,
@@ -48,6 +50,8 @@ type QueueProps = {
 
 export default function Queue(props: QueueProps) {
     // const queue = props.queue;
+    const usc = useContext(UserSessionContext);
+    const isSoundtrack = usc.user.streaming_service === "SOUNDTRACK";
     const current = props.current[0];
     const progress = props.current[1];
 
@@ -103,26 +107,27 @@ export default function Queue(props: QueueProps) {
     return (
         <div style={{ width: "100%", display: 'flex', flexDirection: 'column' }}>
             <span className="App-smalltext">{queueOrder.length} tracks · {millisToHoursMinutes(totalMs())}</span>
-            <div style={{ paddingBottom: padding, paddingTop: smallPadding, display: "flex", justifyContent: 'center', alignItems: 'center', height: 70 }}>
-                {
-                    editingQueue ?
-                        <div style={dragBoxStyle}>
-                            <UpNextButton title="Save changes" onClick={onSave} backgroundColor={Colors.green} />
-                            <div style={{ width: padding }} />
-                            <UpNextButton title="Cancel" onClick={onCancel} backgroundColor={Colors.red} />
-                        </div> :
-                        <div style={{ ...dragBoxStyle, backgroundColor: Colors.background, }}>
-                            <div style={{ paddingRight: 7 }}>
-                                <FontAwesomeIcon style={{ transform: "rotate(90deg) scaleX(-1)" }} icon={faArrowRightArrowLeft}></FontAwesomeIcon>
+            {isSoundtrack ?
+                <div style={{ paddingBottom: padding, paddingTop: smallPadding, display: "flex", justifyContent: 'center', alignItems: 'center', height: 70 }}>
+                    {
+                        editingQueue ?
+                            <div style={dragBoxStyle}>
+                                <UpNextButton title="Save changes" onClick={onSave} backgroundColor={Colors.green} />
+                                <div style={{ width: padding }} />
+                                <UpNextButton title="Cancel" onClick={onCancel} backgroundColor={Colors.red} />
+                            </div> :
+                            <div style={{ ...dragBoxStyle, backgroundColor: Colors.background, }}>
+                                <div style={{ paddingRight: 7 }}>
+                                    <FontAwesomeIcon style={{ transform: "rotate(90deg) scaleX(-1)" }} icon={faArrowRightArrowLeft}></FontAwesomeIcon>
+                                </div>
+                                <span className="App-smalltext">Drag to reorder the queue</span>
                             </div>
-                            <span className="App-smalltext">Drag to reorder the queue</span>
-                        </div>
-
-                }
-            </div>
+                    }
+                </div> : <div style={{ height: padding }}></div>
+            }
             {
                 queueOrder ?
-                    <Container disable={props.disable} data={props.queueOrder} dims={props.songDims} editingQueue={props.editingQueue} />
+                    <Container mobile={props.mobile} disable={!isSoundtrack || props.disable} data={props.queueOrder} dims={props.songDims} editingQueue={props.editingQueue} />
                     :
                     <div>
                         <span>There was a problem getting your queue... are you sure you've set up everything completely?</span>
@@ -151,6 +156,7 @@ const Container = memo(function Container(props: {
     editingQueue: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
     dims?: number,
     disable?: boolean,
+    mobile?: boolean
 }) {
     const [cards, setCards] = props.data;
     // const setCards = props.data[1];
@@ -191,7 +197,7 @@ const Container = memo(function Container(props: {
 
     const [, drop] = useDrop(() => ({ accept: 'card' }))
     return (
-        <div ref={drop} style={{ flex: 1 }}>
+        <div ref={drop} style={{ flex: 1, overflowY: 'scroll', maxHeight: props.mobile ? 420 : undefined }}>
             {cards.map((card) => (
                 card === undefined ?
                     <></>
@@ -267,7 +273,9 @@ const SongCard: FC<SongCardProps> = memo(function Card({
         [findCard, moveCard],
     )
 
-    const opacity = disable ? 0.5 : isDragging ? 0.3 : 1;
+    const opacity =
+        // disable ? 0.5 : 
+        isDragging ? 0.3 : 1;
 
     return (
         <div ref={(node) => drag(drop(node))} style={{ opacity, paddingBottom: padding, cursor: 'move', display: 'flex', justifyContent: 'space-between' }}>
