@@ -389,6 +389,9 @@ export default function Dashboard() {
         console.log("refreshing all");
         //reqs
         const requests = await getRequests(usc, deletedIds, deletedCheckAgain);
+
+        console.log("requests", requests)
+
         if (!_.isEqual(requests, songRequests)) setSongRequests(requests);
 
         //queue
@@ -1062,13 +1065,15 @@ const AISideTab = (props: { onClick: () => any, close?: boolean }) => {
 }
 
 const parseRequestJSON = (json: any): SongRequestType => {
+    const user = {
+        first_name: json.tipper_info?.tipper_info.first_name,
+        last_name: json.tipper_info?.tipper_info.last_name,
+        email: json.tipper_info?.tipper_info.email
+    }
+
     const songJSON = json.song_json;
     return ({
-        user: {
-            first_name: json.tipper_info.tipper_info.first_name,
-            last_name: json.tipper_info.tipper_info.last_name,
-            email: json.tipper_info.tipper_info.email
-        },
+        user: user,
         id: json.id,
         song: { title: songJSON.name, artists: [songJSON.artist], albumart: songJSON.image_url, id: songJSON.id, explicit: songJSON.explicit ?? false },
         price: json.price,
@@ -1086,14 +1091,21 @@ const getRequests = async (usc: UserSessionContextType, deletedIds: Map<number, 
         // console.log(response);
         return response.json();
     }).then(json => {
+        console.log("requests json", json);
+
         const out: SongRequestType[] = [];
-        json.data.forEach((item: any) => {
+
+        for (const item of json.data) {
             const songJSON = item.song_json;
             const exptime = deletedIds.get(item.id);
+            console.log("requests exptime", exptime)
             if (!exptime || exptime + deletedCheckAgain < Date.now()) {
+                console.log("req pushing out!", item)
                 out.push(parseRequestJSON(item))
             }
-        });
+        }
+
+        console.log("requests out", out)
 
         const sorted = out.sort((a, b) => b.date.getTime() - a.date.getTime());
 
